@@ -34,6 +34,10 @@
  *
  *********************************************************************/
 
+#define SIMULATION
+// Start heading back with this margin of safety (wrt battery time remaining)
+#define MARGIN_SECONDS 10
+
 #include <explore/explore.h>
 #include <explore/explore_frontier.h>
 
@@ -107,6 +111,20 @@ Explore::Explore() :
   tf::poseStampedTFToMsg(robot_pose, robot_pose_msg);
   home_point = robot_pose_msg.pose.position;
   ROS_WARN("Robot home at %f, %f, %f", home_point.x, home_point.y, home_point.z);
+
+  // Last time we were at home is right now
+  last_time_at_home = ros::Time::now();
+
+#ifdef SIMULATION
+  // 60 seconds
+  battery_duration = ros::Duration(60.0);
+#endif
+
+  // Find robot's max speed
+  max_vel_x = 0.0;
+  private_nh.getParam("/move_base/TrajectoryPlannerROS/max_vel_x", max_vel_x);
+  ROS_WARN("Robot has max speed %f", max_vel_x);
+  assert(max_vel_x != 0.0);
 }
 
 Explore::~Explore() {
@@ -262,7 +280,9 @@ void Explore::makePlan() {
   goal_pose.header.stamp = ros::Time::now();
   // Calculates navigation from this position to points in costmap
   planner_->computePotential(robot_pose_msg.pose.position); // just to be safe, though this should already have been done in explorer_->getExplorationGoals
+#ifdef SIMULATION
   shouldGoHome(robot_pose_msg);
+#endif
 
   int blacklist_count = 0;
   for (unsigned int i=0; i<goals.size(); i++) {
@@ -393,9 +413,34 @@ bool Explore::shouldGoHome(PoseStamped robot_pose_msg) {
     distance += dist;
     prev_pose = *it;
   }
-  ROS_WARN("Distance to go home: %f", distance);
+  ROS_WARN("Distance to go home: %f meters", distance);
 
-  return true;
+  // XXX probably need to take into account turn time at each point too
+
+  // Estimate time to travel home
+  int time_to_home = ceil(distance / max_vel_x);
+  ROS_WARN("Time to go home: %d seconds", time_to_home);
+
+  if (time_to_home + MARGIN_SECONDS > batteryTimeRemaining()) {
+    ROS_WARN("Decided to return home");
+    return true;
+  }
+
+  return false;
+}
+
+/*
+  Estimation of amount of battery time we have left in seconds
+*/
+int Explore::batteryTimeRemaining() {
+#ifdef SIMULATION
+  ros::Duration elapsed = ros::Time::now() - last_time_at_home;
+  int remaining = battery_duration.sec - elapsed.sec;
+  ROS_WARN("Time elapsed since charge: %d Time remaining on battery: %d", elapsed.sec, remaining);
+  return remaining;
+#else
+  return 0;
+#endif
 }
 
 /*

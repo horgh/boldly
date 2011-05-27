@@ -112,6 +112,8 @@ private:
   bool goalOnBlacklist(const geometry_msgs::PoseStamped& goal);
 
   bool shouldGoHome(geometry_msgs::PoseStamped robot_pose_msg);
+  int batteryTimeRemaining();
+
 
   ros::NodeHandle node_;
   tf::TransformListener tf_;
@@ -144,6 +146,15 @@ private:
 
   // Location of our home base to charge
   geometry_msgs::Point home_point;
+
+  // Robot's max speed
+  double max_vel_x;
+
+  /*
+    Used in simulation
+  */
+  ros::Time last_time_at_home;
+  ros::Duration battery_duration;
 };
 
 }
