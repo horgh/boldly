@@ -104,8 +104,11 @@ Explore::Explore() :
   tf::Stamped<tf::Pose> robot_pose;
   explore_costmap_ros_->getRobotPose(robot_pose);
   PoseStamped robot_pose_msg;
-  tf::poseStampedTFToMsg(robot_pose, home_pose_msg);
-  ROS_WARN("Robot home at %f, %f, %f", home_pose_msg.pose.position.x, home_pose_msg.pose.position.y, home_pose_msg.pose.position.z);
+  tf::poseStampedTFToMsg(robot_pose, robot_pose_msg);
+  home_point.x = robot_pose_msg.pose.position.x;
+  home_point.y = robot_pose_msg.pose.position.y;
+  home_point.z = robot_pose_msg.pose.position.z;
+  ROS_WARN("Robot home at %f, %f, %f", home_point.x, home_point.y, home_point.z);
 }
 
 Explore::~Explore() {
@@ -259,7 +262,10 @@ void Explore::makePlan() {
 
   goal_pose.header.frame_id = explore_costmap_ros_->getGlobalFrameID();
   goal_pose.header.stamp = ros::Time::now();
+  // Calculates navigation from this position to points in costmap
   planner_->computePotential(robot_pose_msg.pose.position); // just to be safe, though this should already have been done in explorer_->getExplorationGoals
+  shouldGoHome();
+
   int blacklist_count = 0;
   for (unsigned int i=0; i<goals.size(); i++) {
     goal_pose.pose = goals[i];
@@ -357,6 +363,11 @@ void Explore::reachedGoal(const actionlib::SimpleClientGoalState& status,
 //  else{
 //    ROS_INFO("Exploration finished. Hooray.");
 //  }
+}
+
+bool Explore::shouldGoHome() {
+  ROS_WARN("Cost to go home: %f", planner_->getPointPotential( home_point ) );
+  return true;
 }
 
 /*

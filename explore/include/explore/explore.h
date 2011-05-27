@@ -40,6 +40,7 @@
 #include <move_base_msgs/MoveBaseAction.h>
 #include <actionlib/client/simple_action_client.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Point.h>
 #include <nav_msgs/GetMap.h>
 #include <costmap_2d/costmap_2d_ros.h>
 #include <costmap_2d/costmap_2d.h>
@@ -110,6 +111,8 @@ private:
 
   bool goalOnBlacklist(const geometry_msgs::PoseStamped& goal);
 
+  bool shouldGoHome();
+
   ros::NodeHandle node_;
   tf::TransformListener tf_;
   costmap_2d::Costmap2DROS* explore_costmap_ros_;
@@ -140,7 +143,7 @@ private:
   bool   close_loops_;
 
   // Location of our home base to charge
-  geometry_msgs::PoseStamped home_pose_msg;
+  geometry_msgs::Point home_point;
 };
 
 }
