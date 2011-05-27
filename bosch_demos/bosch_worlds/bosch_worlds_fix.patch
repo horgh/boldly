@@ -1,0 +1,33 @@
+Index: maze.world
+===================================================================
+--- maze.world	(revision 636)
++++ maze.world	(working copy)
+@@ -33,12 +33,14 @@
+ ( 
+   name "maze"
+   bitmap "../bosch_maps/maze.png"
+-  size3 [20.0 20.0 2.0]
+-  pose [0.0 0.0 0.0]
++  #size3 [20.0 20.0 2.0]
++  #size3 [20000.0 20000.0 20000.0]
++	size [20 20 2]
++  pose3 [0.0 0.0 0.0]
+ )
+ 
+ segway( 
+-  pose [0 0 0] 
++  pose3 [0 0 0] 
+   name "segway" 
+   color "gray"
+ )
+Index: segway.inc
+===================================================================
+--- segway.inc	(revision 636)
++++ segway.inc	(working copy)
+@@ -21,5 +21,5 @@
+   block[0].point[6] [  0.2825  0.34 ]
+   block[0].point[7] [ -0.2825  0.34 ]
+ 
+-  sick(pose [0.2 0.0 0.67])
++  sick(pose3 [0.2 0.0 0.67])
+ )

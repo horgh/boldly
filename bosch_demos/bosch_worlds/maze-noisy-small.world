@@ -1,0 +1,47 @@
+include "segway-noisy.inc"
+
+define floorplan model
+(
+  # sombre, sensible, artistic
+  color "gray30"
+
+  # most maps will need a bounding box
+  boundary 1
+
+  gui_nose 0
+  gui_grid 0
+  gui_movemask 0
+  gui_outline 0
+  gripper_return 0
+  fiducial_return 0
+  laser_return 1
+)
+
+resolution 0.02
+interval_sim 100  # simulation timestep in milliseconds
+interval_real 150 # real-time interval between simulation updates in milliseconds 
+
+window
+( 
+  size [ 600.000 700.000 ]
+  center [ 0 0] 
+  rotate [ 0 0 ]
+  scale 30
+)
+
+floorplan
+( 
+  name "maze"
+  bitmap "../bosch_maps/maze.png"
+  size [20 20 2]
+  #size [100 100 2]
+  #size [200 200 2]
+  pose3 [0.0 0.0 0.0]
+)
+
+segway( 
+	pose [0 0 0 0]
+  name "segway" 
+  color "gray"
+)
+

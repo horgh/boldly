@@ -1,0 +1,20 @@
+<stack>
+  <description brief="Demos for Bosch stacks and packages">
+     A collection of demos for Bosch stacks and packages.
+  </description>
+  <author>Maintained by Benjamin Pitzer</author>
+  <license>BSD</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/bosch_demos</url>
+  <depend stack="exploration" /> <!-- explore -->
+  <depend stack="geometry" /> <!-- tf -->
+  <depend stack="joystick_drivers" /> <!-- joy -->
+  <depend stack="navigation" /> <!-- move_base -->
+  <depend stack="pr2_apps" /> <!-- pr2_teleop -->
+  <depend stack="pr2_navigation_apps" /> <!-- pr2_2dnav_slam -->
+  <depend stack="ros" />
+  <depend stack="shared_autonomy" /> <!-- safe_teleop_base -->
+  <depend stack="simulator_stage" /> <!-- stage -->
+  <depend stack="slam_gmapping" /> <!-- gmapping -->
+
+</stack>
