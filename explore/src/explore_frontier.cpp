@@ -84,6 +84,9 @@ float ExploreFrontier::getFrontierCost(const Frontier& frontier) {
     return 1.0;
 }
 
+/*
+	Orientation change of robot wrt frontier?
+*/
 // TODO: what is this doing exactly?
 double ExploreFrontier::getOrientationChange(const Frontier& frontier, const tf::Stamped<tf::Pose>& robot_pose){
   double robot_yaw = tf::getYaw(robot_pose.getRotation());
@@ -98,6 +101,10 @@ float ExploreFrontier::getFrontierGain(const Frontier& frontier, double map_reso
   return frontier.size * map_resolution;
 }
 
+/*
+	Goes through each existing frontier & assigns a cost to each
+	Then sorts by cost and returns these as goals
+*/
 bool ExploreFrontier::getExplorationGoals(Costmap2DROS& costmap, tf::Stamped<tf::Pose> robot_pose, navfn::NavfnROS* planner, std::vector<geometry_msgs::Pose>& goals, double potential_scale, double orientation_scale, double gain_scale)
 {
   findFrontiers(costmap);
@@ -160,6 +167,10 @@ bool ExploreFrontier::getExplorationGoals(Costmap2DROS& costmap, tf::Stamped<tf:
   return (goals.size() > 0);
 }
 
+/*
+	Build new list of frontiers from the costmap
+		- Groups close regions into one large frontier & ensures large enough for robot to pass
+*/
 void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
   frontiers_.clear();
 
@@ -191,6 +202,7 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
 //    bool valid_point = planner_->validPointPotential(p);
     bool valid_point = (map[idx] < LETHAL_OBSTACLE);
 
+		// Check if there is a cell with no information around our cell
     if ((valid_point && map) &&
         (((idx+1 < size) && (map[idx+1] == NO_INFORMATION)) ||
          ((idx-1 >= 0) && (map[idx-1] == NO_INFORMATION)) ||
@@ -213,8 +225,15 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
   // Group adjoining map_ pixels
   int segment_id = 127;
   std::vector< std::vector<FrontierPoint> > segments;
+	// Track which cells are already part of frontier segments
+	std::set<int> cells_in_segments;
   for (int i = 0; i < size; i++) {
+		// If the cell is a frontier (open cell next to no info cell)
     if (map_.data[i] == -128) {
+			// Already part of a segment
+			if (cells_in_segments.count( i ) > 0 ) {
+				continue;
+			}
       std::vector<int> neighbors;
       std::vector<FrontierPoint> segment;
       neighbors.push_back(i);
@@ -227,43 +246,51 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
 
         btVector3 tot(0,0,0);
         int c = 0;
-        if ((idx+1 < size) && (map[idx+1] == NO_INFORMATION)) {
+        if (idx+1 < size && map[idx+1] == NO_INFORMATION) {
           tot += btVector3(1,0,0);
           c++;
         }
-        if ((idx-1 >= 0) && (map[idx-1] == NO_INFORMATION)) {
+        if (idx-1 >= 0 && map[idx-1] == NO_INFORMATION) {
           tot += btVector3(-1,0,0);
           c++;
         }
-        if ((idx+w < size) && (map[idx+w] == NO_INFORMATION)) {
+        if (idx+w < size && map[idx+w] == NO_INFORMATION) {
           tot += btVector3(0,1,0);
           c++;
         }
-        if ((idx-w >= 0) && (map[idx-w] == NO_INFORMATION)) {
+        if (idx-w >= 0 && map[idx-w] == NO_INFORMATION) {
           tot += btVector3(0,-1,0);
           c++;
         }
         assert(c > 0);
         segment.push_back(FrontierPoint(idx, tot / c));
+				cells_in_segments.insert( idx );
+
+				if (segment.size() >= 25) {
+					//ROS_WARN("Limiting size of segment");
+					neighbors.clear();
+					continue;
+				}
 
         // consider 8 neighborhood
-        if (((idx-1)>0) && (map_.data[idx-1] == -128))
+        if (idx-1 > 0 && map_.data[idx-1] == -128)
           neighbors.push_back(idx-1);
-        if (((idx+1)<size) && (map_.data[idx+1] == -128))
+        if (idx+1 < size && map_.data[idx+1] == -128)
           neighbors.push_back(idx+1);
-        if (((idx-map_.info.width)>0) && (map_.data[idx-map_.info.width] == -128))
+        if (idx-map_.info.width > 0 && map_.data[idx-map_.info.width] == -128)
           neighbors.push_back(idx-map_.info.width);
-        if (((idx-map_.info.width+1)>0) && (map_.data[idx-map_.info.width+1] == -128))
+        if (idx-map_.info.width+1 > 0 && map_.data[idx-map_.info.width+1] == -128)
           neighbors.push_back(idx-map_.info.width+1);
-        if (((idx-map_.info.width-1)>0) && (map_.data[idx-map_.info.width-1] == -128))
+        if (idx-map_.info.width-1 > 0 && map_.data[idx-map_.info.width-1] == -128)
           neighbors.push_back(idx-map_.info.width-1);
-        if (((idx+(int)map_.info.width)<size) && (map_.data[idx+map_.info.width] == -128))
+        if (idx+(int)map_.info.width < size && map_.data[idx+map_.info.width] == -128)
           neighbors.push_back(idx+map_.info.width);
-        if (((idx+(int)map_.info.width+1)<size) && (map_.data[idx+map_.info.width+1] == -128))
+        if (idx+(int)map_.info.width+1 < size && map_.data[idx+map_.info.width+1] == -128)
           neighbors.push_back(idx+map_.info.width+1);
-        if (((idx+(int)map_.info.width-1)<size) && (map_.data[idx+map_.info.width-1] == -128))
+        if (idx+(int)map_.info.width-1 < size && map_.data[idx+map_.info.width-1] == -128)
           neighbors.push_back(idx+map_.info.width-1);
       }
+			//ROS_WARN("Segment size %d", segment.size() );
 
       segments.push_back(segment);
       segment_id--;

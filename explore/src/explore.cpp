@@ -80,6 +80,7 @@ Explore::Explore() :
   private_nh.param("loop_closure_addition_dist_min", loop_closure_addition_dist_min, 2.5);
   private_nh.param("loop_closure_loop_dist_min", loop_closure_loop_dist_min, 6.0);
   private_nh.param("loop_closure_loop_dist_max", loop_closure_loop_dist_max, 20.0);
+  //private_nh.param("loop_closure_loop_dist_max", loop_closure_loop_dist_max, 100.0);
   private_nh.param("loop_closure_slam_entropy_max", loop_closure_slam_entropy_max, 3.0);
   private_nh.param("potential_scale", potential_scale_, 1e-3);
   private_nh.param("orientation_scale", orientation_scale_, 0.0); // TODO: set this back to 0.318 once getOrientationChange is fixed
@@ -114,6 +115,10 @@ Explore::~Explore() {
     delete explore_costmap_ros_;
 }
 
+/*
+	Called when map service on this node is queried?
+	Returns map data (whether occupied, etc) in form of nav_msgs::GetMap::Response
+*/
 bool Explore::mapCallback(nav_msgs::GetMap::Request  &req,
                           nav_msgs::GetMap::Response &res)
 {
@@ -148,6 +153,9 @@ bool Explore::mapCallback(nav_msgs::GetMap::Request  &req,
   return true;
 }
 
+/*
+	Similar/same to above function. Sends map data (whether occupied, etc)
+*/
 void Explore::publishMap() {
   nav_msgs::OccupancyGrid map;
   map.header.stamp = ros::Time::now();
@@ -182,6 +190,9 @@ void Explore::publishMap() {
   map_publisher_.publish(map);
 }
 
+/*
+	For visualization
+*/
 void Explore::publishGoal(const geometry_msgs::Pose& goal){
   visualization_msgs::Marker marker;
   marker.header.frame_id = "map";
@@ -201,6 +212,12 @@ void Explore::publishGoal(const geometry_msgs::Pose& goal){
   marker_publisher_.publish(marker);
 }
 
+/*
+	Get goals from explore_frontier & choose one to go to
+	If goal has changed not changed from previous, ensure makes progress
+	If sufficient time elapsed and could not reach, blacklist
+	Sends the goal pose to the base with a callback function to call when goal reached
+*/
 void Explore::makePlan() {
   //since this gets called on handle activate
   if(explore_costmap_ros_ == NULL)
@@ -211,7 +228,20 @@ void Explore::makePlan() {
 
   std::vector<geometry_msgs::Pose> goals;
   explore_costmap_ros_->clearRobotFootprint();
-  explorer_->getExplorationGoals(*explore_costmap_ros_, robot_pose, planner_, goals, potential_scale_, orientation_scale_, gain_scale_);
+  bool res = explorer_->getExplorationGoals(*explore_costmap_ros_, robot_pose, planner_, goals, potential_scale_, orientation_scale_, gain_scale_);
+	/*
+	ROS_WARN("getExplorationGoals(): %d Have %d exploration goals/ frontiers", res, goals.size());
+	for (std::vector<geometry_msgs::Pose>::iterator it = goals.begin(); it != goals.end(); it++) {
+		ROS_WARN("Goal at %f, %f, %f", it->position.x, it->position.y, it->position.z);
+		PoseStamped test_goal_pose;
+		test_goal_pose.header.frame_id = explore_costmap_ros_->getGlobalFrameID();
+		test_goal_pose.header.stamp = ros::Time::now();
+		test_goal_pose.pose = *it;
+		if ( goalOnBlacklist(test_goal_pose) ) {
+			ROS_WARN("Goal is on blacklist");
+		}
+	}
+	*/
   if (goals.size() == 0)
     done_exploring_ = true;
 
@@ -231,6 +261,9 @@ void Explore::makePlan() {
       continue;
     }
 
+		/*
+			Build plan to given goal. If such a plan exists, we can use it
+		*/
     valid_plan = ((planner_->getPlanFromPotential(goal_pose, plan)) && (!plan.empty()));
     if (valid_plan) {
       break;
@@ -246,6 +279,10 @@ void Explore::makePlan() {
   }
 
   if (valid_plan) {
+		/*
+			If plan size has changed, that means we are making some sort of progress
+			Otherwise check if too much time has elapsed and we may need to blacklist the goal
+		*/
     if (prev_plan_size_ != plan.size()) {
       time_since_progress_ = 0.0;
     } else {
@@ -260,7 +297,7 @@ void Explore::makePlan() {
     // black list goals for which we've made no progress for a long time
     if (time_since_progress_ > progress_timeout_) {
       frontier_blacklist_.push_back(goal_pose);
-      ROS_DEBUG("Adding current goal to black list");
+      ROS_WARN("Adding current goal to black list");
     }
 
     prev_plan_size_ = plan.size();
@@ -282,6 +319,9 @@ void Explore::makePlan() {
 
 }
 
+/*
+	Check if current goal is too close to a blacklisted frontier
+*/
 bool Explore::goalOnBlacklist(const geometry_msgs::PoseStamped& goal){
   //check if a goal is on the blacklist for goals that we're pursuing
   for(unsigned int i = 0; i < frontier_blacklist_.size(); ++i){
@@ -300,7 +340,7 @@ void Explore::reachedGoal(const actionlib::SimpleClientGoalState& status,
   ROS_DEBUG("Reached goal");
   if(status == actionlib::SimpleClientGoalState::ABORTED){
     frontier_blacklist_.push_back(frontier_goal);
-    ROS_DEBUG("Adding current goal to black list");
+    ROS_WARN("Adding current goal to black list (aborted, but reached goal)");
   }
 
 //  if(!done_exploring_){
@@ -312,6 +352,11 @@ void Explore::reachedGoal(const actionlib::SimpleClientGoalState& status,
 //  }
 }
 
+/*
+	Continually run makePlan() after specified sleep
+	This will cause goals to become blacklisted if not enough progress is made
+	and not just wait for callback when goal is reached
+*/
 void Explore::execute() {
   while (! move_base_client_.waitForServer(ros::Duration(5,0)))
     ROS_WARN("Waiting to connect to move_base server");
