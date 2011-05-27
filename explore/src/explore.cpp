@@ -99,6 +99,13 @@ Explore::Explore() :
         move_base_client_,
         *explore_costmap_ros_,
         client_mutex_);
+
+  // Assume start position is our home. Record it
+  tf::Stamped<tf::Pose> robot_pose;
+  explore_costmap_ros_->getRobotPose(robot_pose);
+  PoseStamped robot_pose_msg;
+  tf::poseStampedTFToMsg(robot_pose, home_pose_msg);
+  ROS_WARN("Robot home at %f, %f, %f", home_pose_msg.pose.position.x, home_pose_msg.pose.position.y, home_pose_msg.pose.position.z);
 }
 
 Explore::~Explore() {
