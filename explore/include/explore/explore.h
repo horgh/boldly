@@ -111,7 +111,7 @@ private:
 
   bool goalOnBlacklist(const geometry_msgs::PoseStamped& goal);
 
-  bool shouldGoHome();
+  bool shouldGoHome(geometry_msgs::PoseStamped robot_pose_msg);
 
   ros::NodeHandle node_;
   tf::TransformListener tf_;

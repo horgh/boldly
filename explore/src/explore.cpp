@@ -105,9 +105,7 @@ Explore::Explore() :
   explore_costmap_ros_->getRobotPose(robot_pose);
   PoseStamped robot_pose_msg;
   tf::poseStampedTFToMsg(robot_pose, robot_pose_msg);
-  home_point.x = robot_pose_msg.pose.position.x;
-  home_point.y = robot_pose_msg.pose.position.y;
-  home_point.z = robot_pose_msg.pose.position.z;
+  home_point = robot_pose_msg.pose.position;
   ROS_WARN("Robot home at %f, %f, %f", home_point.x, home_point.y, home_point.z);
 }
 
@@ -264,7 +262,7 @@ void Explore::makePlan() {
   goal_pose.header.stamp = ros::Time::now();
   // Calculates navigation from this position to points in costmap
   planner_->computePotential(robot_pose_msg.pose.position); // just to be safe, though this should already have been done in explorer_->getExplorationGoals
-  shouldGoHome();
+  shouldGoHome(robot_pose_msg);
 
   int blacklist_count = 0;
   for (unsigned int i=0; i<goals.size(); i++) {
@@ -365,8 +363,38 @@ void Explore::reachedGoal(const actionlib::SimpleClientGoalState& status,
 //  }
 }
 
-bool Explore::shouldGoHome() {
+/*
+  Note: Must have called planner_->computePotential() prior to calling this
+*/
+bool Explore::shouldGoHome(PoseStamped robot_pose_msg) {
   ROS_WARN("Cost to go home: %f", planner_->getPointPotential( home_point ) );
+
+  /*
+    Get distance needed to get home
+  */
+  // Find the plan to go home
+  std::vector<geometry_msgs::PoseStamped> plan;
+  PoseStamped home_pose;
+  home_pose.header.frame_id = explore_costmap_ros_->getGlobalFrameID();
+  home_pose.header.stamp = ros::Time::now();
+  bool valid_plan = planner_->getPlanFromPotential(home_pose, plan) && !plan.empty();
+  if (!valid_plan) {
+    ROS_WARN("No plan to get home!");
+  }
+
+  // Calculate the distance
+  PoseStamped prev_pose;
+  prev_pose = robot_pose_msg;
+  double distance = 0.0;
+  for (std::vector<geometry_msgs::PoseStamped>::iterator it = plan.begin(); it != plan.end(); it++) {
+    double dx = prev_pose.pose.position.x - it->pose.position.x;
+    double dy = prev_pose.pose.position.y - it->pose.position.y;
+    double dist = sqrt(dx*dx + dy*dy);
+    distance += dist;
+    prev_pose = *it;
+  }
+  ROS_WARN("Distance to go home: %f", distance);
+
   return true;
 }
 
