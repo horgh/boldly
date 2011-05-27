@@ -243,6 +243,8 @@ void Explore::publishGoal(const geometry_msgs::Pose& goal){
 	If goal has changed not changed from previous, ensure makes progress
 	If sufficient time elapsed and could not reach, blacklist
 	Sends the goal pose to the base with a callback function to call when goal reached
+
+  - Must call ExploreFrontier::computePotential() first
 */
 void Explore::makePlan() {
   //since this gets called on handle activate
@@ -279,10 +281,8 @@ void Explore::makePlan() {
   goal_pose.header.frame_id = explore_costmap_ros_->getGlobalFrameID();
   goal_pose.header.stamp = ros::Time::now();
   // Calculates navigation from this position to points in costmap
-  planner_->computePotential(robot_pose_msg.pose.position); // just to be safe, though this should already have been done in explorer_->getExplorationGoals
-#ifdef SIMULATION
-  shouldGoHome(robot_pose_msg);
-#endif
+  //planner_->computePotential(robot_pose_msg.pose.position); // just to be safe, though this should already have been done in explorer_->getExplorationGoals
+  //shouldGoHome(robot_pose_msg);
 
   int blacklist_count = 0;
   for (unsigned int i=0; i<goals.size(); i++) {
@@ -383,10 +383,20 @@ void Explore::reachedGoal(const actionlib::SimpleClientGoalState& status,
 //  }
 }
 
+geometry_msgs::PoseStamped Explore::currentPose() {
+  tf::Stamped<tf::Pose> robot_pose;
+  explore_costmap_ros_->getRobotPose(robot_pose);
+
+  PoseStamped robot_pose_msg;
+  tf::poseStampedTFToMsg(robot_pose, robot_pose_msg);
+
+  return robot_pose_msg;
+}
+
 /*
   Note: Must have called planner_->computePotential() prior to calling this
 */
-bool Explore::shouldGoHome(PoseStamped robot_pose_msg) {
+bool Explore::shouldGoHome() {
   ROS_WARN("Cost to go home: %f", planner_->getPointPotential( home_point ) );
 
   /*
@@ -402,9 +412,8 @@ bool Explore::shouldGoHome(PoseStamped robot_pose_msg) {
     ROS_WARN("No plan to get home!");
   }
 
-  // Calculate the distance
-  PoseStamped prev_pose;
-  prev_pose = robot_pose_msg;
+  // Calculate the distance from current point to home point using the plan
+  PoseStamped prev_pose = currentPose();
   double distance = 0.0;
   for (std::vector<geometry_msgs::PoseStamped>::iterator it = plan.begin(); it != plan.end(); it++) {
     double dx = prev_pose.pose.position.x - it->pose.position.x;
@@ -421,10 +430,14 @@ bool Explore::shouldGoHome(PoseStamped robot_pose_msg) {
   int time_to_home = ceil(distance / max_vel_x);
   ROS_WARN("Time to go home: %d seconds", time_to_home);
 
+// Doesn't make sense yet without us estimating remaining battery
+#ifdef SIMULATION
   if (time_to_home + MARGIN_SECONDS > batteryTimeRemaining()) {
     ROS_WARN("Decided to return home");
-    return true;
+    // XXX until goHome() implemented
+    //return true;
   }
+#endif
 
   return false;
 }
@@ -443,6 +456,10 @@ int Explore::batteryTimeRemaining() {
 #endif
 }
 
+void Explore::goHome() {
+
+}
+
 /*
 	Continually run makePlan() after specified sleep
 	This will cause goals to become blacklisted if not enough progress is made
@@ -454,6 +471,7 @@ void Explore::execute() {
 
   ROS_INFO("Connected to move_base server");
 
+  explorer_->computePotential(explore_costmap_ros_, planner_);
   // This call sends the first goal, and sets up for future callbacks.
   makePlan();
 
@@ -466,7 +484,14 @@ void Explore::execute() {
       loop_closure_->updateGraph(robot_pose);
     }
 
-    makePlan();
+    explorer_->computePotential(explore_costmap_ros_, planner_);
+
+    if ( shouldGoHome() ) {
+      goHome();
+    } else {
+      makePlan();
+    }
+
     r.sleep();
   }
 

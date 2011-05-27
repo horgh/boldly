@@ -101,9 +101,24 @@ float ExploreFrontier::getFrontierGain(const Frontier& frontier, double map_reso
   return frontier.size * map_resolution;
 }
 
+void ExploreFrontier::computePotential(Costmap2DROS* costmap, navfn::NavfnROS* planner) {
+  tf::Stamped<tf::Pose> robot_pose;
+  costmap->getRobotPose(robot_pose);
+
+  costmap->clearRobotFootprint();
+
+  geometry_msgs::PoseStamped robot_pose_msg;
+  tf::poseStampedTFToMsg(robot_pose, robot_pose_msg);
+
+  planner->computePotential(robot_pose_msg.pose.position);
+}
+
 /*
 	Goes through each existing frontier & assigns a cost to each
 	Then sorts by cost and returns these as goals
+
+  Must call ExploreFrontier::computePotential() first
+  Note: This is always called by makePlan() in explore
 */
 bool ExploreFrontier::getExplorationGoals(Costmap2DROS& costmap, tf::Stamped<tf::Pose> robot_pose, navfn::NavfnROS* planner, std::vector<geometry_msgs::Pose>& goals, double potential_scale, double orientation_scale, double gain_scale)
 {
@@ -111,12 +126,14 @@ bool ExploreFrontier::getExplorationGoals(Costmap2DROS& costmap, tf::Stamped<tf:
   if (frontiers_.size() == 0)
     return false;
 
+/*
   geometry_msgs::Point start;
   start.x = robot_pose.getOrigin().x();
   start.y = robot_pose.getOrigin().y();
   start.z = robot_pose.getOrigin().z();
 
   planner->computePotential(start);
+*/
 
   planner_ = planner;
   costmapResolution_ = costmap.getResolution();

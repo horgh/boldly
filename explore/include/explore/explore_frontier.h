@@ -150,6 +150,8 @@ public:
    * @param markers All markers will be added to this vector
    */
   virtual void getVisualizationMarkers(std::vector<visualization_msgs::Marker>& markers);
+
+  virtual void computePotential(costmap_2d::Costmap2DROS* costmap, navfn::NavfnROS* planner);
 };
 
 }

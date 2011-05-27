@@ -111,8 +111,10 @@ private:
 
   bool goalOnBlacklist(const geometry_msgs::PoseStamped& goal);
 
-  bool shouldGoHome(geometry_msgs::PoseStamped robot_pose_msg);
+  geometry_msgs::PoseStamped currentPose();
+  bool shouldGoHome();
   int batteryTimeRemaining();
+  void goHome();
 
 
   ros::NodeHandle node_;
