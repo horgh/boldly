@@ -115,6 +115,10 @@ private:
   bool shouldGoHome();
   int batteryTimeRemaining();
   void goHome();
+  void reachedHome(const actionlib::SimpleClientGoalState& status,
+    const move_base_msgs::MoveBaseResultConstPtr& result,
+    geometry_msgs::PoseStamped goal
+  );
 
 
   ros::NodeHandle node_;

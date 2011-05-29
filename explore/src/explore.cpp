@@ -111,6 +111,11 @@ Explore::Explore() :
   tf::poseStampedTFToMsg(robot_pose, robot_pose_msg);
   home_point = robot_pose_msg.pose.position;
   ROS_WARN("Robot home at %f, %f, %f", home_point.x, home_point.y, home_point.z);
+  ROS_WARN("Quaternion %f %f %f %f", robot_pose_msg.pose.orientation.x,
+    robot_pose_msg.pose.orientation.y,
+    robot_pose_msg.pose.orientation.z,
+    robot_pose_msg.pose.orientation.w
+  );
 
   // Last time we were at home is right now
   last_time_at_home = ros::Time::now();
@@ -434,8 +439,7 @@ bool Explore::shouldGoHome() {
 #ifdef SIMULATION
   if (time_to_home + MARGIN_SECONDS > batteryTimeRemaining()) {
     ROS_WARN("Decided to return home");
-    // XXX until goHome() implemented
-    //return true;
+    return true;
   }
 #endif
 
@@ -456,8 +460,37 @@ int Explore::batteryTimeRemaining() {
 #endif
 }
 
+/*
+  Send goal to go home to base
+*/
 void Explore::goHome() {
+  geometry_msgs::PoseStamped home_pose;
+  home_pose.header.frame_id = explore_costmap_ros_->getGlobalFrameID();
+  home_pose.header.stamp = ros::Time::now();
 
+  home_pose.pose.position = home_point;
+
+  home_pose.pose.orientation.x = home_point.x;
+  home_pose.pose.orientation.y = home_point.y;
+  home_pose.pose.orientation.z = home_point.z;
+  home_pose.pose.orientation.w = 1.0;
+
+  move_base_msgs::MoveBaseGoal goal;
+  goal.target_pose = home_pose;
+  move_base_client_.sendGoal(goal, boost::bind(&Explore::reachedHome, this, _1, _2, home_pose));
+}
+
+/*
+  Called when home has been reached
+*/
+void Explore::reachedHome(const actionlib::SimpleClientGoalState& status,
+  const move_base_msgs::MoveBaseResultConstPtr& result,
+  geometry_msgs::PoseStamped goal) {
+#ifdef SIMULATION
+  last_time_at_home = ros::Time::now();
+#else
+
+#endif
 }
 
 /*
