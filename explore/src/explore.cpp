@@ -130,6 +130,12 @@ Explore::Explore() :
   private_nh.getParam("/move_base/TrajectoryPlannerROS/max_vel_x", max_vel_x);
   ROS_WARN("Robot has max speed %f", max_vel_x);
   assert(max_vel_x != 0.0);
+
+  // And max turn speed
+  max_vel_th = 0.0;
+  private_nh.getParam("/move_base/TrajectoryPlannerROS/max_vel_th", max_vel_th);
+  ROS_WARN("Robot has max turn speed %f", max_vel_th);
+  assert(max_vel_th != 0.0);
 }
 
 Explore::~Explore() {
@@ -261,7 +267,8 @@ void Explore::makePlan() {
 
   std::vector<geometry_msgs::Pose> goals;
   explore_costmap_ros_->clearRobotFootprint();
-  bool res = explorer_->getExplorationGoals(*explore_costmap_ros_, robot_pose, planner_, goals, potential_scale_, orientation_scale_, gain_scale_);
+  // this returns bool
+  explorer_->getExplorationGoals(*explore_costmap_ros_, robot_pose, planner_, goals, potential_scale_, orientation_scale_, gain_scale_);
 	/*
 	ROS_WARN("getExplorationGoals(): %d Have %d exploration goals/ frontiers", res, goals.size());
 	for (std::vector<geometry_msgs::Pose>::iterator it = goals.begin(); it != goals.end(); it++) {
@@ -399,6 +406,43 @@ geometry_msgs::PoseStamped Explore::currentPose() {
 }
 
 /*
+  Find the distance in meters for given plan starting from given pose
+*/
+double Explore::distanceForPlan(PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan) {
+  double distance = 0.0;
+  PoseStamped previous_pose = *pose;
+
+  for (std::vector<geometry_msgs::PoseStamped>::iterator it = plan->begin(); it != plan->end(); it++) {
+    double dx = previous_pose.pose.position.x - it->pose.position.x;
+    double dy = previous_pose.pose.position.y - it->pose.position.y;
+    distance += sqrt(dx*dx + dy*dy);
+    previous_pose = *it;
+  }
+
+  return distance;
+}
+
+/*
+  Find the amount of angle change needed for given plan starting from given pose
+  XXX Doesn't seem right. yaw after first pose is always 0
+*/
+double Explore::angleChangeForPlan(PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan) {
+  double angle_change = 0.0;
+  PoseStamped previous_pose = *pose;
+  for (std::vector<geometry_msgs::PoseStamped>::iterator it = plan->begin(); it != plan->end(); it++) {
+    double yaw_1 = tf::getYaw(previous_pose.pose.orientation);
+    double yaw_2 = tf::getYaw(it->pose.orientation);
+    double da = fabs(yaw_1 - yaw_2);
+    //ROS_WARN("next pose %f %f %f %f", it->pose.orientation.x, it->pose.orientation.y, it->pose.orientation.z, it->pose.orientation.w);
+    //ROS_WARN("yaw1 %f yaw2 %f da %f", yaw_1, yaw_2, da);
+    angle_change += da;
+    previous_pose = *it;
+  }
+
+  return angle_change;
+}
+
+/*
   Note: Must have called planner_->computePotential() prior to calling this
 */
 bool Explore::shouldGoHome() {
@@ -417,22 +461,18 @@ bool Explore::shouldGoHome() {
     ROS_WARN("No plan to get home!");
   }
 
+  PoseStamped current_pose = currentPose();
+
   // Calculate the distance from current point to home point using the plan
-  PoseStamped prev_pose = currentPose();
-  double distance = 0.0;
-  for (std::vector<geometry_msgs::PoseStamped>::iterator it = plan.begin(); it != plan.end(); it++) {
-    double dx = prev_pose.pose.position.x - it->pose.position.x;
-    double dy = prev_pose.pose.position.y - it->pose.position.y;
-    double dist = sqrt(dx*dx + dy*dy);
-    distance += dist;
-    prev_pose = *it;
-  }
+  double distance = distanceForPlan(&current_pose, &plan);
   ROS_WARN("Distance to go home: %f meters", distance);
 
-  // XXX probably need to take into account turn time at each point too
+  // Find the amount of angle changed needed for the plan
+  double angle_change = angleChangeForPlan(&current_pose, &plan);
+  ROS_WARN("Angle change to go home: %f", angle_change);
 
   // Estimate time to travel home
-  int time_to_home = ceil(distance / max_vel_x);
+  int time_to_home = ceil(distance / max_vel_x) + ceil(angle_change / max_vel_th);
   ROS_WARN("Time to go home: %d seconds", time_to_home);
 
 // Doesn't make sense yet without us estimating remaining battery

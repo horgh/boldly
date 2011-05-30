@@ -51,6 +51,7 @@
 #include <vector>
 #include <string>
 #include <boost/thread/mutex.hpp>
+#include <cmath>
 
 
 namespace explore {
@@ -119,6 +120,8 @@ private:
     const move_base_msgs::MoveBaseResultConstPtr& result,
     geometry_msgs::PoseStamped goal
   );
+  double distanceForPlan(geometry_msgs::PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan);
+  double angleChangeForPlan(geometry_msgs::PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan);
 
 
   ros::NodeHandle node_;
@@ -155,6 +158,8 @@ private:
 
   // Robot's max speed
   double max_vel_x;
+  // Robot's max turn speed
+  double max_vel_th;
 
   /*
     Used in simulation
