@@ -116,6 +116,7 @@ Explore::Explore() :
     robot_pose_msg.pose.orientation.z,
     robot_pose_msg.pose.orientation.w
   );
+  ROS_WARN("Yaw at home %f", tf::getYaw(robot_pose_msg.pose.orientation));
 
   // Last time we were at home is right now
   last_time_at_home = ros::Time::now();
@@ -177,7 +178,9 @@ bool Explore::mapCallback(nav_msgs::GetMap::Request  &req,
   int size = res.map.info.width * res.map.info.height;
   const unsigned char* map = explore_costmap.getCharMap();
 
-  res.map.set_data_size(size);
+  //res.map.set_data_size(size);
+  // XXX May be wrong. Previously was the above
+  res.map.data.resize(size);
   for (int i=0; i<size; i++) {
     if (map[i] == NO_INFORMATION)
       res.map.data[i] = -1;
@@ -214,7 +217,9 @@ void Explore::publishMap() {
   int size = map.info.width * map.info.height;
   const unsigned char* char_map = explore_costmap.getCharMap();
 
-  map.set_data_size(size);
+  //map.set_data_size(size);
+  // XXX May be wrong. Previously was the above
+  map.data.resize(size);
   for (int i=0; i<size; i++) {
     if (char_map[i] == NO_INFORMATION)
       map.data[i] = -1;
