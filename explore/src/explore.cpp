@@ -35,8 +35,12 @@
  *********************************************************************/
 
 #define SIMULATION
-// Start heading back with this margin of safety (wrt battery time remaining)
-#define MARGIN_SECONDS 10
+// Life of battery in seconds
+#define SIMULATION_BATTERY_TIME 60
+// Start heading back with at least this margin of safety (wrt battery time remaining)
+#define MIN_BATTERY_SAFETY_MARGIN 10
+// Starting safety margin
+#define START_SAFETY_MARGIN 30
 
 #include <explore/explore.h>
 #include <explore/explore_frontier.h>
@@ -122,8 +126,7 @@ Explore::Explore() :
   last_time_at_home = ros::Time::now();
 
 #ifdef SIMULATION
-  // 60 seconds
-  battery_duration = ros::Duration(60.0);
+  battery_duration = ros::Duration(SIMULATION_BATTERY_TIME);
 #endif
 
   // Find robot's max speed
@@ -139,6 +142,8 @@ Explore::Explore() :
   assert(max_vel_th != 0.0);
 
   heading_home = false;
+
+  battery_safety_margin = START_SAFETY_MARGIN;
 }
 
 Explore::~Explore() {
@@ -440,7 +445,8 @@ double Explore::angleChangeForPlan(PoseStamped * pose, std::vector<geometry_msgs
     double yaw_1 = tf::getYaw(previous_pose.pose.orientation);
     double yaw_2 = tf::getYaw(it->pose.orientation);
     double da = fabs(yaw_1 - yaw_2);
-    //ROS_WARN("next pose %f %f %f %f", it->pose.orientation.x, it->pose.orientation.y, it->pose.orientation.z, it->pose.orientation.w);
+    //ROS_WARN("Next point %f %f %f", it->pose.position.x, it->pose.position.y, it->pose.position.z);
+    //ROS_WARN("Next quarternion %f %f %f %f", it->pose.orientation.x, it->pose.orientation.y, it->pose.orientation.z, it->pose.orientation.w);
     //ROS_WARN("yaw1 %f yaw2 %f da %f", yaw_1, yaw_2, da);
     angle_change += da;
     previous_pose = *it;
@@ -482,9 +488,11 @@ bool Explore::shouldGoHome() {
   int time_to_home = ceil(distance / max_vel_x) + ceil(angle_change / max_vel_th);
   ROS_WARN("Time to go home: %d seconds", time_to_home);
 
+  ROS_WARN("Battery safety margin: %d seconds", battery_safety_margin);
+
 // Doesn't make sense yet without us estimating remaining battery
 #ifdef SIMULATION
-  if (time_to_home + MARGIN_SECONDS > batteryTimeRemaining()) {
+  if (time_to_home + battery_safety_margin > batteryTimeRemaining()) {
     ROS_WARN("Decided to return home");
     return true;
   }
@@ -535,12 +543,28 @@ void Explore::goHome() {
 void Explore::reachedHome(const actionlib::SimpleClientGoalState& status,
   const move_base_msgs::MoveBaseResultConstPtr& result,
   geometry_msgs::PoseStamped goal) {
+
+  // Change next margin depending on time remaining on our battery
+  int battery_time_remaining = batteryTimeRemaining();
+
+  if (battery_time_remaining <= 0) {
+    ROS_WARN("I died!");
+  }
+
+  if ( battery_time_remaining > MIN_BATTERY_SAFETY_MARGIN ) {
+    battery_safety_margin--;
+  } else if ( battery_time_remaining < MIN_BATTERY_SAFETY_MARGIN ) {
+    //battery_safety_margin++;
+    battery_safety_margin += abs(MIN_BATTERY_SAFETY_MARGIN - battery_time_remaining);
+  }
+
 #ifdef SIMULATION
   last_time_at_home = ros::Time::now();
 #else
 
 #endif
   heading_home = false;
+
 }
 
 /*
@@ -570,7 +594,7 @@ void Explore::execute() {
     explorer_->computePotential(explore_costmap_ros_, planner_);
 
     // We don't need to change goal if we're already going home
-    if ( !heading_home ) {
+    //if ( !heading_home ) {
 
       if ( shouldGoHome() ) {
         goHome();
@@ -578,7 +602,7 @@ void Explore::execute() {
         makePlan();
       }
 
-    }
+    //}
 
     r.sleep();
   }

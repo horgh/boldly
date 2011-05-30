@@ -164,6 +164,9 @@ private:
   // whether we're heading home
   bool heading_home;
 
+  // Time in seconds for margin of battery life to return to charge
+  int battery_safety_margin;
+
   /*
     Used in simulation
   */
