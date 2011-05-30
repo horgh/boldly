@@ -161,6 +161,9 @@ private:
   // Robot's max turn speed
   double max_vel_th;
 
+  // whether we're heading home
+  bool heading_home;
+
   /*
     Used in simulation
   */

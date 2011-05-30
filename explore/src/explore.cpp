@@ -137,6 +137,8 @@ Explore::Explore() :
   private_nh.getParam("/move_base/TrajectoryPlannerROS/max_vel_th", max_vel_th);
   ROS_WARN("Robot has max turn speed %f", max_vel_th);
   assert(max_vel_th != 0.0);
+
+  heading_home = false;
 }
 
 Explore::~Explore() {
@@ -523,6 +525,8 @@ void Explore::goHome() {
   move_base_msgs::MoveBaseGoal goal;
   goal.target_pose = home_pose;
   move_base_client_.sendGoal(goal, boost::bind(&Explore::reachedHome, this, _1, _2, home_pose));
+
+  heading_home = true;
 }
 
 /*
@@ -536,6 +540,7 @@ void Explore::reachedHome(const actionlib::SimpleClientGoalState& status,
 #else
 
 #endif
+  heading_home = false;
 }
 
 /*
@@ -564,10 +569,15 @@ void Explore::execute() {
 
     explorer_->computePotential(explore_costmap_ros_, planner_);
 
-    if ( shouldGoHome() ) {
-      goHome();
-    } else {
-      makePlan();
+    // We don't need to change goal if we're already going home
+    if ( !heading_home ) {
+
+      if ( shouldGoHome() ) {
+        goHome();
+      } else {
+        makePlan();
+      }
+
     }
 
     r.sleep();
