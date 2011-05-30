@@ -456,9 +456,29 @@ double Explore::angleChangeForPlan(PoseStamped * pose, std::vector<geometry_msgs
 }
 
 /*
+  If we're close enough to home, assume we're there
+  (so as not to care so much about angle once we're at home, etc)
+*/
+bool Explore::atHome() {
+  PoseStamped current_pose = currentPose();
+
+  double x_diff = fabs(current_pose.pose.position.x - home_point.x);
+  double y_diff = fabs(current_pose.pose.position.y - home_point.y);
+
+  return x_diff < 2 * explore_costmap_ros_->getResolution() &&
+    y_diff < 2 * explore_costmap_ros_->getResolution();
+}
+
+/*
   Note: Must have called planner_->computePotential() prior to calling this
 */
 bool Explore::shouldGoHome() {
+  // May already be close enough to home
+  if ( heading_home && atHome() ) {
+    reachedHome();
+    return false;
+  }
+
   ROS_WARN("Cost to go home: %f", planner_->getPointPotential( home_point ) );
 
   /*
@@ -532,18 +552,15 @@ void Explore::goHome() {
 
   move_base_msgs::MoveBaseGoal goal;
   goal.target_pose = home_pose;
-  move_base_client_.sendGoal(goal, boost::bind(&Explore::reachedHome, this, _1, _2, home_pose));
+  move_base_client_.sendGoal(goal, boost::bind(&Explore::reachedHomeCallback, this, _1, _2, home_pose));
 
   heading_home = true;
 }
 
 /*
-  Called when home has been reached
+  We reached home
 */
-void Explore::reachedHome(const actionlib::SimpleClientGoalState& status,
-  const move_base_msgs::MoveBaseResultConstPtr& result,
-  geometry_msgs::PoseStamped goal) {
-
+void Explore::reachedHome() {
   // Change next margin depending on time remaining on our battery
   int battery_time_remaining = batteryTimeRemaining();
 
@@ -555,7 +572,7 @@ void Explore::reachedHome(const actionlib::SimpleClientGoalState& status,
     battery_safety_margin--;
   } else if ( battery_time_remaining < MIN_BATTERY_SAFETY_MARGIN ) {
     //battery_safety_margin++;
-    battery_safety_margin += abs(MIN_BATTERY_SAFETY_MARGIN - battery_time_remaining);
+    battery_safety_margin += MIN_BATTERY_SAFETY_MARGIN;
   }
 
 #ifdef SIMULATION
@@ -564,7 +581,15 @@ void Explore::reachedHome(const actionlib::SimpleClientGoalState& status,
 
 #endif
   heading_home = false;
+}
 
+/*
+  This callback called when home has been reached (by nav stack)
+*/
+void Explore::reachedHomeCallback(const actionlib::SimpleClientGoalState& status,
+  const move_base_msgs::MoveBaseResultConstPtr& result,
+  geometry_msgs::PoseStamped goal) {
+  reachedHome();
 }
 
 /*

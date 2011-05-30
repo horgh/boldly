@@ -113,10 +113,12 @@ private:
   bool goalOnBlacklist(const geometry_msgs::PoseStamped& goal);
 
   geometry_msgs::PoseStamped currentPose();
+  bool atHome();
   bool shouldGoHome();
   int batteryTimeRemaining();
   void goHome();
-  void reachedHome(const actionlib::SimpleClientGoalState& status,
+  void reachedHome();
+  void reachedHomeCallback(const actionlib::SimpleClientGoalState& status,
     const move_base_msgs::MoveBaseResultConstPtr& result,
     geometry_msgs::PoseStamped goal
   );
