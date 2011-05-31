@@ -101,6 +101,9 @@ float ExploreFrontier::getFrontierGain(const Frontier& frontier, double map_reso
   return frontier.size * map_resolution;
 }
 
+/*
+  Compute potential to each point in the cost map
+*/
 void ExploreFrontier::computePotential(Costmap2DROS* costmap, navfn::NavfnROS* planner) {
   tf::Stamped<tf::Pose> robot_pose;
   costmap->getRobotPose(robot_pose);
@@ -201,7 +204,8 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
 
   map_.info.width = w;
   map_.info.height = h;
-  map_.set_data_size(size);
+  //map_.set_data_size(size);
+  map_.data.resize(size);
   map_.info.resolution = costmap.getResolution();
   map_.info.origin.position.x = costmap.getOriginX();
   map_.info.origin.position.y = costmap.getOriginY();

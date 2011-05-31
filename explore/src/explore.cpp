@@ -36,7 +36,7 @@
 
 #define SIMULATION
 // Life of battery in seconds
-#define SIMULATION_BATTERY_TIME 60
+#define SIMULATION_BATTERY_TIME 120
 // Start heading back with at least this margin of safety (wrt battery time remaining)
 #define MIN_BATTERY_SAFETY_MARGIN 10
 // Starting safety margin
@@ -270,7 +270,7 @@ void Explore::publishGoal(const geometry_msgs::Pose& goal){
   - Must call ExploreFrontier::computePotential() first
 */
 void Explore::makePlan() {
-  //since this gets called on handle activate
+  // since this gets called on handle activate
   if(explore_costmap_ros_ == NULL)
     return;
 
@@ -278,29 +278,35 @@ void Explore::makePlan() {
   explore_costmap_ros_->getRobotPose(robot_pose);
 
   std::vector<geometry_msgs::Pose> goals;
-  explore_costmap_ros_->clearRobotFootprint();
+
+  // was needed when calculating potential here?
+  //explore_costmap_ros_->clearRobotFootprint();
+
   // this returns bool
   explorer_->getExplorationGoals(*explore_costmap_ros_, robot_pose, planner_, goals, potential_scale_, orientation_scale_, gain_scale_);
-	/*
-	ROS_WARN("getExplorationGoals(): %d Have %d exploration goals/ frontiers", res, goals.size());
-	for (std::vector<geometry_msgs::Pose>::iterator it = goals.begin(); it != goals.end(); it++) {
-		ROS_WARN("Goal at %f, %f, %f", it->position.x, it->position.y, it->position.z);
-		PoseStamped test_goal_pose;
-		test_goal_pose.header.frame_id = explore_costmap_ros_->getGlobalFrameID();
-		test_goal_pose.header.stamp = ros::Time::now();
-		test_goal_pose.pose = *it;
-		if ( goalOnBlacklist(test_goal_pose) ) {
-			ROS_WARN("Goal is on blacklist");
-		}
-	}
-	*/
+/*
+  ROS_WARN("getExplorationGoals(): %d Have %d exploration goals/ frontiers", res, goals.size());
+  for (std::vector<geometry_msgs::Pose>::iterator it = goals.begin(); it != goals.end(); it++) {
+    ROS_WARN("Goal at %f, %f, %f", it->position.x, it->position.y, it->position.z);
+    PoseStamped test_goal_pose;
+    test_goal_pose.header.frame_id = explore_costmap_ros_->getGlobalFrameID();
+    test_goal_pose.header.stamp = ros::Time::now();
+    test_goal_pose.pose = *it;
+    if ( goalOnBlacklist(test_goal_pose) ) {
+      ROS_WARN("Goal is on blacklist");
+    }
+  }
+*/
   if (goals.size() == 0)
     done_exploring_ = true;
 
   bool valid_plan = false;
   std::vector<geometry_msgs::PoseStamped> plan;
-  PoseStamped goal_pose, robot_pose_msg;
-  tf::poseStampedTFToMsg(robot_pose, robot_pose_msg);
+
+  // was needed for computepotential
+  //PoseStamped goal_pose, robot_pose_msg;
+  PoseStamped goal_pose;
+  //tf::poseStampedTFToMsg(robot_pose, robot_pose_msg);
 
   goal_pose.header.frame_id = explore_costmap_ros_->getGlobalFrameID();
   goal_pose.header.stamp = ros::Time::now();
@@ -316,9 +322,9 @@ void Explore::makePlan() {
       continue;
     }
 
-		/*
-			Build plan to given goal. If such a plan exists, we can use it
-		*/
+    /*
+      Build plan to given goal. If such a plan exists, we can use it
+    */
     valid_plan = ((planner_->getPlanFromPotential(goal_pose, plan)) && (!plan.empty()));
     if (valid_plan) {
       break;
@@ -334,10 +340,10 @@ void Explore::makePlan() {
   }
 
   if (valid_plan) {
-		/*
-			If plan size has changed, that means we are making some sort of progress
-			Otherwise check if too much time has elapsed and we may need to blacklist the goal
-		*/
+    /*
+      If plan size has changed, that means we are making some sort of progress
+      Otherwise check if too much time has elapsed and we may need to blacklist the goal
+    */
     if (prev_plan_size_ != plan.size()) {
       time_since_progress_ = 0.0;
     } else {
@@ -375,7 +381,7 @@ void Explore::makePlan() {
 }
 
 /*
-	Check if current goal is too close to a blacklisted frontier
+  Check if current goal is too close to a blacklisted frontier
 */
 bool Explore::goalOnBlacklist(const geometry_msgs::PoseStamped& goal){
   //check if a goal is on the blacklist for goals that we're pursuing
@@ -389,6 +395,9 @@ bool Explore::goalOnBlacklist(const geometry_msgs::PoseStamped& goal){
   return false;
 }
 
+/*
+  Callback called when goal reached (from nav stack)
+*/
 void Explore::reachedGoal(const actionlib::SimpleClientGoalState& status,
     const move_base_msgs::MoveBaseResultConstPtr& result, geometry_msgs::PoseStamped frontier_goal){
 
@@ -407,6 +416,9 @@ void Explore::reachedGoal(const actionlib::SimpleClientGoalState& status,
 //  }
 }
 
+/*
+  Get the robot's current pose
+*/
 geometry_msgs::PoseStamped Explore::currentPose() {
   tf::Stamped<tf::Pose> robot_pose;
   explore_costmap_ros_->getRobotPose(robot_pose);
