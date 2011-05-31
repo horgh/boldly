@@ -448,19 +448,28 @@ double Explore::distanceForPlan(PoseStamped * pose, std::vector<geometry_msgs::P
 
 /*
   Find the amount of angle change needed for given plan starting from given pose
-  XXX Doesn't seem right. yaw after first pose is always 0
 */
 double Explore::angleChangeForPlan(PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan) {
   double angle_change = 0.0;
   PoseStamped previous_pose = *pose;
+  double previous_angle = tf::getYaw(previous_pose.pose.orientation);
   for (std::vector<geometry_msgs::PoseStamped>::iterator it = plan->begin(); it != plan->end(); it++) {
-    double yaw_1 = tf::getYaw(previous_pose.pose.orientation);
-    double yaw_2 = tf::getYaw(it->pose.orientation);
-    double da = fabs(yaw_1 - yaw_2);
+    //double yaw_1 = tf::getYaw(previous_pose.pose.orientation);
+    //double yaw_2 = tf::getYaw(it->pose.orientation);
+    //double da = fabs(yaw_1 - yaw_2);
     //ROS_WARN("Next point %f %f %f", it->pose.position.x, it->pose.position.y, it->pose.position.z);
     //ROS_WARN("Next quarternion %f %f %f %f", it->pose.orientation.x, it->pose.orientation.y, it->pose.orientation.z, it->pose.orientation.w);
     //ROS_WARN("yaw1 %f yaw2 %f da %f", yaw_1, yaw_2, da);
-    angle_change += da;
+
+    double dx = previous_pose.pose.position.x - it->pose.position.x;
+    double dy = previous_pose.pose.position.y - it->pose.position.y;
+    double da = atan2(dx, dy);
+
+    angle_change += fabs(previous_angle - da);
+
+    //ROS_WARN("dx %f dy %f da %f previous_angle %f angle_change %f", dx, dy, da, previous_angle, angle_change);
+
+    previous_angle = da;
     previous_pose = *it;
   }
 
