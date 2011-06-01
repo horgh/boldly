@@ -34,7 +34,7 @@
  *
  *********************************************************************/
 
-#define SIMULATION
+//#define SIMULATION
 // Life of battery in seconds
 #define SIMULATION_BATTERY_TIME 120
 // Start heading back with at least this margin of safety (wrt battery time remaining)
@@ -642,11 +642,15 @@ void Explore::execute() {
     // We don't need to change goal if we're already going home
     //if ( !heading_home ) {
 
+#ifdef SIMULATION
       if ( shouldGoHome() ) {
         goHome();
       } else {
+#endif
         makePlan();
+#ifdef SIMULATION
       }
+#endif
 
     //}
 
