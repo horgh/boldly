@@ -34,7 +34,7 @@
  *
  *********************************************************************/
 
-//#define SIMULATION
+#define SIMULATION
 // Life of battery in seconds
 #define SIMULATION_BATTERY_TIME 120
 // Start heading back with at least this margin of safety (wrt battery time remaining)
@@ -331,14 +331,6 @@ void Explore::makePlan() {
     }
   }
 
-  // publish visualization markers
-  if (visualize_) {
-    std::vector<Marker> markers;
-    explorer_->getVisualizationMarkers(markers);
-    for (uint i=0; i < markers.size(); i++)
-      marker_publisher_.publish(markers[i]);
-  }
-
   if (valid_plan) {
     /*
       If plan size has changed, that means we are making some sort of progress
@@ -370,7 +362,6 @@ void Explore::makePlan() {
 
     if (visualize_) {
       publishGoal(goal_pose.pose);
-      publishMap();
     }
   } else {
     ROS_WARN("Done exploring with %d goals left that could not be reached. There are %d goals on our blacklist, and %d of the frontier goals are too close to them to pursue. The rest had global planning fail to them. \n", (int)goals.size(), (int)frontier_blacklist_.size(), blacklist_count);
@@ -653,6 +644,17 @@ void Explore::execute() {
 #endif
 
     //}
+
+    if (visualize_) {
+      // publish visualization markers
+      std::vector<Marker> markers;
+      explorer_->getVisualizationMarkers(markers);
+      for (uint i=0; i < markers.size(); i++)
+        marker_publisher_.publish(markers[i]);
+
+      // and map
+      publishMap();
+    }
 
     r.sleep();
   }
