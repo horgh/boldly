@@ -1,0 +1,30 @@
+<launch>
+  <node pkg="gmapping" type="slam_gmapping" name="gmapping" args="/scan">
+    <!-- Processing parameters (resolution of the map). Default = 0.05 -->
+    <param name="delta" type="double" value="0.05" />
+
+    <!-- Process a scan if the last scan proccessed is older than the update time in seconds. A value less than zero will turn time based updates off. Default = -1.0 -->
+    <!-- Taken from p2os gmapping.launch -->
+    <param name="temporalUpdate" type="double" value="2.5" />
+
+    <!-- Initial map size. Defaults to -100.0. p2os has -2 -->
+    <param name="xmin" type="double" value="-2" />
+    <param name="ymin" type="double" value="-2" />
+    <!-- defaults to 100, p2os has 2 -->
+    <param name="xmax" type="double" value="2" />
+    <param name="ymax" type="double" value="2" />
+
+    <!-- How long (in seconds) between updates to the map. Lowering this number updates the occupancy grid more often, at the expense of greater computational load. Default is 5.0, explore uses 1.0 -->
+    <param name="map_update_interval" type="double" value="5.0" />
+
+    <!-- The neff based resampling threshold (?) Default = 0.5, explore uses 0.3 -->
+    <param name="resampleThreshold" type="double" value="0.5" />
+
+    <!-- Translational sampling range for the likelihood. Default = 0.01, explore uses 0.05 -->
+    <param name="llsamplerange" type="double" value="0.01" />
+    <param name="llsamplestep" type="double" value="0.01" />
+    <!-- Angular sampling range for the likelihood. Default = 0.005, explore uses 0.05 -->
+    <param name="lasamplerange" type="double" value="0.005" />
+    <param name="lasamplestep" type="double" value="0.005" />
+  </node>
+</launch>

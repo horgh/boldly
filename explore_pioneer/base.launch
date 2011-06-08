@@ -1,0 +1,13 @@
+<launch>
+  <master auto="start" />
+  <param name="/use_sim_time" value="true" />
+
+  <!-- gmapping -->
+  <include file="$(find explore_pioneer)/gmapping.xml" />
+
+  <!-- move base -->
+  <include file="$(find explore_pioneer)/move.xml" />
+
+  <!-- explore controller -->
+
+</launch>

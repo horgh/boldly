@@ -1,0 +1,22 @@
+# explore has 2.5 as well
+obstacle_range: 2.5
+# explore has 3.0
+raytrace_range: 3.0
+# explore has 0.6
+inflation_radius: 0.35
+
+# from explore
+#max:obstacle_height: 2.0
+#inscribed_radius: 0.385
+#circumscribed_radius: 0.685
+#cost_scaling_factor: 15.0
+#lethal_cost_threshold: 100
+
+# explore has 0.5
+transform_tolerance: 0.2
+map_type: costmap
+observation_sources: laser_scan_sensor
+
+# explore has observation_persistance: 0.0 in this
+laser_scan_sensor: {sensor_frame: laser, data_type: LaserScan, topic: scan, marking: true, clearing: true, expected_updated_rate: 0.2}
+

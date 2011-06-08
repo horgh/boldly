@@ -1,0 +1,3 @@
+NavfnROS:
+  # from explore, p2os doesn't have
+  transform_tolerance: 0.3
