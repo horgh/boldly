@@ -1,0 +1,17 @@
+<package>
+  <description brief="sonarify">
+
+     sonarify
+
+  </description>
+  <author>Autolab</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/sonarify</url>
+  <depend package="roscpp"/>
+  <depend package="nav_msgs"/>
+  <depend package="tf"/>
+
+</package>
+
+
