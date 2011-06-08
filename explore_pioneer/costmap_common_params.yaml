@@ -6,7 +6,7 @@ raytrace_range: 3.0
 inflation_radius: 0.35
 
 # from explore
-#max:obstacle_height: 2.0
+#max_obstacle_height: 2.0
 #inscribed_radius: 0.385
 #circumscribed_radius: 0.685
 #cost_scaling_factor: 15.0
@@ -19,4 +19,3 @@ observation_sources: laser_scan_sensor
 
 # explore has observation_persistance: 0.0 in this
 laser_scan_sensor: {sensor_frame: laser, data_type: LaserScan, topic: scan, marking: true, clearing: true, expected_updated_rate: 0.2}
-

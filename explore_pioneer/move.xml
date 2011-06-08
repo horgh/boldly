@@ -4,8 +4,9 @@
     <rosparam file="$(find explore_pioneer)/costmap_common_params.yaml" command="load" ns="global_costmap" />
     <rosparam file="$(find explore_pioneer)/costmap_common_params.yaml" command="load" ns="local_costmap" />
     <rosparam file="$(find explore_pioneer)/global_costmap_params.yaml" command="load" />
-    <rosparam file="$(find explore_pioneer)/navfn_params.yaml" command="load" />
     <rosparam file="$(find explore_pioneer)/local_costmap_params.yaml" command="load" />
+    <!-- not in p2os... -->
+    <rosparam file="$(find explore_pioneer)/navfn_params.yaml" command="load" />
     <!-- file is called base_local_planner_params in p2os -->
     <rosparam file="$(find explore_pioneer)/trajectory_planner_params.yaml" command="load" />
 
