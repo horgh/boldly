@@ -124,6 +124,7 @@ private:
   );
   double distanceForPlan(geometry_msgs::PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan);
   double angleChangeForPlan(geometry_msgs::PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan);
+  double distanceBetweenTwoPoses(geometry_msgs::Pose * pose1, geometry_msgs::Pose * pose2);
 
 
   ros::NodeHandle node_;
@@ -163,8 +164,8 @@ private:
   // Robot's max turn speed
   double max_vel_th;
 
-  // whether we're heading home
-  bool heading_home;
+  // robot state
+  int state;
 
   // Time in seconds for margin of battery life to return to charge
   int battery_safety_margin;

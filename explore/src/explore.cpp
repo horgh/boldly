@@ -42,6 +42,10 @@
 // Starting safety margin
 #define START_SAFETY_MARGIN 30
 
+// Possible states
+#define STATE_HEADING_HOME 0
+#define STATE_EXPLORING 1
+
 #include <explore/explore.h>
 #include <explore/explore_frontier.h>
 
@@ -141,7 +145,7 @@ Explore::Explore() :
   ROS_WARN("Robot has max turn speed %f", max_vel_th);
   assert(max_vel_th != 0.0);
 
-  heading_home = false;
+  state = STATE_EXPLORING;
 
   battery_safety_margin = START_SAFETY_MARGIN;
 }
@@ -339,6 +343,7 @@ void Explore::makePlan() {
     if (prev_plan_size_ != plan.size()) {
       time_since_progress_ = 0.0;
     } else {
+      // XXX distance between two goals?
       double dx = prev_goal_.pose.position.x - goal_pose.pose.position.x;
       double dy = prev_goal_.pose.position.y - goal_pose.pose.position.y;
       double dist = sqrt(dx*dx+dy*dy);
@@ -468,6 +473,15 @@ double Explore::angleChangeForPlan(PoseStamped * pose, std::vector<geometry_msgs
 }
 
 /*
+  Approximate 2d distance between the two poses
+*/
+double Explore::distanceBetweenTwoPoses(geometry_msgs::Pose * pose1, geometry_msgs::Pose * pose2) {
+  double dx = pose1->position.x - pose2->position.x;
+  double dy = pose1->position.y - pose2->position.y;
+  return sqrt(dx*dx + dy*dy);
+}
+
+/*
   If we're close enough to home, assume we're there
   (so as not to care so much about angle once we're at home, etc)
 */
@@ -486,7 +500,7 @@ bool Explore::atHome() {
 */
 bool Explore::shouldGoHome() {
   // May already be close enough to home
-  if ( heading_home && atHome() ) {
+  if ( state == STATE_HEADING_HOME && atHome() ) {
     reachedHome();
     return false;
   }
@@ -566,7 +580,7 @@ void Explore::goHome() {
   goal.target_pose = home_pose;
   move_base_client_.sendGoal(goal, boost::bind(&Explore::reachedHomeCallback, this, _1, _2, home_pose));
 
-  heading_home = true;
+  state = STATE_HEADING_HOME;
 }
 
 /*
@@ -592,7 +606,7 @@ void Explore::reachedHome() {
 #else
 
 #endif
-  heading_home = false;
+  state = STATE_EXPLORING;
 }
 
 /*
@@ -630,20 +644,15 @@ void Explore::execute() {
 
     explorer_->computePotential(explore_costmap_ros_, planner_);
 
-    // We don't need to change goal if we're already going home
-    //if ( !heading_home ) {
-
 #ifdef SIMULATION
-      if ( shouldGoHome() ) {
-        goHome();
-      } else {
+    if ( shouldGoHome() ) {
+      goHome();
+    } else {
 #endif
-        makePlan();
+      makePlan();
 #ifdef SIMULATION
-      }
+    }
 #endif
-
-    //}
 
     if (visualize_) {
       // publish visualization markers
