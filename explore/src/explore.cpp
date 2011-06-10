@@ -148,6 +148,8 @@ Explore::Explore() :
   state = STATE_EXPLORING;
 
   battery_safety_margin = START_SAFETY_MARGIN;
+
+  last_pose = currentPose();
 }
 
 Explore::~Explore() {
@@ -482,6 +484,35 @@ double Explore::distanceBetweenTwoPoses(geometry_msgs::Pose * pose1, geometry_ms
 }
 
 /*
+  Taken from SendingSimpleGoals tutorial
+*/
+void Explore::moveRandomDirection() {
+  move_base_msgs::MoveBaseGoal goal;
+  // in base link frame so that coords are distance to move?
+  goal.target_pose.header.frame_id = "base_link";
+  goal.target_pose.header.stamp = ros::Time::now();
+  // 1 meter
+  goal.target_pose.pose.position.x = 1.0;
+  goal.target_pose.pose.orientation.w = (double) rand() / (double) RAND_MAX;
+  ROS_WARN("\n");
+  ROS_WARN("\n");
+  ROS_WARN("\n");
+  ROS_WARN("**** Moving random direction %f ****", goal.target_pose.pose.orientation.w);
+  ROS_WARN("\n");
+  ROS_WARN("\n");
+  ROS_WARN("\n");
+
+  move_base_client_.sendGoal(goal);
+  publishGoal(goal.target_pose.pose); 
+
+  move_base_client_.waitForResult();
+
+  if (move_base_client_.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
+    time_since_progress_ = 0.0;
+  }
+}
+
+/*
   If we're close enough to home, assume we're there
   (so as not to care so much about angle once we're at home, etc)
 */
@@ -565,6 +596,24 @@ int Explore::batteryTimeRemaining() {
   Send goal to go home to base
 */
 void Explore::goHome() {
+  // We have just started to head home
+  if (state != STATE_HEADING_HOME) {
+    state = STATE_HEADING_HOME;
+    time_since_progress_ = 0.0;
+  }
+
+  // We may be stuck
+  else {
+    geometry_msgs::PoseStamped current_pose = currentPose();
+    double dist = distanceBetweenTwoPoses(&last_pose.pose, &current_pose.pose);
+    if (dist < 0.01) {
+      time_since_progress_ += 1.0f / planner_frequency_;
+    }
+    if (time_since_progress_ > progress_timeout_) {
+      moveRandomDirection();
+    }
+  }
+
   geometry_msgs::PoseStamped home_pose;
   home_pose.header.frame_id = explore_costmap_ros_->getGlobalFrameID();
   home_pose.header.stamp = ros::Time::now();
@@ -579,8 +628,6 @@ void Explore::goHome() {
   move_base_msgs::MoveBaseGoal goal;
   goal.target_pose = home_pose;
   move_base_client_.sendGoal(goal, boost::bind(&Explore::reachedHomeCallback, this, _1, _2, home_pose));
-
-  state = STATE_HEADING_HOME;
 }
 
 /*
@@ -665,6 +712,7 @@ void Explore::execute() {
       publishMap();
     }
 
+    last_pose = currentPose();
     r.sleep();
   }
 

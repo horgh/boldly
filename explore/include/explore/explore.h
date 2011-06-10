@@ -125,6 +125,7 @@ private:
   double distanceForPlan(geometry_msgs::PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan);
   double angleChangeForPlan(geometry_msgs::PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan);
   double distanceBetweenTwoPoses(geometry_msgs::Pose * pose1, geometry_msgs::Pose * pose2);
+  void moveRandomDirection();
 
 
   ros::NodeHandle node_;
@@ -158,6 +159,9 @@ private:
 
   // Location of our home base to charge
   geometry_msgs::Point home_point;
+
+  // Last position, updated every iteration
+  geometry_msgs::PoseStamped last_pose;
 
   // Robot's max speed
   double max_vel_x;
