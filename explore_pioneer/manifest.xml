@@ -1,0 +1,11 @@
+<package>
+  <description brief="Explore launch and settings for pioneer">Explore launch and settings for pioneer</description>
+  <author>...</author>
+  <license>BSD</license>
+  <review status="na" notes="" />
+  <url>...</url>
+  <depend package="explore" />
+  <depend package="move_base" />
+  <depend package="gmapping" />
+  <depend package="tf" />
+</package>
