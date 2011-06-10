@@ -27,7 +27,7 @@ TrajectoryPlannerROS:
   #world_model: costmap
   #sim_granularity: 0.025
   # ** probably want this, more efficient. see base_local_planner page
-  #dwa: true
+  dwa: true
   #vx_samples: 3
   #vtheta_samples: 20
   #max_vel_th: 1.0

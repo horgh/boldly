@@ -2,6 +2,10 @@
   <master auto="start" />
   <param name="/use_sim_time" value="true" />
 
+  <!-- also need to start p2os driver -->
+  <!-- and sicklms_wrapper with params _port:=/dev/ttyS2 _baud:=38400 -->
+  <!-- but may be wish to do this outside of launch since motors & the delay of laser -->
+
   <!-- move base -->
   <include file="$(find explore_pioneer)/move.xml" />
 

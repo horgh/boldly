@@ -8,14 +8,22 @@ global_costmap:
   publish_frequency: 10.0
   # ** explore has false, p2os true
   static_map: false
+
   # from explore
+
   #raytrace_range: 30.0
   #obstacle_range: 5.0
+  # default is false,
   #rolling_window: false
 
   # ** probably must set these since no longer static_map
   #width: 60.0
   #height: 60.0
+  width: 60.0
+  height: 60.0
   #resolution: 0.05
+  resolution: 0.05
   #origin_x: -30.0
   #origin_y: -30.0
+  origin_x: -30.0
+  origin_y: -30.0
