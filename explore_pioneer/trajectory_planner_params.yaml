@@ -15,11 +15,11 @@ TrajectoryPlannerROS:
   goal_distance_bias: 0.6
 
   # 1.0 in explore
-  acc_limit_th: 3.2
+  acc_lim_th: 3.2
   # 0.5 in explore
-  acc_limit_x: 2.5
+  acc_lim_x: 2.5
   # 0.0 in explore
-  acc_limit_y: 2.5
+  acc_lim_y: 2.5
 
   holonomic_robot: false
 
@@ -33,6 +33,9 @@ TrajectoryPlannerROS:
   #vtheta_samples: 20
   #max_vel_th: 1.0
   #min_vel_th: -1.0
+  # guess
+  max_vel_th: 0.5
+  min_vel_th: -0.5
   #min_in_place_vel_th: 0.4
   #xy_goal_tolerance: 0.1
   #yaw_goal_tolerance: 0.02
