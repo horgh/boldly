@@ -1,6 +1,7 @@
 TrajectoryPlannerROS:
-  # 0.65 in explore
-  max_vel_x: 0.8
+  # 0.65 in explore, 0.8 in p2os
+  #max_vel_x: 0.8
+  max_vel_x: 0.3
   # 0.1 in explore
   min_vel_x: 0.1
   max_rotational_vel: 0.8
