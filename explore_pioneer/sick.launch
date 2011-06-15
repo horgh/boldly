@@ -1,5 +1,5 @@
 <launch>
-  <node pkg="sicktoolbox_wrapper" name="sicklms">
+  <node pkg="sicktoolbox_wrapper" type="sicklms" name="sicklms" output="screen">
     <param name="port" value="/dev/ttyS2" />
     <param name="baud" value="38400" />
   </node>
