@@ -5,7 +5,10 @@
   <node pkg="gmapping" type="slam_gmapping" name="gmapping" output="screen">
     <remap from="scan" to="base_scan" />
     <param name="inverted_laser" value="false" />
+  <!--
     <param name="maxUrange" value="30.0" />
+  -->
+    <param name="maxUrange" value="80.0" />
     <param name="particles" value="30" />
     <param name="delta" value="0.10" />
     <param name="xmin" value="-15.0" />
