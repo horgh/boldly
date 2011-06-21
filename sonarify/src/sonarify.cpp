@@ -1,35 +1,8 @@
 /*
   Node which subscribes to laser data and sonar data, and attempts to merge
   the two intelligently. (For example, to account for glass.)
-*/
 
-#include <ros/ros.h>
-#include <sensor_msgs/LaserScan.h>
-#include <p2os_driver/SonarArray.h>
-
-using namespace std;
-
-ros::Publisher laser_pub;
-
-/*
-  Called whenever laser scan received
-*/
-void laser_callback(const sensor_msgs::LaserScan::ConstPtr & laser_scan) {
-  // Take in laser scan, combine with sonar data if need be, and publish
-  sensor_msgs::LaserScan sonarify_laser_scan;
-
-  ROS_INFO("laser angle min %f angle max %f angle increment %f ranges.size %i",
-    laser_scan->angle_min,
-    laser_scan->angle_max,
-    laser_scan->angle_increment,
-    laser_scan->ranges.size()
-  );
-
-  laser_pub.publish(sonarify_laser_scan);
-}
-
-/*
-  Called whenever sonar array received
+  Info on the sonar implementation / setup:
 
   "The sonar's are ordered in the same manner as in the robot
   documentation (thus for p3dx it's 0 on the front left 1-6 on the front
@@ -48,13 +21,113 @@ void laser_callback(const sensor_msgs::LaserScan::ConstPtr & laser_scan) {
   [6] = 50
   [7] = 90
 */
-void sonar_callback(const p2os_driver::SonarArray::ConstPtr & sonar_array) {
-  ROS_WARN("sonar_array ranges size %i", sonar_array->ranges.size());
+
+#include <ros/ros.h>
+#include <sensor_msgs/LaserScan.h>
+#include <p2os_driver/SonarArray.h>
+
+using namespace std;
+
+class p3dxSonar {
+public:
+  double angle_degree;
+  double angle_radian;
+  double range;
+
+  p3dxSonar(double degree) {
+    angle_degree = degree;
+    angle_radian = dtor(angle_degree);
+    range = 1.0;
+    ROS_INFO("New sonar with degree %f, radian %f", angle_degree, angle_radian);
+  }
+
+  // From rtv's Antix
+  static double dtor(double d) {
+    return d * M_PI / 180.0;
+  }
+};
+
+/*
+  Only work with front sonar for now
+*/
+class p3dxSonarArray {
+public:
+  vector<p3dxSonar> sonars;
+
+  p3dxSonarArray() {
+    // far left
+    sonars.push_back( p3dxSonar(-90.0) );
+    sonars.push_back( p3dxSonar(-50.0) );
+    sonars.push_back( p3dxSonar(-30.0) );
+    // front left
+    sonars.push_back( p3dxSonar(-10.0) );
+    // front right
+    sonars.push_back( p3dxSonar(10.0) );
+    sonars.push_back( p3dxSonar(30.0) );
+    sonars.push_back( p3dxSonar(50.0) );
+    sonars.push_back( p3dxSonar(90.0) );
+  }
+};
+
+// This many sonars on the front. Assume index starts at 0
+#define NUM_SONARS 8
+
+ros::Publisher laser_pub;
+p3dxSonarArray sonar_array;
+
+/*
+  Called whenever laser scan received
+*/
+void laser_callback(const sensor_msgs::LaserScan::ConstPtr & laser_scan) {
+  // Take in laser scan, combine with sonar data if need be, and publish
+  sensor_msgs::LaserScan sonarify_laser_scan = *laser_scan;
+
+/*
+  ROS_INFO("laser angle min %f angle max %f angle increment %f ranges.size %i",
+    laser_scan->angle_min,
+    laser_scan->angle_max,
+    laser_scan->angle_increment,
+    laser_scan->ranges.size()
+  );
+  */
+
+  for (unsigned int i = 0; i < NUM_SONARS; i++) {
+    // Assume sonar range only valid if < 5.0 meters
+    if (sonar_array.sonars[i].range >= 5.0)
+      continue;
+
+    // Index into the laser range array depends on angle of sonar
+    unsigned int laser_scan_index = floor(
+      abs( laser_scan->angle_min - sonar_array.sonars[i].angle_radian )
+      / laser_scan->angle_increment
+    );
+
+    // We only care if sonar range is less than laser range
+    if (sonar_array.sonars[i].range < sonarify_laser_scan.ranges[laser_scan_index]) {
+      sonarify_laser_scan.ranges[laser_scan_index] = sonar_array.sonars[i].range;
+
+      ROS_INFO("laser range index %i (@ %f degrees) was %f but now %f",
+        laser_scan_index,
+        sonar_array.sonars[i].angle_degree,
+        laser_scan->ranges[laser_scan_index],
+        sonarify_laser_scan.ranges[laser_scan_index]
+      );
+    }
+  }
+
+  laser_pub.publish(sonarify_laser_scan);
+}
+
+/*
+  Called whenever sonar array received
+*/
+void sonar_callback(const p2os_driver::SonarArray::ConstPtr & sonar_array_scan) {
+  //ROS_WARN("sonar_array ranges size %i", sonar_array_scan->ranges.size());
 
   // Only look at front sonars
-  for (unsigned int i = 0; i <= 7; i++) {
+  for (unsigned int i = 0; i < NUM_SONARS; i++) {
     // Max valid range is 5 meters?
-    ROS_WARN("sonar %i has range %f", i, sonar_array->ranges[i]);
+    sonar_array.sonars[i].range = sonar_array_scan->ranges[i];
   }
 }
 
