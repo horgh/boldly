@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="p2os_driver" type="p2os" name="p2os" output="screen">
+    <param name="use_sonar" value="true" />
+  </node>
+</launch>
