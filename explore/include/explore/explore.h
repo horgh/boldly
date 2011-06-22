@@ -112,8 +112,10 @@ private:
 
   bool goalOnBlacklist(const geometry_msgs::PoseStamped& goal);
 
+  void removeUnsafeFrontiers(std::vector<geometry_msgs::Pose> * goals);
   geometry_msgs::PoseStamped currentPose();
   bool atHome();
+  int timeToTravel(geometry_msgs::PoseStamped* source_pose_stamped, geometry_msgs::Pose* target_pose);
   bool shouldGoHome();
   int batteryTimeRemaining();
   void goHome();
@@ -158,7 +160,7 @@ private:
   bool   close_loops_;
 
   // Location of our home base to charge
-  geometry_msgs::Point home_point;
+  geometry_msgs::PoseStamped home_pose_msg;
 
   // Last position, updated every iteration
   geometry_msgs::PoseStamped last_pose;

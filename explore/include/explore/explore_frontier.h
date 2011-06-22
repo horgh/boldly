@@ -151,7 +151,8 @@ public:
    */
   virtual void getVisualizationMarkers(std::vector<visualization_msgs::Marker>& markers);
 
-  virtual void computePotential(costmap_2d::Costmap2DROS* costmap, navfn::NavfnROS* planner);
+  virtual void computePotentialFromPoint(costmap_2d::Costmap2DROS* costmap, navfn::NavfnROS* planner, geometry_msgs::Point* position);
+  virtual void computePotentialFromRobot(costmap_2d::Costmap2DROS* costmap, navfn::NavfnROS* planner);
 };
 
 }

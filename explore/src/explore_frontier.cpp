@@ -102,18 +102,31 @@ float ExploreFrontier::getFrontierGain(const Frontier& frontier, double map_reso
 }
 
 /*
-  Compute potential to each point in the cost map
+  Compute potential to each point in the costmap from given position
 */
-void ExploreFrontier::computePotential(Costmap2DROS* costmap, navfn::NavfnROS* planner) {
+void ExploreFrontier::computePotentialFromPoint(Costmap2DROS* costmap,
+  navfn::NavfnROS* planner,
+  geometry_msgs::Point* position)
+{
+  costmap->clearRobotFootprint();
+  planner->computePotential( *position );
+}
+
+/*
+  Compute potential to each point in the costmap from robot's position
+*/
+void ExploreFrontier::computePotentialFromRobot(Costmap2DROS* costmap, navfn::NavfnROS* planner) {
   tf::Stamped<tf::Pose> robot_pose;
   costmap->getRobotPose(robot_pose);
 
-  costmap->clearRobotFootprint();
+  //costmap->clearRobotFootprint();
 
   geometry_msgs::PoseStamped robot_pose_msg;
   tf::poseStampedTFToMsg(robot_pose, robot_pose_msg);
 
-  planner->computePotential(robot_pose_msg.pose.position);
+  computePotentialFromPoint(costmap, planner, & robot_pose_msg.pose.position );
+
+  //planner->computePotential(robot_pose_msg.pose.position);
 }
 
 /*
