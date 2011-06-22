@@ -2,6 +2,9 @@
   Node which subscribes to laser data and sonar data, and attempts to merge
   the two intelligently. (For example, to account for glass.)
 
+  Note: We assume laser is at 0,0 on robot. We then manually transform the
+  ranges of the sonar based on this. The sonar positions are given below.
+
   Info on the sonar implementation / setup:
 
   "The sonar's are ordered in the same manner as in the robot
@@ -12,14 +15,14 @@
   P3DX spec says 8 sonar, 180 degrees @ 20 degree intervals each
 
   From Stage definition for P3DX sonars, seems to be
-  [0] = -90 degrees (far left front sonar)
-  [1] = -50
-  [2] = -30
-  [3] = -10 (left front sonar)
-  [4] = 10 (right front sonar)
-  [5] = 30
-  [6] = 50
-  [7] = 90
+  [0] @ (0.069 -0.136) = -90 degrees (far left front sonar)
+  [1] @ (0.114 -0.119) = -50 degrees
+  [2] @ (0.148 -0.078) = -30 degrees
+  [3] @ (0.166 -0.027) = -10 degrees (left front sonar)
+  [4] @ (0.166 0.027) = 10 degrees (right front sonar)
+  [5] @ (0.148 0.078) = 30 degrees
+  [6] @ (0.114 0.119) = 50 degrees
+  [7] @ (0.069 0.136) = 90 degrees
 */
 
 #include <ros/ros.h>
@@ -30,15 +33,26 @@ using namespace std;
 
 class p3dxSonar {
 public:
+  // x, y from robot centre (assumed to be laser coordinates @ 0.0, 0.0)
+  double x,
+    y;
+  // offset to add to range (i.e., to transform to look as though from laser)
+  // this is distance to robot centre
+  double offset;
+
   double angle_degree;
   double angle_radian;
   double range;
 
-  p3dxSonar(double degree) {
-    angle_degree = degree;
-    angle_radian = dtor(angle_degree);
+  p3dxSonar(double x, double y, double degree) : x(x), y(y), angle_degree(degree) {
+    angle_radian = dtor(degree);
     range = 1.0;
-    ROS_INFO("New sonar with degree %f, radian %f", angle_degree, angle_radian);
+
+    offset = sqrt( (0.0 - x) * (0.0 - x) + (0.0 - y) * (0.0 - y) );
+    ROS_INFO("New sonar at (%f, %f) with degree %f, radian %f, distance from laser %f",
+      x, y,
+      angle_degree, angle_radian, offset
+    );
   }
 
   // From rtv's Antix
@@ -56,16 +70,16 @@ public:
 
   p3dxSonarArray() {
     // far left
-    sonars.push_back( p3dxSonar(-90.0) );
-    sonars.push_back( p3dxSonar(-50.0) );
-    sonars.push_back( p3dxSonar(-30.0) );
+    sonars.push_back( p3dxSonar(0.069, -0.136, -90.0) );
+    sonars.push_back( p3dxSonar(0.114, -0.119, -50.0) );
+    sonars.push_back( p3dxSonar(0.148, -0.078, -30.0) );
     // front left
-    sonars.push_back( p3dxSonar(-10.0) );
+    sonars.push_back( p3dxSonar(0.166, -0.027, -10.0) );
     // front right
-    sonars.push_back( p3dxSonar(10.0) );
-    sonars.push_back( p3dxSonar(30.0) );
-    sonars.push_back( p3dxSonar(50.0) );
-    sonars.push_back( p3dxSonar(90.0) );
+    sonars.push_back( p3dxSonar(0.166, 0.027, 10.0) );
+    sonars.push_back( p3dxSonar(0.148, 0.078, 30.0) );
+    sonars.push_back( p3dxSonar(0.114, 0.119, 50.0) );
+    sonars.push_back( p3dxSonar(0.069, 0.136, 90.0) );
   }
 };
 
@@ -104,7 +118,7 @@ void laser_callback(const sensor_msgs::LaserScan::ConstPtr & laser_scan) {
 
     // We only care if sonar range is less than laser range
     if (sonar_array.sonars[i].range < sonarify_laser_scan.ranges[laser_scan_index]) {
-      sonarify_laser_scan.ranges[laser_scan_index] = sonar_array.sonars[i].range;
+      sonarify_laser_scan.ranges[laser_scan_index] = sonar_array.sonars[i].range + sonar_array.sonars[i].offset;
 
       ROS_INFO("laser range index %i (@ %f degrees) was %f but now %f",
         laser_scan_index,
