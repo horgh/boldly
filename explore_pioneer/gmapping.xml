@@ -1,5 +1,8 @@
 <launch>
   <node pkg="gmapping" type="slam_gmapping" name="gmapping" args="/scan">
+    <!-- The maximum usable range of the laser. A beam is cropped to this value. -->
+    <param name="maxUrange" value ="80.0" />
+
     <!-- Processing parameters (resolution of the map). Default = 0.05 -->
     <param name="delta" type="double" value="0.05" />
 

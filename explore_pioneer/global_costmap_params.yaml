@@ -14,6 +14,8 @@ global_costmap:
 
   #raytrace_range: 30.0
   #obstacle_range: 5.0
+  raytrace_range: 80.0
+  obstacle_range: 80.0
   # default is false,
   #rolling_window: false
 
