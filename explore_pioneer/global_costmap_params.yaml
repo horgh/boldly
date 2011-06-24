@@ -5,7 +5,8 @@ global_costmap:
   # explore has 1.0
   update_frequency: 2.0
   # explore has 0.5
-  publish_frequency: 10.0
+  #publish_frequency: 10.0
+  publish_frequency: 2.0
   # ** explore has false, p2os true
   static_map: false
 
