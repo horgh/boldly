@@ -87,9 +87,12 @@ public:
 #define NUM_SONARS 8
 // If this is 0, multiple laser ranges are replaced
 #define SINGLE_RANGE_REPLACEMENT 0
+// Samples to average to limit error
+#define SAMPLE_COUNT 5
 
 ros::Publisher laser_pub;
 p3dxSonarArray sonar_array;
+double samples[SAMPLE_COUNT][NUM_SONARS];
 
 /*
   Called whenever laser scan received
@@ -153,11 +156,35 @@ void laser_callback(const sensor_msgs::LaserScan::ConstPtr & laser_scan) {
 */
 void sonar_callback(const p2os_driver::SonarArray::ConstPtr & sonar_array_scan) {
   //ROS_WARN("sonar_array ranges size %i", sonar_array_scan->ranges.size());
+  static bool initial = true;
+
+  // Maintain list of five most recent samples
+  if(initial) {
+    for(unsigned i = 0; i < SAMPLE_COUNT; ++i) {
+      for(unsigned j = 0; j < NUM_SONARS; ++j) {
+	samples[i][j] = sonar_array_scan->ranges[j];
+      }
+    }
+  } else {
+    for(unsigned i = 1; i < SAMPLE_COUNT; ++i) {
+      for(unsigned j = 0; j < NUM_SONARS; ++j) {
+	samples[i][j] = samples[i-1][j];
+      }
+    }
+    for(unsigned j = 0; j < NUM_SONARS; ++j) {
+      samples[0][j] = sonar_array_scan->ranges[j];
+    }
+  }
 
   // Only look at front sonars
   for (unsigned int i = 0; i < NUM_SONARS; i++) {
     // Max valid range is 5 meters?
-    sonar_array.sonars[i].range = sonar_array_scan->ranges[i];
+    double mean = 0;
+    for(unsigned j = 0; j < SAMPLE_COUNT; ++j) {
+      mean += samples[j][i];
+    }
+    mean /= (double)SAMPLE_COUNT;
+    sonar_array.sonars[i].range = mean;
   }
 }
 
