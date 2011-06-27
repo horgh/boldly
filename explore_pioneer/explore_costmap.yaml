@@ -4,8 +4,10 @@ explore_costmap:
   robot_base_fram: base_link
   update_frequency: 1.0
   publish_frequency: 0.0
-  raytrace_range: 5.0
-  obstacle_range: 5.0
+  #raytrace_range: 5.0
+  #obstacle_range: 5.0
+  raytrace_range: 80.0
+  obstacle_range: 80.0
   static_map: false
   rolling_window: false
   width: 60.0

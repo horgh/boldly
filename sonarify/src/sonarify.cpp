@@ -86,7 +86,7 @@ public:
 // This many sonars on the front. Assume index starts at 0
 #define NUM_SONARS 8
 // If this is 0, multiple laser ranges are replaced
-#define SINGLE_RANGE_REPLACEMENT 0
+#define SINGLE_RANGE_REPLACEMENT 1
 // Samples to average to limit error
 #define SAMPLE_COUNT 5
 
@@ -115,7 +115,7 @@ void laser_callback(const sensor_msgs::LaserScan::ConstPtr & laser_scan) {
     // cone shaped, we restrict and only care about the sensor if it is
     // closer than 2 meters (pulled out of the air)
     // For reference, see http://comments.gmane.org/gmane.science.robotics.ros.user/6508
-    if (sonar_array.sonars[i].range >= 2.0)
+    if (sonar_array.sonars[i].range >= 1.0)
       continue;
 
     // Index into the laser range array depends on angle of sonar
@@ -131,7 +131,7 @@ void laser_callback(const sensor_msgs::LaserScan::ConstPtr & laser_scan) {
 #if SINGLE_RANGE_REPLACEMENT
       sonarify_laser_scan.ranges[laser_scan_index] = sonar_array.sonars[i].range + sonar_array.sonars[i].offset;
 #else
-      for (int j = 0; j < 4; j++) {
+      for (int j = 0; j < 7; j++) {
         if (laser_scan_index - j >= 0)
           sonarify_laser_scan.ranges[laser_scan_index-j] = sonar_array.sonars[i].range + sonar_array.sonars[i].offset;
         if (laser_scan_index + j < (int) sonarify_laser_scan.ranges.size())

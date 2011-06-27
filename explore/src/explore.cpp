@@ -35,14 +35,14 @@
  *********************************************************************/
 
 // Compile with some debugging
-#define DEBUG
+//#define DEBUG
 
 // If uncommented, use frontier comparison algorithm where we don't try to go to those
 // frontiers which we deem unsafe due to battery life, but may go to others intead
-#define FRONTIER_COMPARE
+//#define FRONTIER_COMPARE
 
 // Some simulation only code if uncommented
-#define SIMULATION
+//#define SIMULATION
 // Life of battery in seconds
 #define SIMULATION_BATTERY_TIME 120
 // Start heading back with at least this margin of safety (wrt battery time remaining)
