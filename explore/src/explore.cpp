@@ -43,6 +43,7 @@
 
 // Some simulation only code if uncommented
 //#define SIMULATION
+
 // Life of battery in seconds
 #define SIMULATION_BATTERY_TIME 120
 // Start heading back with at least this margin of safety (wrt battery time remaining)
@@ -53,6 +54,8 @@
 // Possible states
 #define STATE_HEADING_HOME 0
 #define STATE_EXPLORING 1
+#define STATE_WAITING 2
+#define STATE_STUCK 3
 
 #include <explore/explore.h>
 #include <explore/explore_frontier.h>
@@ -376,9 +379,6 @@ void Explore::makePlan() {
 
   std::vector<geometry_msgs::Pose> goals;
 
-  // was needed when calculating potential here?
-  //explore_costmap_ros_->clearRobotFootprint();
-
   // this returns bool
   explorer_->getExplorationGoals(*explore_costmap_ros_, robot_pose, planner_, goals, potential_scale_, orientation_scale_, gain_scale_);
 
@@ -391,20 +391,6 @@ void Explore::makePlan() {
 #ifdef FRONTIER_COMPARE
   removeUnsafeFrontiers(&goals);
 #endif
-
-/*
-  ROS_WARN("getExplorationGoals(): %d Have %d exploration goals/ frontiers", res, goals.size());
-  for (std::vector<geometry_msgs::Pose>::iterator it = goals.begin(); it != goals.end(); it++) {
-    ROS_WARN("Goal at %f, %f, %f", it->position.x, it->position.y, it->position.z);
-    PoseStamped test_goal_pose;
-    test_goal_pose.header.frame_id = explore_costmap_ros_->getGlobalFrameID();
-    test_goal_pose.header.stamp = ros::Time::now();
-    test_goal_pose.pose = *it;
-    if ( goalOnBlacklist(test_goal_pose) ) {
-      ROS_WARN("Goal is on blacklist");
-    }
-  }
-*/
 
   // Go home if there are no reachable goals at the moment
   if (goals.size() == 0) {
@@ -422,9 +408,6 @@ void Explore::makePlan() {
 
   goal_pose.header.frame_id = explore_costmap_ros_->getGlobalFrameID();
   goal_pose.header.stamp = ros::Time::now();
-  // Calculates navigation from this position to points in costmap
-  //planner_->computePotential(robot_pose_msg.pose.position); // just to be safe, though this should already have been done in explorer_->getExplorationGoals
-  //shouldGoHome(robot_pose_msg);
 
   int blacklist_count = 0;
   for (unsigned int i=0; i<goals.size(); i++) {
@@ -510,14 +493,6 @@ void Explore::reachedGoal(const actionlib::SimpleClientGoalState& status,
     frontier_blacklist_.push_back(frontier_goal);
     ROS_WARN("Adding current goal to black list (aborted, but reached goal)");
   }
-
-//  if(!done_exploring_){
-//    //create a plan from the frontiers left and send a new goal to move_base
-//    makePlan();
-//  }
-//  else{
-//    ROS_INFO("Exploration finished. Hooray.");
-//  }
 }
 
 /*
@@ -558,13 +533,6 @@ double Explore::angleChangeForPlan(PoseStamped * pose, std::vector<geometry_msgs
   PoseStamped previous_pose = *pose;
   double previous_angle = tf::getYaw(previous_pose.pose.orientation);
   for (std::vector<geometry_msgs::PoseStamped>::iterator it = plan->begin(); it != plan->end(); it++) {
-    //double yaw_1 = tf::getYaw(previous_pose.pose.orientation);
-    //double yaw_2 = tf::getYaw(it->pose.orientation);
-    //double da = fabs(yaw_1 - yaw_2);
-    //ROS_WARN("Next point %f %f %f", it->pose.position.x, it->pose.position.y, it->pose.position.z);
-    //ROS_WARN("Next quarternion %f %f %f %f", it->pose.orientation.x, it->pose.orientation.y, it->pose.orientation.z, it->pose.orientation.w);
-    //ROS_WARN("yaw1 %f yaw2 %f da %f", yaw_1, yaw_2, da);
-
     double dx = previous_pose.pose.position.x - it->pose.position.x;
     double dy = previous_pose.pose.position.y - it->pose.position.y;
     double da = atan2(dx, dy);
@@ -793,16 +761,16 @@ void Explore::reachedHomeCallback(const actionlib::SimpleClientGoalState& status
 */
 void Explore::execute() {
   while (! move_base_client_.waitForServer(ros::Duration(5,0)))
-    ROS_WARN("Waiting to connect to move_base server");
+    ROS_WARN("Explore: Waiting to connect to move_base server");
 
-  ROS_INFO("Connected to move_base server");
+  ROS_INFO("Explore: Connected to move_base server.");
 
   explorer_->computePotentialFromRobot(explore_costmap_ros_, planner_);
   // This call sends the first goal, and sets up for future callbacks.
   makePlan();
 
   ros::Rate r(planner_frequency_);
-  while (node_.ok() && (!done_exploring_)) {
+  while (node_.ok() && !done_exploring_) {
 
     if (close_loops_) {
       tf::Stamped<tf::Pose> robot_pose;
@@ -849,7 +817,7 @@ void Explore::spin() {
 
 }
 
-int main(int argc, char** argv){
+int main(int argc, char** argv) {
   ros::init(argc, argv, "explore");
 
   explore::Explore explore;
