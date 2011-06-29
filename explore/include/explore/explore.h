@@ -114,7 +114,6 @@ private:
 
   void removeUnsafeFrontiers(std::vector<geometry_msgs::Pose> * goals);
   geometry_msgs::PoseStamped currentPose();
-  bool atHome();
   int timeToTravel(geometry_msgs::PoseStamped* source_pose_stamped, geometry_msgs::Pose* target_pose);
   bool shouldGoHome();
   int batteryTimeRemaining();
@@ -126,7 +125,11 @@ private:
   );
   double distanceForPlan(geometry_msgs::PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan);
   double angleChangeForPlan(geometry_msgs::PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan);
+  bool closeEnoughToPoseStamped(geometry_msgs::PoseStamped * pose_stamped);
   double distanceBetweenTwoPoses(geometry_msgs::Pose * pose1, geometry_msgs::Pose * pose2);
+  bool atHome();
+  bool atGoal();
+  void checkIfStuck();
   void moveRandomDirection();
 
 
@@ -153,6 +156,7 @@ private:
   LoopClosure* loop_closure_;
   std::vector<geometry_msgs::PoseStamped> frontier_blacklist_;
   geometry_msgs::PoseStamped prev_goal_;
+  geometry_msgs::PoseStamped current_goal_pose_stamped_;
   unsigned int prev_plan_size_;
   double time_since_progress_, progress_timeout_;
   double potential_scale_, orientation_scale_, gain_scale_;
