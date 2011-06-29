@@ -1,0 +1,17 @@
+<package>
+  <description brief="skeleplanner">
+
+     skeleplanner
+
+  </description>
+  <author>Autolab</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/skeleplanner</url>
+  <depend package="roscpp"/>
+  <depend package="nav_core"/>
+  <depend package="costmap_2d"/>
+
+</package>
+
+
