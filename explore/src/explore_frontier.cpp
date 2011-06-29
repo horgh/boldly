@@ -119,14 +119,10 @@ void ExploreFrontier::computePotentialFromRobot(Costmap2DROS* costmap, navfn::Na
   tf::Stamped<tf::Pose> robot_pose;
   costmap->getRobotPose(robot_pose);
 
-  //costmap->clearRobotFootprint();
-
   geometry_msgs::PoseStamped robot_pose_msg;
   tf::poseStampedTFToMsg(robot_pose, robot_pose_msg);
 
   computePotentialFromPoint(costmap, planner, & robot_pose_msg.pose.position );
-
-  //planner->computePotential(robot_pose_msg.pose.position);
 }
 
 /*

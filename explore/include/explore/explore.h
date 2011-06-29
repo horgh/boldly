@@ -127,6 +127,7 @@ private:
   double distanceForPlan(geometry_msgs::PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan);
   double angleChangeForPlan(geometry_msgs::PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan);
   double distanceBetweenTwoPoses(geometry_msgs::Pose * pose1, geometry_msgs::Pose * pose2);
+  void checkIfStuck();
   void moveRandomDirection();
 
 

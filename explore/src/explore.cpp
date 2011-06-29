@@ -56,6 +56,7 @@
 #define STATE_EXPLORING 1
 #define STATE_WAITING 2
 #define STATE_STUCK 3
+#define STATE_DONE 4
 
 #include <explore/explore.h>
 #include <explore/explore_frontier.h>
@@ -163,7 +164,7 @@ Explore::Explore() :
   ROS_WARN("Robot has max turn speed %f", max_vel_th);
   assert(max_vel_th != 0.0);
 
-  state = STATE_EXPLORING;
+  state = STATE_WAITING;
 
   battery_safety_margin = START_SAFETY_MARGIN;
 
@@ -366,21 +367,24 @@ void Explore::removeUnsafeFrontiers(std::vector<geometry_msgs::Pose> * goals) {
 	If goal has changed not changed from previous, ensure makes progress
 	If sufficient time elapsed and could not reach, blacklist
 	Sends the goal pose to the base with a callback function to call when goal reached
-
-  - Must call ExploreFrontier::computePotentialFromRobot() first
 */
 void Explore::makePlan() {
   // since this gets called on handle activate
   if(explore_costmap_ros_ == NULL)
     return;
 
+  // Calculate potential from robot to each point on map
+  explorer_->computePotentialFromRobot(explore_costmap_ros_, planner_);
+
   tf::Stamped<tf::Pose> robot_pose;
   explore_costmap_ros_->getRobotPose(robot_pose);
 
   std::vector<geometry_msgs::Pose> goals;
 
-  // this returns bool
-  explorer_->getExplorationGoals(*explore_costmap_ros_, robot_pose, planner_, goals, potential_scale_, orientation_scale_, gain_scale_);
+  // Find frontier goals
+  if (! explorer_->getExplorationGoals(*explore_costmap_ros_, robot_pose, planner_, goals, potential_scale_, orientation_scale_, gain_scale_) ) {
+    assert( 1 == 0 );
+  }
 
   // Before filtering goals, we check if exploration is done
   if (goals.size() == 0) {
@@ -390,37 +394,31 @@ void Explore::makePlan() {
 
 #ifdef FRONTIER_COMPARE
   removeUnsafeFrontiers(&goals);
-#endif
 
   // Go home if there are no reachable goals at the moment
   if (goals.size() == 0) {
     goHome();
     return;
   }
+#endif
 
   bool valid_plan = false;
   std::vector<geometry_msgs::PoseStamped> plan;
 
-  // was needed for computepotential
-  //PoseStamped goal_pose, robot_pose_msg;
   PoseStamped goal_pose;
-  //tf::poseStampedTFToMsg(robot_pose, robot_pose_msg);
-
   goal_pose.header.frame_id = explore_costmap_ros_->getGlobalFrameID();
   goal_pose.header.stamp = ros::Time::now();
 
   int blacklist_count = 0;
-  for (unsigned int i=0; i<goals.size(); i++) {
+  for (unsigned int i = 0; i < goals.size(); i++) {
     goal_pose.pose = goals[i];
     if (goalOnBlacklist(goal_pose)) {
       blacklist_count++;
       continue;
     }
 
-    /*
-      Build plan to given goal. If such a plan exists, we can use it
-    */
-    valid_plan = ((planner_->getPlanFromPotential(goal_pose, plan)) && (!plan.empty()));
+    // Build plan to given goal. If such a plan exists, we can use it
+    valid_plan = (planner_->getPlanFromPotential(goal_pose, plan) && !plan.empty());
     if (valid_plan) {
       break;
     }
@@ -430,7 +428,6 @@ void Explore::makePlan() {
     /*
       If plan size has changed, that means we are making some sort of progress
       Otherwise check if too much time has elapsed and we may need to blacklist the goal
-    */
     if (prev_plan_size_ != plan.size()) {
       time_since_progress_ = 0.0;
     } else {
@@ -451,10 +448,13 @@ void Explore::makePlan() {
 
     prev_plan_size_ = plan.size();
     prev_goal_ = goal_pose;
+    */
 
     move_base_msgs::MoveBaseGoal goal;
     goal.target_pose = goal_pose;
     move_base_client_.sendGoal(goal, boost::bind(&Explore::reachedGoal, this, _1, _2, goal_pose));
+
+    state = STATE_EXPLORING;
 
     if (visualize_) {
       publishGoal(goal_pose.pose);
@@ -463,8 +463,8 @@ void Explore::makePlan() {
     ROS_WARN("Done exploring with %d goals left that could not be reached. There are %d goals on our blacklist, and %d of the frontier goals are too close to them to pursue. The rest had global planning fail to them. \n", (int)goals.size(), (int)frontier_blacklist_.size(), blacklist_count);
     ROS_INFO("Exploration finished. Hooray.");
     done_exploring_ = true;
+    // XXX Should go home here
   }
-
 }
 
 /*
@@ -558,6 +558,15 @@ double Explore::distanceBetweenTwoPoses(geometry_msgs::Pose * pose1, geometry_ms
 }
 
 /*
+  Check if we appear to be stuck
+  If we're stuck and trying to explore, blacklist the goal
+  Otherwise we are going home, so try to move in a random direction
+*/
+void Explore::checkIfStuck() {
+
+}
+
+/*
   Taken from SendingSimpleGoals tutorial
 */
 void Explore::moveRandomDirection() {
@@ -644,7 +653,8 @@ bool Explore::shouldGoHome() {
   }
 
   // This keeps us heading home if once we decided to go there.
-  // XXX maybe not wanted if we decide we have enough battery to go see a frontier instead
+  // XXX maybe not wanted if we decide we have enough battery to
+  // go see a frontier instead
   if ( state == STATE_HEADING_HOME ) {
     return true;
   }
@@ -762,14 +772,10 @@ void Explore::reachedHomeCallback(const actionlib::SimpleClientGoalState& status
 void Explore::execute() {
   while (! move_base_client_.waitForServer(ros::Duration(5,0)))
     ROS_WARN("Explore: Waiting to connect to move_base server");
-
   ROS_INFO("Explore: Connected to move_base server.");
 
-  explorer_->computePotentialFromRobot(explore_costmap_ros_, planner_);
-  // This call sends the first goal, and sets up for future callbacks.
-  makePlan();
-
   ros::Rate r(planner_frequency_);
+
   while (node_.ok() && !done_exploring_) {
 
     if (close_loops_) {
@@ -778,8 +784,19 @@ void Explore::execute() {
       loop_closure_->updateGraph(robot_pose);
     }
 
-    explorer_->computePotentialFromRobot(explore_costmap_ros_, planner_);
+    // XXX Check if we should head home
 
+    if (state == STATE_WAITING || state == STATE_STUCK) {
+      // Find new exploration goal and send it to move_base.
+      makePlan();
+
+    // We're either heading home or moving towards a goal
+    // But we could get stuck, so check.
+    } else {
+      checkIfStuck();
+    }
+
+/*
 #ifdef SIMULATION
     if ( shouldGoHome() ) {
       goHome();
@@ -789,6 +806,7 @@ void Explore::execute() {
 #ifdef SIMULATION
     }
 #endif
+*/
 
     if (visualize_) {
       // publish visualization markers
