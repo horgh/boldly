@@ -94,7 +94,7 @@ Explore::Explore() :
 
   private_nh.param("navfn/robot_base_frame", robot_base_frame_, std::string("base_link"));
   private_nh.param("planner_frequency", planner_frequency_, 1.0);
-  private_nh.param("progress_timeout", progress_timeout_, 30.0);
+  private_nh.param("progress_timeout", progress_timeout_, 15.0);
   private_nh.param("visualize", visualize_, 1);
   double loop_closure_addition_dist_min;
   double loop_closure_loop_dist_min;
@@ -452,9 +452,12 @@ void Explore::makePlan() {
 
     move_base_msgs::MoveBaseGoal goal;
     goal.target_pose = goal_pose;
+    current_goal_pose_stamped_ = goal_pose;
     move_base_client_.sendGoal(goal, boost::bind(&Explore::reachedGoal, this, _1, _2, goal_pose));
+    ROS_WARN("Sent new goal to move_base.");
 
     state = STATE_EXPLORING;
+    time_since_progress_ = 0.0;
 
     if (visualize_) {
       publishGoal(goal_pose.pose);
@@ -472,12 +475,15 @@ void Explore::makePlan() {
 */
 bool Explore::goalOnBlacklist(const geometry_msgs::PoseStamped& goal){
   //check if a goal is on the blacklist for goals that we're pursuing
-  for(unsigned int i = 0; i < frontier_blacklist_.size(); ++i){
+  for (unsigned int i = 0; i < frontier_blacklist_.size(); ++i) {
     double x_diff = fabs(goal.pose.position.x - frontier_blacklist_[i].pose.position.x);
     double y_diff = fabs(goal.pose.position.y - frontier_blacklist_[i].pose.position.y);
 
-    if(x_diff < 2 * explore_costmap_ros_->getResolution() && y_diff < 2 * explore_costmap_ros_->getResolution())
+    if(x_diff < 2 * explore_costmap_ros_->getResolution() &&
+      y_diff < 2 * explore_costmap_ros_->getResolution())
+    {
       return true;
+    }
   }
   return false;
 }
@@ -486,12 +492,16 @@ bool Explore::goalOnBlacklist(const geometry_msgs::PoseStamped& goal){
   Callback called when goal reached (from nav stack)
 */
 void Explore::reachedGoal(const actionlib::SimpleClientGoalState& status,
-    const move_base_msgs::MoveBaseResultConstPtr& result, geometry_msgs::PoseStamped frontier_goal){
+    const move_base_msgs::MoveBaseResultConstPtr& result,
+    geometry_msgs::PoseStamped frontier_goal)
+  {
 
-  ROS_DEBUG("Reached goal");
-  if(status == actionlib::SimpleClientGoalState::ABORTED){
+  ROS_WARN("Reached goal.");
+  state = STATE_WAITING;
+
+  if (status == actionlib::SimpleClientGoalState::ABORTED) {
     frontier_blacklist_.push_back(frontier_goal);
-    ROS_WARN("Adding current goal to black list (aborted, but reached goal)");
+    ROS_WARN("Adding current goal to black list (aborted, but reached goal).");
   }
 }
 
@@ -549,6 +559,19 @@ double Explore::angleChangeForPlan(PoseStamped * pose, std::vector<geometry_msgs
 }
 
 /*
+  True if our current pose is "close enough" to given pose
+*/
+bool Explore::closeEnoughToPoseStamped(geometry_msgs::PoseStamped * pose_stamped) {
+  PoseStamped current_pose = currentPose();
+
+  double x_diff = fabs(current_pose.pose.position.x - pose_stamped->pose.position.x);
+  double y_diff = fabs(current_pose.pose.position.y - pose_stamped->pose.position.y);
+
+  return x_diff < 2 * explore_costmap_ros_->getResolution() &&
+    y_diff < 2 * explore_costmap_ros_->getResolution();
+}
+
+/*
   Approximate 2d distance between the two poses
 */
 double Explore::distanceBetweenTwoPoses(geometry_msgs::Pose * pose1, geometry_msgs::Pose * pose2) {
@@ -558,12 +581,40 @@ double Explore::distanceBetweenTwoPoses(geometry_msgs::Pose * pose1, geometry_ms
 }
 
 /*
+  If we're close enough to home, assume we're there
+  (so as not to care so much about angle once we're at home, etc)
+*/
+bool Explore::atHome() {
+  return closeEnoughToPoseStamped(&home_pose_msg);
+}
+
+/*
+  Are we close enough to our goal?
+*/
+bool Explore::atGoal() {
+  return closeEnoughToPoseStamped(&current_goal_pose_stamped_);
+}
+
+/*
   Check if we appear to be stuck
   If we're stuck and trying to explore, blacklist the goal
   Otherwise we are going home, so try to move in a random direction
 */
 void Explore::checkIfStuck() {
+  PoseStamped current_pose = currentPose();
 
+  double dist = distanceBetweenTwoPoses(&last_pose.pose, &current_pose.pose);
+  if (dist < 0.01) {
+    time_since_progress_ += 1.0f / planner_frequency_;
+  }
+  ROS_WARN("Time since progress: %f", time_since_progress_);
+
+  if (time_since_progress_ > progress_timeout_) {
+    state = STATE_STUCK;
+    ROS_WARN("Decided we're stuck.");
+    frontier_blacklist_.push_back(current_goal_pose_stamped_);
+    ROS_WARN("Adding current goal to black list");
+  }
 }
 
 /*
@@ -593,20 +644,6 @@ void Explore::moveRandomDirection() {
   if (move_base_client_.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
     time_since_progress_ = 0.0;
   }
-}
-
-/*
-  If we're close enough to home, assume we're there
-  (so as not to care so much about angle once we're at home, etc)
-*/
-bool Explore::atHome() {
-  PoseStamped current_pose = currentPose();
-
-  double x_diff = fabs(current_pose.pose.position.x - home_pose_msg.pose.position.x);
-  double y_diff = fabs(current_pose.pose.position.y - home_pose_msg.pose.position.y);
-
-  return x_diff < 2 * explore_costmap_ros_->getResolution() &&
-    y_diff < 2 * explore_costmap_ros_->getResolution();
 }
 
 /*
@@ -786,7 +823,7 @@ void Explore::execute() {
 
     // XXX Check if we should head home
 
-    if (state == STATE_WAITING || state == STATE_STUCK) {
+    if (state == STATE_WAITING || state == STATE_STUCK || atGoal() ) {
       // Find new exploration goal and send it to move_base.
       makePlan();
 
