@@ -6,16 +6,17 @@ obstacle_range: 80.0
 raytrace_range: 80.0
 # explore has 0.6, p2os 0.35. default = 0.55
 # complains at 0.35
-inflation_radius: 0.35
+inflation_radius: 0.55
 
 # from explore
 #max_obstacle_height: 2.0
 #inscribed_radius: 0.385
 #circumscribed_radius: 0.685
-inscribed_radius: 0.35
-circumscribed_radius: 0.35
 #cost_scaling_factor: 15.0
 #lethal_cost_threshold: 100
+# altered
+inscribed_radius: 0.55
+circumscribed_radius: 0.55
 
 # explore has 0.5
 transform_tolerance: 0.2
@@ -23,4 +24,4 @@ map_type: costmap
 observation_sources: laser_scan_sensor
 
 # explore has observation_persistance: 0.0 in this
-laser_scan_sensor: {sensor_frame: laser, data_type: LaserScan, topic: scan, marking: true, clearing: true, expected_updated_rate: 0.2}
+laser_scan_sensor: {sensor_frame: laser, data_type: LaserScan, topic: sonarify_scan, marking: true, clearing: true, expected_updated_rate: 0.2}
