@@ -1,0 +1,11 @@
+# Run with "screen -c ~/ros/boldly/explore_pioneer/screenrc"
+vbell off
+defutf8 on
+hardstatus alwayslastline
+hardstatus string "%{.bW}%?%-Lw%?%{.rW}%n*%f %t%?(%u)%?%{-}%?%+Lw%? %= %l"
+screen -t p2os 0
+screen -t sick 1
+screen -t explore 2
+screen -t roscore 3
+screen -t ed 4
+screen -t su 5 sudo -i

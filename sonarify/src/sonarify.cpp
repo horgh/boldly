@@ -90,6 +90,8 @@ public:
 // Samples to average to limit error
 #define SAMPLE_COUNT 5
 
+//#define DEBUG
+
 ros::Publisher laser_pub;
 p3dxSonarArray sonar_array;
 double samples[SAMPLE_COUNT][NUM_SONARS];
@@ -139,12 +141,14 @@ void laser_callback(const sensor_msgs::LaserScan::ConstPtr & laser_scan) {
       }
 #endif
 
+#ifdef DEBUG
       ROS_INFO("laser range index %i (@ %f degrees) was %f but now %f",
         laser_scan_index,
         sonar_array.sonars[i].angle_degree,
         laser_scan->ranges[laser_scan_index],
         sonarify_laser_scan.ranges[laser_scan_index]
       );
+#endif
     }
   }
 

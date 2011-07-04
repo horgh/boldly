@@ -44,6 +44,9 @@
 // Some simulation only code if uncommented
 //#define SIMULATION
 
+// Time until we decide we are stuck in seconds
+#define PROGRESS_TIMEOUT 10.0
+
 // Life of battery in seconds
 #define SIMULATION_BATTERY_TIME 120
 // Start heading back with at least this margin of safety (wrt battery time remaining)
@@ -94,7 +97,7 @@ Explore::Explore() :
 
   private_nh.param("navfn/robot_base_frame", robot_base_frame_, std::string("base_link"));
   private_nh.param("planner_frequency", planner_frequency_, 1.0);
-  private_nh.param("progress_timeout", progress_timeout_, 15.0);
+  private_nh.param("progress_timeout", progress_timeout_, PROGRESS_TIMEOUT);
   private_nh.param("visualize", visualize_, 1);
   double loop_closure_addition_dist_min;
   double loop_closure_loop_dist_min;
