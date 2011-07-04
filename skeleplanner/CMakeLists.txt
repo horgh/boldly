@@ -29,6 +29,5 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #target_link_libraries(example ${PROJECT_NAME})
 rosbuild_add_library(${PROJECT_NAME}
   src/skeleplanner.cpp
-  src/common.cpp
   src/waypoint.cpp
   )

@@ -4,9 +4,11 @@
 
 class SkelePlanner : nav_core::BaseGlobalPlanner {
 protected:
-  costmap_2d::Costmap2DROS *costmap;
-  vector<Waypoint*> *topomap;
-  geometry_msgs::PoseStamped lastStart;
+  costmap_2d::Costmap2D costmap;
+  costmap_2d::Costmap2DROS *costmapros;
+  std::vector<Waypoint*> *topomap;
+  geometry_msgs::PoseStamped lastOrigin, safeOrigin;
+  bool gotSafeOrigin;
 
   void wipeTopo();
 
