@@ -41,14 +41,14 @@
 // frontiers which we deem unsafe due to battery life, but may go to others intead
 //#define FRONTIER_COMPARE
 
-// Some simulation only code if uncommented
-//#define SIMULATION
-
 // Time until we decide we are stuck in seconds
 #define PROGRESS_TIMEOUT 10.0
 
+// Our battery is a timer. Makes us go home when its up
+//#define BATTERY_TIMER
+
 // Life of battery in seconds
-#define SIMULATION_BATTERY_TIME 120
+#define BATTERY_TIME 120
 // Start heading back with at least this margin of safety (wrt battery time remaining)
 #define MIN_BATTERY_SAFETY_MARGIN 10
 // Starting safety margin
@@ -60,6 +60,7 @@
 #define STATE_WAITING 2
 #define STATE_STUCK 3
 #define STATE_DONE 4
+#define STATE_AT_HOME 5
 
 #include <explore/explore.h>
 #include <explore/explore_frontier.h>
@@ -151,9 +152,7 @@ Explore::Explore() :
   // Last time we were at home is right now
   last_time_at_home = ros::Time::now();
 
-#ifdef SIMULATION
-  battery_duration = ros::Duration(SIMULATION_BATTERY_TIME);
-#endif
+  battery_duration = ros::Duration(BATTERY_TIME);
 
   // Find robot's max speed
   max_vel_x = 0.0;
@@ -392,6 +391,7 @@ void Explore::makePlan() {
   // Before filtering goals, we check if exploration is done
   if (goals.size() == 0) {
     done_exploring_ = true;
+    goHome();
     return;
   }
 
@@ -428,31 +428,6 @@ void Explore::makePlan() {
   }
 
   if (valid_plan) {
-    /*
-      If plan size has changed, that means we are making some sort of progress
-      Otherwise check if too much time has elapsed and we may need to blacklist the goal
-    if (prev_plan_size_ != plan.size()) {
-      time_since_progress_ = 0.0;
-    } else {
-      // XXX distance between two goals?
-      double dx = prev_goal_.pose.position.x - goal_pose.pose.position.x;
-      double dy = prev_goal_.pose.position.y - goal_pose.pose.position.y;
-      double dist = sqrt(dx*dx+dy*dy);
-      if (dist < 0.01) {
-        time_since_progress_ += 1.0f / planner_frequency_;
-      }
-    }
-
-    // black list goals for which we've made no progress for a long time
-    if (time_since_progress_ > progress_timeout_) {
-      frontier_blacklist_.push_back(goal_pose);
-      ROS_WARN("Adding current goal to black list");
-    }
-
-    prev_plan_size_ = plan.size();
-    prev_goal_ = goal_pose;
-    */
-
     move_base_msgs::MoveBaseGoal goal;
     goal.target_pose = goal_pose;
     current_goal_pose_stamped_ = goal_pose;
@@ -609,14 +584,23 @@ void Explore::checkIfStuck() {
   double dist = distanceBetweenTwoPoses(&last_pose.pose, &current_pose.pose);
   if (dist < 0.01) {
     time_since_progress_ += 1.0f / planner_frequency_;
+  } else {
+    time_since_progress_ = 0.0;
   }
   ROS_WARN("Time since progress: %f", time_since_progress_);
 
   if (time_since_progress_ > progress_timeout_) {
-    state = STATE_STUCK;
     ROS_WARN("Decided we're stuck.");
-    frontier_blacklist_.push_back(current_goal_pose_stamped_);
-    ROS_WARN("Adding current goal to black list");
+
+    if (state == STATE_EXPLORING) {
+      frontier_blacklist_.push_back(current_goal_pose_stamped_);
+      ROS_WARN("Adding current goal to black list");
+    } else if (state == STATE_HEADING_HOME) {
+      // XXX should move randomly for a time
+    } else {
+      ROS_WARN("*** We're stuck but didn't expect this state! ***");
+    }
+    state = STATE_STUCK;
   }
 }
 
@@ -631,13 +615,7 @@ void Explore::moveRandomDirection() {
   // 1 meter
   goal.target_pose.pose.position.x = 1.0;
   goal.target_pose.pose.orientation.w = (double) rand() / (double) RAND_MAX;
-  ROS_WARN("\n");
-  ROS_WARN("\n");
-  ROS_WARN("\n");
   ROS_WARN("**** Moving random direction %f ****", goal.target_pose.pose.orientation.w);
-  ROS_WARN("\n");
-  ROS_WARN("\n");
-  ROS_WARN("\n");
 
   move_base_client_.sendGoal(goal);
   publishGoal(goal.target_pose.pose); 
@@ -686,18 +664,6 @@ int Explore::timeToTravel(geometry_msgs::PoseStamped* source_pose_stamped, geome
   Note: Must have called computePotentialFromRobot() prior to calling this
 */
 bool Explore::shouldGoHome() {
-  // May already be close enough to home
-  if ( state == STATE_HEADING_HOME && atHome() ) {
-    reachedHome();
-    return false;
-  }
-
-  // This keeps us heading home if once we decided to go there.
-  // XXX maybe not wanted if we decide we have enough battery to
-  // go see a frontier instead
-  if ( state == STATE_HEADING_HOME ) {
-    return true;
-  }
 
   ROS_WARN("Cost to go home: %f", planner_->getPointPotential( home_pose_msg.pose.position ) );
 
@@ -715,13 +681,10 @@ bool Explore::shouldGoHome() {
   int battery_time_remaining = batteryTimeRemaining();
   ROS_WARN("Battery time remaining: %d seconds", battery_time_remaining);
 
-// Doesn't make sense yet without us estimating remaining battery
-#ifdef SIMULATION
   if (time_to_home + battery_safety_margin > battery_time_remaining) {
     ROS_WARN("Decided to return home");
     return true;
   }
-#endif
 
   return false;
 }
@@ -730,37 +693,17 @@ bool Explore::shouldGoHome() {
   Estimation of amount of battery time we have left in seconds
 */
 int Explore::batteryTimeRemaining() {
-#ifdef SIMULATION
   ros::Duration elapsed = ros::Time::now() - last_time_at_home;
   int remaining = battery_duration.sec - elapsed.sec;
 //  ROS_WARN("Time elapsed since charge: %d Time remaining on battery: %d", elapsed.sec, remaining);
   return remaining;
-#else
-  return 0;
-#endif
 }
 
 /*
   Send goal to go home to base
 */
 void Explore::goHome() {
-  // We have just started to head home
-  if (state != STATE_HEADING_HOME) {
-    state = STATE_HEADING_HOME;
-    time_since_progress_ = 0.0;
-  }
-
-  // We may be stuck
-  else {
-    geometry_msgs::PoseStamped current_pose = currentPose();
-    double dist = distanceBetweenTwoPoses(&last_pose.pose, &current_pose.pose);
-    if (dist < 0.01) {
-      time_since_progress_ += 1.0f / planner_frequency_;
-    }
-    if (time_since_progress_ > progress_timeout_) {
-      moveRandomDirection();
-    }
-  }
+  state = STATE_HEADING_HOME;
 
   home_pose_msg.header.stamp = ros::Time::now();
 
@@ -787,12 +730,9 @@ void Explore::reachedHome() {
     battery_safety_margin += MIN_BATTERY_SAFETY_MARGIN;
   }
 
-#ifdef SIMULATION
   last_time_at_home = ros::Time::now();
-#else
 
-#endif
-  state = STATE_EXPLORING;
+  state = STATE_WAITING;
 }
 
 /*
@@ -816,7 +756,7 @@ void Explore::execute() {
 
   ros::Rate r(planner_frequency_);
 
-  while (node_.ok() && !done_exploring_) {
+  while (node_.ok()) {
 
     if (close_loops_) {
       tf::Stamped<tf::Pose> robot_pose;
@@ -824,10 +764,18 @@ void Explore::execute() {
       loop_closure_->updateGraph(robot_pose);
     }
 
-    // XXX Check if we should head home
+#ifdef BATTERY_TIMER
+    if ( state != STATE_HEADING_HOME && shouldGoHome() ) {
+      goHome();
+    }
+#endif
 
-    if (state == STATE_WAITING || state == STATE_STUCK || atGoal() ) {
-      // Find new exploration goal and send it to move_base.
+    // If we're heading home, see if we're there
+    if (state == STATE_HEADING_HOME && atHome() ) {
+      reachedHome();
+
+    // Find new exploration goal and send it to move_base.
+    } else if (state == STATE_WAITING || state == STATE_STUCK || atGoal() ) {
       makePlan();
 
     // We're either heading home or moving towards a goal
@@ -835,18 +783,6 @@ void Explore::execute() {
     } else {
       checkIfStuck();
     }
-
-/*
-#ifdef SIMULATION
-    if ( shouldGoHome() ) {
-      goHome();
-    } else {
-#endif
-      makePlan();
-#ifdef SIMULATION
-    }
-#endif
-*/
 
     if (visualize_) {
       // publish visualization markers
