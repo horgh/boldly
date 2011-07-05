@@ -1,9 +1,9 @@
 <launch>
+  <!-- map server -->
+  <node pkg="map_server" type="map_server" args="$(find skeleplanner)/skeletester_map01.pgm 0.05" respawn="true" name="map" />
+
   <!-- skeletester -->
   <node pkg="skeleplanner" type="skeletester" name="skeletester" output="screen">
     <rosparam file="$(find skeleplanner)/skeletester_costmap.yaml" command="load" />
   </node>
-
-  <!-- map server -->
-  <node pkg="map_server" type="map_server" args="$(find skeleplanner)/skeletester_map01.pgm 0.05" respawn="true" name="map" />
 </launch>

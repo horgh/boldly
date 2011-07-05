@@ -122,8 +122,8 @@ int main(int argc, char** argv) {
   tf::TransformListener tf_(ros::Duration(10.0));
   costmap_2d::Costmap2DROS* costmap_ = new costmap_2d::Costmap2DROS(std::string("skeletester_costmap"), tf_);
 
-  SkelePlanner skele_planner;
-  skele_planner.initialize("skeletester", costmap_);
+  //SkelePlanner skele_planner;
+  //skele_planner.initialize("skeletester", costmap_);
 
   marker_id = 0;
 
@@ -131,12 +131,13 @@ int main(int argc, char** argv) {
   ros::Rate loop_rate(1);
 
   while ( ros::ok() ) {
-    ROS_INFO("Skeletester publishing...");
+    ROS_WARN("Skeletester publishing...");
 
     // First publish the current occupancy grid
-    publish_map(costmap_, &map_pub);
+    //publish_map(costmap_, &map_pub);
 
     // Markers for each node in the topological map
+    /*
     std::vector<visualization_msgs::Marker> markers;
     for (std::vector<Waypoint*>::const_iterator it = skele_planner.topomap->begin();
       it != skele_planner.topomap->end(); ++it)
@@ -167,6 +168,7 @@ int main(int argc, char** argv) {
 
     // Additionally we can publish chosen path
     // makePlan() then add nodes & edges with different colours
+    */
 
     ros::spinOnce();
     loop_rate.sleep();
