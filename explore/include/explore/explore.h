@@ -115,7 +115,9 @@ private:
   void removeUnsafeFrontiers(std::vector<geometry_msgs::Pose> * goals);
   geometry_msgs::PoseStamped currentPose();
   int timeToTravel(geometry_msgs::PoseStamped* source_pose_stamped, geometry_msgs::Pose* target_pose);
-  bool shouldGoHome();
+  bool shouldGoHome_dynamic();
+  bool shouldGoHome_fast();
+  int timeSinceCharge();
   int batteryTimeRemaining();
   void goHome();
   void reachedHome();

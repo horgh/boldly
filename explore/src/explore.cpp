@@ -444,7 +444,7 @@ void Explore::makePlan() {
     ROS_WARN("Done exploring with %d goals left that could not be reached. There are %d goals on our blacklist, and %d of the frontier goals are too close to them to pursue. The rest had global planning fail to them. \n", (int)goals.size(), (int)frontier_blacklist_.size(), blacklist_count);
     ROS_INFO("Exploration finished. Hooray.");
     done_exploring_ = true;
-    // XXX Should go home here
+    goHome();
   }
 }
 
@@ -492,6 +492,8 @@ geometry_msgs::PoseStamped Explore::currentPose() {
 
   PoseStamped robot_pose_msg;
   tf::poseStampedTFToMsg(robot_pose, robot_pose_msg);
+
+  //ROS_WARN("Robot pose currently %f, %f", robot_pose_msg.pose.position.x, robot_pose_msg.pose.position.y);
 
   return robot_pose_msg;
 }
@@ -596,7 +598,7 @@ void Explore::checkIfStuck() {
       frontier_blacklist_.push_back(current_goal_pose_stamped_);
       ROS_WARN("Adding current goal to black list");
     } else if (state == STATE_HEADING_HOME) {
-      // XXX should move randomly for a time
+      moveRandomDirection();
     } else {
       ROS_WARN("*** We're stuck but didn't expect this state! ***");
     }
@@ -661,10 +663,14 @@ int Explore::timeToTravel(geometry_msgs::PoseStamped* source_pose_stamped, geome
 }
 
 /*
+  Decide whether we should go home based on robot's current position
+  relative to home. Since this uses costmap data and plan generated from
+  that, we must have called computePotential() first, making this expensive
+  to be calling frequently.
+
   Note: Must have called computePotentialFromRobot() prior to calling this
 */
-bool Explore::shouldGoHome() {
-
+bool Explore::shouldGoHome_dynamic() {
   ROS_WARN("Cost to go home: %f", planner_->getPointPotential( home_pose_msg.pose.position ) );
 
   // Get time to go home
@@ -682,7 +688,7 @@ bool Explore::shouldGoHome() {
   ROS_WARN("Battery time remaining: %d seconds", battery_time_remaining);
 
   if (time_to_home + battery_safety_margin > battery_time_remaining) {
-    ROS_WARN("Decided to return home");
+    ROS_WARN("Decided to return home.");
     return true;
   }
 
@@ -690,12 +696,39 @@ bool Explore::shouldGoHome() {
 }
 
 /*
+  Fast decision whether to go home or not.
+
+  Assume entire time since last charge was spent moving away from home.
+  We then need this same amount of time remaining on battery to return
+  home.
+*/
+bool Explore::shouldGoHome_fast() {
+  int time_since_charge = timeSinceCharge();
+  int battery_time_remaining = batteryTimeRemaining();
+
+  ROS_WARN("Time elapsed since charge: %d Time remaining on battery: %d",
+    time_since_charge, battery_time_remaining);
+
+  if (time_since_charge + battery_safety_margin > battery_time_remaining) {
+    ROS_WARN("Decided to return home.");
+    return true;
+  }
+  return false;
+}
+
+/*
+  Return the time since charge in seconds
+*/
+int Explore::timeSinceCharge() {
+  ros::Duration elapsed = ros::Time::now() - last_time_at_home;
+  return elapsed.sec;
+}
+
+/*
   Estimation of amount of battery time we have left in seconds
 */
 int Explore::batteryTimeRemaining() {
-  ros::Duration elapsed = ros::Time::now() - last_time_at_home;
-  int remaining = battery_duration.sec - elapsed.sec;
-//  ROS_WARN("Time elapsed since charge: %d Time remaining on battery: %d", elapsed.sec, remaining);
+  int remaining = battery_duration.sec - timeSinceCharge();
   return remaining;
 }
 
@@ -765,7 +798,7 @@ void Explore::execute() {
     }
 
 #ifdef BATTERY_TIMER
-    if ( state != STATE_HEADING_HOME && shouldGoHome() ) {
+    if ( state != STATE_HEADING_HOME && shouldGoHome_fast() ) {
       goHome();
     }
 #endif
