@@ -131,6 +131,8 @@ int main(int argc, char** argv) {
   ros::Rate loop_rate(1);
 
   while ( ros::ok() ) {
+    ROS_INFO("Skeletester publishing...");
+
     // First publish the current occupancy grid
     publish_map(costmap_, &map_pub);
 
