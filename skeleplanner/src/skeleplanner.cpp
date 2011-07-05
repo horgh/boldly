@@ -88,9 +88,10 @@ void SkelePlanner::waypoints_to_plan(std::vector<geometry_msgs::PoseStamped>* pl
   // waypoints are in reverse order
   for (std::vector<Waypoint*>::reverse_iterator it = waypoint_plan->rbegin(); it != waypoint_plan->rend(); it++) {
     geometry_msgs::PoseStamped pose;
-    // XXX
-    //pose.header.frame_id = 
-    //pose.header.stamp = ros::Time::now();
+    pose.header.frame_id = costmapros->getGlobalFrameID();
+    pose.header.stamp = ros::Time::now();
+
+    // XXX Need to set quaternion too?
     pose.pose.position.x = (*it)->x;
     pose.pose.position.y = (*it)->y;
     pose.pose.position.z = 0.0;
