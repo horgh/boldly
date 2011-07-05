@@ -582,7 +582,7 @@ void Explore::checkIfStuck() {
   PoseStamped current_pose = currentPose();
 
   double dist = distanceBetweenTwoPoses(&last_pose.pose, &current_pose.pose);
-  if (dist < 0.01) {
+  if (dist < 0.10) {
     time_since_progress_ += 1.0f / planner_frequency_;
   } else {
     time_since_progress_ = 0.0;
