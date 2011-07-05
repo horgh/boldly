@@ -12,6 +12,10 @@
   <depend package="nav_core"/>
   <depend package="costmap_2d"/>
 
+  <!-- for skeletester -->
+  <depend package="visualization_msgs" />
+  <depend package="tf" />
+
 </package>
 
 
