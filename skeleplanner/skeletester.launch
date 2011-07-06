@@ -1,9 +1,34 @@
 <launch>
+  <param name="/use_sim_time" value="true" />
+
   <!-- map server -->
-  <node pkg="map_server" type="map_server" args="$(find skeleplanner)/skeletester_map01.pgm 0.05" respawn="true" name="map" />
+  <node pkg="map_server" type="map_server" args="$(find skeleplanner)/skeletester_map01.pgm 0.10" respawn="true" name="map" />
+
+  <!-- stage -->
+  <node pkg="stage" type="stageros" name="stage" args="$(find bosch_worlds)/maze.world" respawn="false" output="screen" />
+  <!-- stage needs this apparently -->
+  <node pkg="tf" type="static_transform_publisher" name="fake_localize" args="0 0 0 0 0 0 map odom 10" />
+
+  <!-- for stage as well -->
+  <include file="$(find skeleplanner)/move.xml" />
+
+<!--
+  <node pkg="tf" type="static_transform_publisher" name="fake_localize" args="0 0 0 0 0 0 map odom 10" />
+  <node pkg="tf" type="static_transform_publisher" name="fake_localize" args="0 0 0 0 0 0 map base_link 10" />
+  <node pkg="tf" type="static_transform_publisher" name="fake_localize2" args="0 0 0 0 0 0 base_link map 10" />
+-->
 
   <!-- skeletester -->
-  <node pkg="skeleplanner" type="skeletester" name="skeletester" output="screen">
+  <node pkg="skeleplanner" type="skeletester" name="skeletester" respawn="false" output="screen">
+<!--
+  <node launch-prefix="gdb - -args " pkg="skeleplanner" type="skeletester" name="skeletester" respawn="false" output="screen">
+-->
+    <rosparam file="$(find skeleplanner)/costmap_common.yaml" command="load" ns="skeletester_costmap" />
     <rosparam file="$(find skeleplanner)/skeletester_costmap.yaml" command="load" />
+<!--
+    <rosparam file="$(find skeleplanner)/costmap.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find skeleplanner)/costmap.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find skeleplanner)/costmap.yaml" command="load" />
+-->
   </node>
 </launch>

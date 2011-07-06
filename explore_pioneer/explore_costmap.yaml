@@ -1,7 +1,7 @@
 # From explore
 explore_costmap:
   global_frame: /map
-  robot_base_fram: base_link
+  robot_base_frame: base_link
   update_frequency: 1.0
   publish_frequency: 0.0
   #raytrace_range: 5.0

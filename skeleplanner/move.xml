@@ -1,0 +1,14 @@
+<launch>  
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen" >
+    <rosparam file="$(find skeleplanner)/footprint.yaml" command="load" />
+
+    <rosparam file="$(find skeleplanner)/costmap_common.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find skeleplanner)/global_costmap.yaml" command="load" />
+    <rosparam file="$(find skeleplanner)/navfn_params.yaml" command="load" />
+    
+    <rosparam file="$(find skeleplanner)/costmap_common.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find skeleplanner)/local_costmap.yaml" command="load" />
+    <rosparam file="$(find skeleplanner)/trajectory_planner_params.yaml" command="load" />
+    <param name="controller_frequency" type="double" value="5.0" />
+  </node>
+</launch>
