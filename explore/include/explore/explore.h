@@ -52,6 +52,8 @@
 #include <string>
 #include <boost/thread/mutex.hpp>
 #include <cmath>
+#include <p2os_driver/BatteryState.h>
+#include <std_msgs/Empty.h>
 
 
 namespace explore {
@@ -62,6 +64,10 @@ namespace explore {
  */
 class Explore {
 public:
+
+  void charge_complete_callback(const std_msgs::Empty::ConstPtr & msg);
+  void battery_state_callback(const p2os_driver::BatteryState::ConstPtr & msg);
+
   /**
    * @brief  Constructor
    * @return
@@ -125,6 +131,7 @@ private:
     const move_base_msgs::MoveBaseResultConstPtr& result,
     geometry_msgs::PoseStamped goal
   );
+  void waitForInitialVoltage();
   double distanceForPlan(geometry_msgs::PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan);
   double angleChangeForPlan(geometry_msgs::PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan);
   bool closeEnoughToPoseStamped(geometry_msgs::PoseStamped * pose_stamped);
@@ -148,6 +155,8 @@ private:
   ros::Publisher marker_publisher_;
   ros::Publisher marker_array_publisher_;
   ros::Publisher map_publisher_;
+  ros::Subscriber voltage_subscriber_;
+  ros::Subscriber charged_subscriber_;
   ros::ServiceServer map_server_;
 
   ExploreFrontier* explorer_;
@@ -175,6 +184,13 @@ private:
   double max_vel_x;
   // Robot's max turn speed
   double max_vel_th;
+
+  // Last read voltage
+  double battery_voltage;
+  // Initial voltage
+  double voltage_initial;
+  // Cutoff voltage
+  double voltage_cutoff;
 
   // robot state
   int state;

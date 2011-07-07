@@ -79,6 +79,14 @@ double sign(double x){
   return x < 0.0 ? -1.0 : 1.0;
 }
 
+void Explore::charge_complete_callback(const std_msgs::Empty::ConstPtr & msg) {
+  ROS_INFO("Got signal we are charged.");
+}
+
+void Explore::battery_state_callback(const p2os_driver::BatteryState::ConstPtr & msg) {
+  battery_voltage = msg->voltage;
+}
+
 Explore::Explore() :
   node_(),
   tf_(ros::Duration(10.0)),
@@ -95,6 +103,9 @@ Explore::Explore() :
   marker_array_publisher_ = node_.advertise<MarkerArray>("visualization_marker_array",10);
   map_publisher_ = private_nh.advertise<nav_msgs::OccupancyGrid>("map", 1, true);
   map_server_ = private_nh.advertiseService("explore_map", &Explore::mapCallback, this);
+  voltage_subscriber_ = node_.subscribe<p2os_driver::BatteryState>("battery_state", 10, battery_state_callback);
+  charged_subscriber_ = node_.subscribe<std_msgs::Empty>("charge_complete", 10, charge_complete_callback);
+  battery_voltage = -1.0;
 
   private_nh.param("navfn/robot_base_frame", robot_base_frame_, std::string("base_link"));
   private_nh.param("planner_frequency", planner_frequency_, 1.0);
@@ -778,6 +789,19 @@ void Explore::reachedHomeCallback(const actionlib::SimpleClientGoalState& status
 }
 
 /*
+  Wait until we read an initial voltage
+*/
+void Explore::waitForInitialVoltage() {
+  ros::Rate r(10.0);
+  while ( node.ok() && battery_voltage == -1.0 ) {
+    r.sleep();
+  }
+  initial_voltage = battery_voltage;
+  assert(initial_voltage != -1.0);
+  ROS_INFO("Recorded initial voltage %f", initial_voltage);
+}
+
+/*
 	Continually run makePlan() after specified sleep
 	This will cause goals to become blacklisted if not enough progress is made
 	and not just wait for callback when goal is reached
@@ -786,6 +810,9 @@ void Explore::execute() {
   while (! move_base_client_.waitForServer(ros::Duration(5,0)))
     ROS_WARN("Explore: Waiting to connect to move_base server");
   ROS_INFO("Explore: Connected to move_base server.");
+
+  // Wait until we get an initial voltage reading
+  waitForInitialVoltage();
 
   ros::Rate r(planner_frequency_);
 
