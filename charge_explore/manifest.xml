@@ -1,0 +1,17 @@
+<package>
+  <description brief="charge_explore">
+
+     charge_explore
+
+  </description>
+  <author>will</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/charge_explore</url>
+  <depend package="std_msgs"/>
+  <depend package="roscpp"/>
+  <depend package="p2os_driver"/>
+
+</package>
+
+
