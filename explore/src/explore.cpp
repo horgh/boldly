@@ -49,7 +49,11 @@
 #define VOLTAGE_WARNING 12.0
 
 // Our battery is a timer. Makes us go home when its up
-//#define BATTERY_TIMER
+#define BATTERY_TIMER
+
+// Always periodically return (uses INITIAL_EXPLORE_TIME) rather than
+// operate with our voltage logic. Requires BATTERY_TIMER as well.
+//#define CONSTANT_BATTERY_TIME
 
 // Life of battery in seconds
 #define BATTERY_TIME 120
@@ -790,12 +794,13 @@ bool Explore::shouldGoHome_fast() {
   if (time_to_home + time_since_time_to_home_updated.sec
     + battery_safety_margin > battery_time_remaining)
   {
-    ROS_WARN("Decided to return home.");
+    ROS_WARN("Decided to return home. (timer)");
     return true;
   }
 
   // Our battery time estimate may be off. Check our critical voltage too
   if (atCriticalVoltage()) {
+    ROS_WARN("Decided to return home. (critical voltage)");
     return true;
   }
 
@@ -856,12 +861,14 @@ void Explore::reachedHome() {
   }
 
   // Change next margin depending on time remaining on our battery
+  /*
   if ( battery_time_remaining > MIN_BATTERY_SAFETY_MARGIN ) {
     battery_safety_margin--;
   } else if ( battery_time_remaining < MIN_BATTERY_SAFETY_MARGIN ) {
     //battery_safety_margin++;
     battery_safety_margin += MIN_BATTERY_SAFETY_MARGIN;
   }
+  */
 
   last_time_at_home = ros::Time::now();
 }
@@ -907,6 +914,12 @@ bool Explore::atCriticalVoltage() {
   warning
 */
 void Explore::updateGlobalState() {
+#ifdef CONSTANT_BATTERY_TIME
+  // We wish to remain in initial state forever if we are using a
+  // constant periodic return to home. So never change state.
+  return;
+#endif
+
   if ( atCriticalVoltage() ) {
     setGlobalState(GLOBAL_STATE_EXPLORE);
     goHome();
@@ -930,7 +943,7 @@ void Explore::setGlobalState(int new_state) {
       s = "UNKNOWN";
   }
 
-  ROS_WARN("Setting bloal state to: %s", s.c_str());
+  ROS_WARN("Setting global state to: %s", s.c_str());
 #endif
 
   global_state = new_state;
