@@ -35,7 +35,7 @@
  *********************************************************************/
 
 // Compile with some debugging
-//#define DEBUG
+#define DEBUG
 
 // If uncommented, use frontier comparison algorithm where we don't try to go to those
 // frontiers which we deem unsafe due to battery life, but may go to others intead
@@ -59,7 +59,7 @@
 #define START_SAFETY_MARGIN 30
 
 // Initial explore time before we return home (initial behaviour)
-#define INITIAL_EXPLORE_TIME 30
+#define INITIAL_EXPLORE_TIME 10
 
 /*
   Possible global states
@@ -102,13 +102,13 @@ double sign(double x){
 
 void Explore::charge_complete_callback(const std_msgs::Empty::ConstPtr & msg) {
   if ( state == STATE_CHARGING ) {
-    ROS_INFO("Got signal we are charged.");
+    ROS_WARN("Got signal we are charged.");
     setLocalState(STATE_WAITING_FOR_GOAL);
   }
 }
 
 void Explore::battery_state_callback(const p2os_driver::BatteryState::ConstPtr & msg) {
-  ROS_INFO("Got battery state (voltage)");
+  //ROS_INFO("Got battery state (voltage)");
   battery_voltage = msg->voltage;
 }
 
@@ -754,10 +754,17 @@ bool Explore::shouldGoHome_fast() {
   ROS_WARN("Time elapsed since charge: %d Time remaining on battery: %d",
     time_since_charge, battery_time_remaining);
 
+  // If our battery time estimate says to go home, do so
   if (time_since_charge + battery_safety_margin > battery_time_remaining) {
     ROS_WARN("Decided to return home.");
     return true;
   }
+
+  // Our battery time estimate may be off. Check our critical voltage too
+  if (atCriticalVoltage()) {
+    return true;
+  }
+
   return false;
 }
 
@@ -848,25 +855,74 @@ void Explore::waitForInitialVoltage() {
 }
 
 /*
+  If we hear a voltage at a predefined level, this is our warning
+  of low/empty battery.
+*/
+bool Explore::atCriticalVoltage() {
+#ifdef DEBUG
+  if (battery_voltage <= VOLTAGE_WARNING) {
+    ROS_WARN("** At critical voltage. **");
+  }
+#endif
+  return battery_voltage <= VOLTAGE_WARNING;
+}
+
+/*
   We leave the initial global state once we have heard the battery
   warning
 */
 void Explore::updateGlobalState() {
-  // If we hear a voltage at a predefined level, this is our warning
-  // of low/empty battery.
-  if (battery_voltage <= VOLTAGE_WARNING) {
+  if ( atCriticalVoltage() ) {
     setGlobalState(GLOBAL_STATE_EXPLORE);
     goHome();
   }
 }
 
 void Explore::setGlobalState(int new_state) {
-  ROS_INFO("Setting bloal state to: %d", new_state);
+#ifdef DEBUG
+  std::string s;
+  switch (new_state) {
+    case GLOBAL_STATE_INITIAL:
+      s = "INITIAL";
+      break;
+    case GLOBAL_STATE_EXPLORE:
+      s = "EXPLORE";
+      break;
+    default:
+      s = "UNKNOWN";
+  }
+
+  ROS_WARN("Setting bloal state to: %s", s.c_str());
+#endif
+
   global_state = new_state;
 }
 
 void Explore::setLocalState(int new_state) {
-  ROS_INFO("Setting local state to: %d", new_state);
+#ifdef DEBUG
+  std::string s;
+  switch (new_state) {
+    case STATE_HEADING_HOME:
+      s = "HEADING_HOME"; 
+      break;
+    case STATE_EXPLORING:
+      s = "EXPLORING";
+      break;
+    case STATE_WAITING_FOR_GOAL:
+      s = "WAITING_FOR_GOAL";
+      break;
+    case STATE_CHARGING:
+      s = "CHARGING";
+      break;
+    case STATE_DONE:
+      s = "DONE";
+      break;
+    default:
+      s = "UNKNOWN";
+  }
+  ROS_WARN("Setting local state to: %s", s.c_str());
+#endif
+
   state = new_state;
 }
 
@@ -952,7 +1008,7 @@ void Explore::execute() {
         setLocalState(STATE_CHARGING);
 
       // Should we go home?
-      } else if ( state != STATE_HEADING_HOME && shouldGoHome_fast() ) {
+      } else if ( state != STATE_HEADING_HOME && state != STATE_CHARGING && shouldGoHome_fast() ) {
         goHome();
 
       // We need a new exploration goal

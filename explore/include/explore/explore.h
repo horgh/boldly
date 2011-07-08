@@ -133,6 +133,7 @@ private:
     geometry_msgs::PoseStamped goal
   );
   void waitForInitialVoltage();
+  bool atCriticalVoltage();
   void updateGlobalState();
   void setGlobalState(int new_state);
   void setLocalState(int new_state);
