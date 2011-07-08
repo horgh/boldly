@@ -112,6 +112,8 @@ void Explore::charge_complete_callback(const std_msgs::Empty::ConstPtr & msg) {
 
     time_to_home = 0;
     last_time_update_time_to_home = ros::Time::now();
+
+    last_time_charged = ros::Time::now();
   }
 }
 
@@ -136,8 +138,8 @@ Explore::Explore() :
   marker_array_publisher_ = node_.advertise<MarkerArray>("visualization_marker_array",10);
   map_publisher_ = private_nh.advertise<nav_msgs::OccupancyGrid>("map", 1, true);
   map_server_ = private_nh.advertiseService("explore_map", &Explore::mapCallback, this);
-  voltage_subscriber_ = node_.subscribe<p2os_driver::BatteryState>("battery_state", 10, &Explore::battery_state_callback, this);
-  charged_subscriber_ = node_.subscribe<std_msgs::Empty>("charge_complete", 10, &Explore::charge_complete_callback, this);
+  voltage_subscriber_ = node_.subscribe<p2os_driver::BatteryState>("battery_state", 1, &Explore::battery_state_callback, this);
+  charged_subscriber_ = node_.subscribe<std_msgs::Empty>("charge_complete", 1, &Explore::charge_complete_callback, this);
   battery_voltage = -1.0;
 
   private_nh.param("navfn/robot_base_frame", robot_base_frame_, std::string("base_link"));
@@ -790,6 +792,8 @@ bool Explore::shouldGoHome_fast() {
   ROS_WARN("Time to home: %d Time since updated time to home: %d",
     time_to_home, time_since_time_to_home_updated.sec);
 
+  ROS_WARN("Current max battery duration: %d", battery_duration.sec);
+
   // If our battery time estimate says to go home, do so
   if (time_to_home + time_since_time_to_home_updated.sec
     + battery_safety_margin > battery_time_remaining)
@@ -801,6 +805,22 @@ bool Explore::shouldGoHome_fast() {
   // Our battery time estimate may be off. Check our critical voltage too
   if (atCriticalVoltage()) {
     ROS_WARN("Decided to return home. (critical voltage)");
+
+    // We hit critical voltage again. We can update our battery duration.
+    // Find the duration of the previous cycle (time since last charge)
+    ros::Duration previous_duration = ros::Time::now() - last_time_charged;
+    if (previous_duration.sec > battery_duration.sec) {
+      battery_duration.sec++;
+      ROS_WARN("Increasing battery duration.");
+
+    // Arbitrary requirement of at least 5 seconds duration, since we may read
+    // old critical voltage readings which are invalid and cause us to reset
+    // the time to 0 or so
+    } else if (previous_duration.sec > 5) {
+      battery_duration = previous_duration;
+      ROS_WARN("Reset battery duration to current cycle's duration.");
+    }
+
     return true;
   }
 
