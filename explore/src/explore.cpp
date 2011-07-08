@@ -44,6 +44,10 @@
 // Time until we decide we are stuck in seconds
 #define PROGRESS_TIMEOUT 10.0
 
+// Voltage that we consider too low and must charge. This should
+// be the same as robot starts sounding alarums
+#define VOLTAGE_WARNING 12.0
+
 // Our battery is a timer. Makes us go home when its up
 #define BATTERY_TIMER
 
@@ -97,7 +101,10 @@ double sign(double x){
 }
 
 void Explore::charge_complete_callback(const std_msgs::Empty::ConstPtr & msg) {
-  ROS_INFO("Got signal we are charged.");
+  if ( state == STATE_CHARGING ) {
+    ROS_INFO("Got signal we are charged.");
+    setLocalState(STATE_WAITING_FOR_GOAL);
+  }
 }
 
 void Explore::battery_state_callback(const p2os_driver::BatteryState::ConstPtr & msg) {
@@ -845,10 +852,12 @@ void Explore::waitForInitialVoltage() {
   warning
 */
 void Explore::updateGlobalState() {
-  //check if hear battery warning
-  //if heard battery warning
-  //set global state to explore
-  //set local state to go home
+  // If we hear a voltage at a predefined level, this is our warning
+  // of low/empty battery.
+  if (battery_voltage <= VOLTAGE_WARNING) {
+    setGlobalState(GLOBAL_STATE_EXPLORE);
+    goHome();
+  }
 }
 
 void Explore::setGlobalState(int new_state) {
@@ -950,7 +959,8 @@ void Explore::execute() {
       } else if ( state == STATE_WAITING_FOR_GOAL || atGoal() ) {
         makePlan();
 
-      } else {
+      // We can get stuck (if we're not charging), so handle it.
+      } else if ( state != STATE_CHARGING ) {
         checkIfStuck();
       }
 
