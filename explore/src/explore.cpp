@@ -49,7 +49,7 @@
 #define VOLTAGE_WARNING 12.0
 
 // Our battery is a timer. Makes us go home when its up
-#define BATTERY_TIMER
+//#define BATTERY_TIMER
 
 // Life of battery in seconds
 #define BATTERY_TIME 120
@@ -974,8 +974,10 @@ void Explore::execute() {
     ROS_WARN("Explore: Waiting to connect to move_base server");
   ROS_INFO("Explore: Connected to move_base server.");
 
+#ifdef BATTERY_TIMER
   // Wait until we get an initial voltage reading
   waitForInitialVoltage();
+#endif
 
   ros::Rate r(planner_frequency_);
 
@@ -1016,6 +1018,7 @@ void Explore::execute() {
       checkIfStuck();
     }
 */
+#ifdef BATTERY_TIMER
     // Initial behaviour
     if (global_state == GLOBAL_STATE_INITIAL) {
       // If we're heading home, we may be there now
@@ -1049,8 +1052,12 @@ void Explore::execute() {
       } else if ( state != STATE_HEADING_HOME && state != STATE_CHARGING && shouldGoHome_fast() ) {
         goHome();
 
+      // an else if (continued below)
+      } else
+#endif
+
       // We need a new exploration goal
-      } else if ( state == STATE_WAITING_FOR_GOAL || atGoal() ) {
+      if ( state == STATE_WAITING_FOR_GOAL || atGoal() ) {
         makePlan();
 
       // We can get stuck (if we're not charging), so handle it.
@@ -1058,10 +1065,12 @@ void Explore::execute() {
         checkIfStuck();
       }
 
+#ifdef BATTERY_TIMER
     } else {
       ROS_WARN("Unknown global state.");
       assert(2 == 3);
     }
+#endif
 
     if (visualize_) {
       // publish visualization markers
