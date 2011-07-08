@@ -56,7 +56,7 @@
 // Start heading back with at least this margin of safety (wrt battery time remaining)
 #define MIN_BATTERY_SAFETY_MARGIN 10
 // Starting safety margin
-#define START_SAFETY_MARGIN 30
+#define START_SAFETY_MARGIN 0
 
 // Initial explore time before we return home (initial behaviour)
 #define INITIAL_EXPLORE_TIME 10
@@ -104,6 +104,7 @@ void Explore::charge_complete_callback(const std_msgs::Empty::ConstPtr & msg) {
   if ( state == STATE_CHARGING ) {
     ROS_WARN("Got signal we are charged.");
     setLocalState(STATE_WAITING_FOR_GOAL);
+    last_time_at_home = ros::Time::now();
   }
 }
 
@@ -852,6 +853,7 @@ void Explore::waitForInitialVoltage() {
   voltage_initial = battery_voltage;
   assert(voltage_initial != -1.0);
   ROS_INFO("Recorded initial voltage %f", voltage_initial);
+  last_time_charged = ros::Time::now();
 }
 
 /*
@@ -875,6 +877,9 @@ void Explore::updateGlobalState() {
   if ( atCriticalVoltage() ) {
     setGlobalState(GLOBAL_STATE_EXPLORE);
     goHome();
+    // Initially battery duration is the time between wake up ("last charged")
+    // and run out of battery, which just occurred.
+    battery_duration = ros::Time::now() - last_time_charged;
   }
 }
 

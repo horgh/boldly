@@ -119,7 +119,16 @@ private:
   bool goalOnBlacklist(const geometry_msgs::PoseStamped& goal);
 
   void removeUnsafeFrontiers(std::vector<geometry_msgs::Pose> * goals);
+
   geometry_msgs::PoseStamped currentPose();
+  double distanceForPlan(geometry_msgs::PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan);
+  double angleChangeForPlan(geometry_msgs::PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan);
+  bool closeEnoughToPoseStamped(geometry_msgs::PoseStamped * pose_stamped);
+  double distanceBetweenTwoPoses(geometry_msgs::Pose * pose1, geometry_msgs::Pose * pose2);
+  bool atHome();
+  bool atGoal();
+  void checkIfStuck();
+  void moveRandomDirection();
   int timeToTravel(geometry_msgs::PoseStamped* source_pose_stamped, geometry_msgs::Pose* target_pose);
   bool shouldGoHome_dynamic();
   bool shouldGoHome_fast();
@@ -137,14 +146,6 @@ private:
   void updateGlobalState();
   void setGlobalState(int new_state);
   void setLocalState(int new_state);
-  double distanceForPlan(geometry_msgs::PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan);
-  double angleChangeForPlan(geometry_msgs::PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan);
-  bool closeEnoughToPoseStamped(geometry_msgs::PoseStamped * pose_stamped);
-  double distanceBetweenTwoPoses(geometry_msgs::Pose * pose1, geometry_msgs::Pose * pose2);
-  bool atHome();
-  bool atGoal();
-  void checkIfStuck();
-  void moveRandomDirection();
 
 
   ros::NodeHandle node_;
@@ -206,6 +207,7 @@ private:
   int battery_safety_margin;
 
   ros::Time last_time_at_home;
+  ros::Time last_time_charged;
   ros::Duration battery_duration;
   // In global initial state, after this much time we want to go home
   ros::Duration initial_time_away_from_home;
