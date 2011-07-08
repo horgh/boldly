@@ -53,14 +53,26 @@
 #define MIN_BATTERY_SAFETY_MARGIN 10
 // Starting safety margin
 #define START_SAFETY_MARGIN 30
+// Initial explore time before we return home (initial behaviour)
+#define INITIAL_EXPLORE_TIME 30
 
-// Possible states
+/*
+  Possible states
+*/
+// Heading home without intending to charge
 #define STATE_HEADING_HOME 0
-#define STATE_EXPLORING 1
-#define STATE_WAITING 2
-#define STATE_STUCK 3
-#define STATE_DONE 4
-#define STATE_AT_HOME 5
+// Heading home intending to charge
+#define STATE_HEADING_HOME_CHARGE 1
+// Initial exploration behaviour
+#define STATE_EXPLORING_INITIAL 2
+// Full exploration behaviour
+#define STATE_EXPLORING 3
+// Waiting for a new exploration goal
+#define STATE_WAITING_FOR_GOAL 4
+// Waiting at home for charging to complete
+#define STATE_CHARGING 5
+// Exploration complete
+#define STATE_DONE 6
 
 #include <explore/explore.h>
 #include <explore/explore_frontier.h>
@@ -177,7 +189,7 @@ Explore::Explore() :
   ROS_WARN("Robot has max turn speed %f", max_vel_th);
   assert(max_vel_th != 0.0);
 
-  state = STATE_WAITING;
+  state = STATE_WAITING_FOR_GOAL;
 
   battery_safety_margin = START_SAFETY_MARGIN;
 
@@ -402,7 +414,7 @@ void Explore::makePlan() {
   // Before filtering goals, we check if exploration is done
   if (goals.size() == 0) {
     done_exploring_ = true;
-    goHome();
+    goHome(STATE_HEADING_HOME_CHARGE);
     return;
   }
 
@@ -411,7 +423,7 @@ void Explore::makePlan() {
 
   // Go home if there are no reachable goals at the moment
   if (goals.size() == 0) {
-    goHome();
+    goHome(STATE_HEADING_HOME_CHARGE);
     return;
   }
 #endif
@@ -455,7 +467,7 @@ void Explore::makePlan() {
     ROS_WARN("Done exploring with %d goals left that could not be reached. There are %d goals on our blacklist, and %d of the frontier goals are too close to them to pursue. The rest had global planning fail to them. \n", (int)goals.size(), (int)frontier_blacklist_.size(), blacklist_count);
     ROS_INFO("Exploration finished. Hooray.");
     done_exploring_ = true;
-    goHome();
+    goHome(STATE_HEADING_HOME_CHARGE);
   }
 }
 
@@ -486,7 +498,7 @@ void Explore::reachedGoal(const actionlib::SimpleClientGoalState& status,
   {
 
   ROS_WARN("Reached goal.");
-  state = STATE_WAITING;
+  state = STATE_WAITING_FOR_GOAL;
 
   if (status == actionlib::SimpleClientGoalState::ABORTED) {
     frontier_blacklist_.push_back(frontier_goal);
@@ -608,12 +620,12 @@ void Explore::checkIfStuck() {
     if (state == STATE_EXPLORING) {
       frontier_blacklist_.push_back(current_goal_pose_stamped_);
       ROS_WARN("Adding current goal to black list");
-    } else if (state == STATE_HEADING_HOME) {
+      state == STATE_WAITING_FOR_GOAL;
+    } else if (state == STATE_HEADING_HOME || state == STATE_HEADING_HOME_CHARGE) {
       moveRandomDirection();
     } else {
       ROS_WARN("*** We're stuck but didn't expect this state! ***");
     }
-    state = STATE_STUCK;
   }
 }
 
@@ -746,8 +758,8 @@ int Explore::batteryTimeRemaining() {
 /*
   Send goal to go home to base
 */
-void Explore::goHome() {
-  state = STATE_HEADING_HOME;
+void Explore::goHome(int new_state) {
+  state = new_state;
 
   home_pose_msg.header.stamp = ros::Time::now();
 
@@ -776,7 +788,12 @@ void Explore::reachedHome() {
 
   last_time_at_home = ros::Time::now();
 
-  state = STATE_WAITING;
+  // Don't wait around for a charge unless that's what we desire
+  if (state == STATE_HEADING_HOME) {
+    state = STATE_WAITING_FOR_GOAL;
+  } else if (state == STATE_HEADING_HOME_CHARGE) {
+    state = STATE_CHARGING;
+  }
 }
 
 /*
@@ -825,21 +842,29 @@ void Explore::execute() {
     }
 
 #ifdef BATTERY_TIMER
-    if ( state != STATE_HEADING_HOME && shouldGoHome_fast() ) {
-      goHome();
-    }
-#endif
+    // Decide whether we should go home to charge
+    if ( state != STATE_HEADING_HOME_CHARGE && shouldGoHome_fast() ) {
+      goHome(STATE_HEADING_HOME_CHARGE);
 
+    // Go home, but don't stay there to charge if we are in initial behaviour
+    } else if ( state == STATE_EXPLORING_INITIAL && shouldGoHome_initial() ) {
+      goHome(STATE_HEADING_HOME);
+    
     // If we're heading home, see if we're there
-    if (state == STATE_HEADING_HOME && atHome() ) {
+    } else if ( (state == STATE_HEADING_HOME || state == STATE_HEADING_HOME_CHARGE)
+      && atHome() )
+    {
       reachedHome();
 
+    // else if continued below
+    } else
+#endif
+
     // Find new exploration goal and send it to move_base.
-    } else if (state == STATE_WAITING || state == STATE_STUCK || atGoal() ) {
+    if (state == STATE_WAITING_FOR_GOAL || atGoal() ) {
       makePlan();
 
-    // We're either heading home or moving towards a goal
-    // But we could get stuck, so check.
+    // We may get stuck, so deal with it
     } else {
       checkIfStuck();
     }
