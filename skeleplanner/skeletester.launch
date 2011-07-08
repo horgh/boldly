@@ -5,7 +5,10 @@
   <node pkg="map_server" type="map_server" args="$(find skeleplanner)/skeletester_map01.pgm 0.10" respawn="true" name="map" />
 
   <!-- stage -->
+<!--
   <node pkg="stage" type="stageros" name="stage" args="$(find bosch_worlds)/maze.world" respawn="false" output="screen" />
+-->
+  <node pkg="stage" type="stageros" name="stage" args="$(find bosch_worlds)/skeletester.world" respawn="false" output="screen" />
   <!-- stage needs this apparently -->
   <node pkg="tf" type="static_transform_publisher" name="fake_localize" args="0 0 0 0 0 0 map odom 10" />
 
