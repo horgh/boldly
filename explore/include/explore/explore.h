@@ -123,6 +123,7 @@ private:
   int timeToTravel(geometry_msgs::PoseStamped* source_pose_stamped, geometry_msgs::Pose* target_pose);
   bool shouldGoHome_dynamic();
   bool shouldGoHome_fast();
+  bool shouldGoHome_initial();
   int timeSinceCharge();
   int batteryTimeRemaining();
   void goHome();
@@ -132,6 +133,9 @@ private:
     geometry_msgs::PoseStamped goal
   );
   void waitForInitialVoltage();
+  void updateGlobalState();
+  void setGlobalState(int new_state);
+  void setLocalState(int new_state);
   double distanceForPlan(geometry_msgs::PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan);
   double angleChangeForPlan(geometry_msgs::PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan);
   bool closeEnoughToPoseStamped(geometry_msgs::PoseStamped * pose_stamped);
@@ -192,17 +196,18 @@ private:
   // Cutoff voltage
   double voltage_cutoff;
 
-  // robot state
+  // global state
+  int global_state;
+  // robot local state
   int state;
 
   // Time in seconds for margin of battery life to return to charge
   int battery_safety_margin;
 
-  /*
-    Used in simulation
-  */
   ros::Time last_time_at_home;
   ros::Duration battery_duration;
+  // In global initial state, after this much time we want to go home
+  ros::Duration initial_time_away_from_home;
 };
 
 }

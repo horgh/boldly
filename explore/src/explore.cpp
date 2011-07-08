@@ -45,7 +45,7 @@
 #define PROGRESS_TIMEOUT 10.0
 
 // Our battery is a timer. Makes us go home when its up
-//#define BATTERY_TIMER
+#define BATTERY_TIMER
 
 // Life of battery in seconds
 #define BATTERY_TIME 120
@@ -53,26 +53,31 @@
 #define MIN_BATTERY_SAFETY_MARGIN 10
 // Starting safety margin
 #define START_SAFETY_MARGIN 30
+
 // Initial explore time before we return home (initial behaviour)
 #define INITIAL_EXPLORE_TIME 30
 
 /*
-  Possible states
+  Possible global states
 */
-// Heading home without intending to charge
+// We're in initial state: return to home frequently, but don't charge
+#define GLOBAL_STATE_INITIAL 0
+// Explore, return home only to charge
+#define GLOBAL_STATE_EXPLORE 1
+
+/*
+  Possible local states
+*/
+// Heading home
 #define STATE_HEADING_HOME 0
-// Heading home intending to charge
-#define STATE_HEADING_HOME_CHARGE 1
-// Initial exploration behaviour
-#define STATE_EXPLORING_INITIAL 2
-// Full exploration behaviour
-#define STATE_EXPLORING 3
+// Exploring
+#define STATE_EXPLORING 1
 // Waiting for a new exploration goal
-#define STATE_WAITING_FOR_GOAL 4
+#define STATE_WAITING_FOR_GOAL 2
 // Waiting at home for charging to complete
-#define STATE_CHARGING 5
-// Exploration complete
-#define STATE_DONE 6
+#define STATE_CHARGING 3
+// Completed whatever state we're in (e.g. no more exploration goals)
+#define STATE_DONE 4
 
 #include <explore/explore.h>
 #include <explore/explore_frontier.h>
@@ -96,6 +101,7 @@ void Explore::charge_complete_callback(const std_msgs::Empty::ConstPtr & msg) {
 }
 
 void Explore::battery_state_callback(const p2os_driver::BatteryState::ConstPtr & msg) {
+  ROS_INFO("Got battery state (voltage)");
   battery_voltage = msg->voltage;
 }
 
@@ -115,8 +121,8 @@ Explore::Explore() :
   marker_array_publisher_ = node_.advertise<MarkerArray>("visualization_marker_array",10);
   map_publisher_ = private_nh.advertise<nav_msgs::OccupancyGrid>("map", 1, true);
   map_server_ = private_nh.advertiseService("explore_map", &Explore::mapCallback, this);
-  voltage_subscriber_ = node_.subscribe<p2os_driver::BatteryState>("battery_state", 10, battery_state_callback);
-  charged_subscriber_ = node_.subscribe<std_msgs::Empty>("charge_complete", 10, charge_complete_callback);
+  voltage_subscriber_ = node_.subscribe<p2os_driver::BatteryState>("battery_state", 10, &Explore::battery_state_callback, this);
+  charged_subscriber_ = node_.subscribe<std_msgs::Empty>("charge_complete", 10, &Explore::charge_complete_callback, this);
   battery_voltage = -1.0;
 
   private_nh.param("navfn/robot_base_frame", robot_base_frame_, std::string("base_link"));
@@ -164,6 +170,7 @@ Explore::Explore() :
     home_pose_msg.pose.position.x,
     home_pose_msg.pose.position.y,
     home_pose_msg.pose.position.z);
+/*
   ROS_WARN("Quaternion %f %f %f %f",
     home_pose_msg.pose.orientation.x,
     home_pose_msg.pose.orientation.y,
@@ -171,11 +178,13 @@ Explore::Explore() :
     home_pose_msg.pose.orientation.w
   );
   ROS_WARN("Yaw at home %f", tf::getYaw(robot_pose_msg.pose.orientation));
+*/
 
   // Last time we were at home is right now
   last_time_at_home = ros::Time::now();
 
   battery_duration = ros::Duration(BATTERY_TIME);
+  initial_time_away_from_home = ros::Duration(INITIAL_EXPLORE_TIME);
 
   // Find robot's max speed
   max_vel_x = 0.0;
@@ -189,11 +198,16 @@ Explore::Explore() :
   ROS_WARN("Robot has max turn speed %f", max_vel_th);
   assert(max_vel_th != 0.0);
 
-  state = STATE_WAITING_FOR_GOAL;
-
   battery_safety_margin = START_SAFETY_MARGIN;
 
   last_pose = currentPose();
+
+#ifdef BATTERY_TIMER
+  global_state = GLOBAL_STATE_INITIAL;
+#else
+  global_state = GLOBAL_STATE_EXPLORE;
+#endif
+  state = STATE_WAITING_FOR_GOAL;
 }
 
 Explore::~Explore() {
@@ -408,13 +422,13 @@ void Explore::makePlan() {
 
   // Find frontier goals
   if (! explorer_->getExplorationGoals(*explore_costmap_ros_, robot_pose, planner_, goals, potential_scale_, orientation_scale_, gain_scale_) ) {
-    assert( 1 == 0 );
+    ROS_WARN("No frontiers found?");
   }
 
   // Before filtering goals, we check if exploration is done
   if (goals.size() == 0) {
     done_exploring_ = true;
-    goHome(STATE_HEADING_HOME_CHARGE);
+    goHome();
     return;
   }
 
@@ -423,7 +437,7 @@ void Explore::makePlan() {
 
   // Go home if there are no reachable goals at the moment
   if (goals.size() == 0) {
-    goHome(STATE_HEADING_HOME_CHARGE);
+    goHome();
     return;
   }
 #endif
@@ -457,7 +471,7 @@ void Explore::makePlan() {
     move_base_client_.sendGoal(goal, boost::bind(&Explore::reachedGoal, this, _1, _2, goal_pose));
     ROS_WARN("Sent new goal to move_base.");
 
-    state = STATE_EXPLORING;
+    setLocalState(STATE_EXPLORING);
     time_since_progress_ = 0.0;
 
     if (visualize_) {
@@ -467,7 +481,7 @@ void Explore::makePlan() {
     ROS_WARN("Done exploring with %d goals left that could not be reached. There are %d goals on our blacklist, and %d of the frontier goals are too close to them to pursue. The rest had global planning fail to them. \n", (int)goals.size(), (int)frontier_blacklist_.size(), blacklist_count);
     ROS_INFO("Exploration finished. Hooray.");
     done_exploring_ = true;
-    goHome(STATE_HEADING_HOME_CHARGE);
+    goHome();
   }
 }
 
@@ -498,7 +512,7 @@ void Explore::reachedGoal(const actionlib::SimpleClientGoalState& status,
   {
 
   ROS_WARN("Reached goal.");
-  state = STATE_WAITING_FOR_GOAL;
+  setLocalState(STATE_WAITING_FOR_GOAL);
 
   if (status == actionlib::SimpleClientGoalState::ABORTED) {
     frontier_blacklist_.push_back(frontier_goal);
@@ -619,12 +633,13 @@ void Explore::checkIfStuck() {
 
     if (state == STATE_EXPLORING) {
       frontier_blacklist_.push_back(current_goal_pose_stamped_);
-      ROS_WARN("Adding current goal to black list");
-      state == STATE_WAITING_FOR_GOAL;
-    } else if (state == STATE_HEADING_HOME || state == STATE_HEADING_HOME_CHARGE) {
+      ROS_WARN("Adding current goal to black list.");
+      setLocalState(STATE_WAITING_FOR_GOAL);
+    } else if (state == STATE_HEADING_HOME) {
       moveRandomDirection();
     } else {
       ROS_WARN("*** We're stuck but didn't expect this state! ***");
+      assert(9 == 10);
     }
   }
 }
@@ -740,6 +755,15 @@ bool Explore::shouldGoHome_fast() {
 }
 
 /*
+  In global state Initial we want to return home periodically.
+  Check if we've been away from home for our set period.
+*/
+bool Explore::shouldGoHome_initial() {
+  ros::Duration elapsed = ros::Time::now() - last_time_at_home;
+  return elapsed > initial_time_away_from_home;
+}
+
+/*
   Return the time since charge in seconds
 */
 int Explore::timeSinceCharge() {
@@ -758,8 +782,13 @@ int Explore::batteryTimeRemaining() {
 /*
   Send goal to go home to base
 */
-void Explore::goHome(int new_state) {
-  state = new_state;
+void Explore::goHome() {
+  // XXX Maybe we should call computePotential() and make a plan to go home
+  // rather than just sending a goal.
+  // Also, maybe we should be doing that periodically as we go home to ensure
+  // we actually have a valid plan. Or is this necessary?
+
+  setLocalState(STATE_HEADING_HOME);
 
   home_pose_msg.header.stamp = ros::Time::now();
 
@@ -772,13 +801,13 @@ void Explore::goHome(int new_state) {
   We reached home
 */
 void Explore::reachedHome() {
-  // Change next margin depending on time remaining on our battery
   int battery_time_remaining = batteryTimeRemaining();
 
   if (battery_time_remaining <= 0) {
     ROS_WARN("I died!");
   }
 
+  // Change next margin depending on time remaining on our battery
   if ( battery_time_remaining > MIN_BATTERY_SAFETY_MARGIN ) {
     battery_safety_margin--;
   } else if ( battery_time_remaining < MIN_BATTERY_SAFETY_MARGIN ) {
@@ -787,13 +816,6 @@ void Explore::reachedHome() {
   }
 
   last_time_at_home = ros::Time::now();
-
-  // Don't wait around for a charge unless that's what we desire
-  if (state == STATE_HEADING_HOME) {
-    state = STATE_WAITING_FOR_GOAL;
-  } else if (state == STATE_HEADING_HOME_CHARGE) {
-    state = STATE_CHARGING;
-  }
 }
 
 /*
@@ -810,12 +832,33 @@ void Explore::reachedHomeCallback(const actionlib::SimpleClientGoalState& status
 */
 void Explore::waitForInitialVoltage() {
   ros::Rate r(10.0);
-  while ( node.ok() && battery_voltage == -1.0 ) {
+  while ( node_.ok() && battery_voltage == -1.0 ) {
     r.sleep();
   }
-  initial_voltage = battery_voltage;
-  assert(initial_voltage != -1.0);
-  ROS_INFO("Recorded initial voltage %f", initial_voltage);
+  voltage_initial = battery_voltage;
+  assert(voltage_initial != -1.0);
+  ROS_INFO("Recorded initial voltage %f", voltage_initial);
+}
+
+/*
+  We leave the initial global state once we have heard the battery
+  warning
+*/
+void Explore::updateGlobalState() {
+  //check if hear battery warning
+  //if heard battery warning
+  //set global state to explore
+  //set local state to go home
+}
+
+void Explore::setGlobalState(int new_state) {
+  ROS_INFO("Setting bloal state to: %d", new_state);
+  global_state = new_state;
+}
+
+void Explore::setLocalState(int new_state) {
+  ROS_INFO("Setting local state to: %d", new_state);
+  state = new_state;
 }
 
 /*
@@ -841,6 +884,7 @@ void Explore::execute() {
       loop_closure_->updateGraph(robot_pose);
     }
 
+/*
 #ifdef BATTERY_TIMER
     // Decide whether we should go home to charge
     if ( state != STATE_HEADING_HOME_CHARGE && shouldGoHome_fast() ) {
@@ -867,6 +911,52 @@ void Explore::execute() {
     // We may get stuck, so deal with it
     } else {
       checkIfStuck();
+    }
+*/
+    // Initial behaviour
+    if (global_state == GLOBAL_STATE_INITIAL) {
+      // If we're heading home, we may be there now
+      if ( state == STATE_HEADING_HOME && atHome() ) {
+        reachedHome();
+        setLocalState(STATE_WAITING_FOR_GOAL);
+
+      // Should we go home?
+      } else if ( state != STATE_HEADING_HOME && shouldGoHome_initial() ) {
+        goHome();
+
+      // We need a new exploration goal
+      } else if ( state == STATE_WAITING_FOR_GOAL || atGoal() ) {
+        makePlan();
+
+      } else {
+        checkIfStuck();
+      }
+
+      // We may leave the initial state
+      updateGlobalState();
+
+    // Exploring
+    } else if (global_state == GLOBAL_STATE_EXPLORE) {
+      // If we're heading home, we may be there now
+      if ( state == STATE_HEADING_HOME && atHome() ) {
+        reachedHome();
+        setLocalState(STATE_CHARGING);
+
+      // Should we go home?
+      } else if ( state != STATE_HEADING_HOME && shouldGoHome_fast() ) {
+        goHome();
+
+      // We need a new exploration goal
+      } else if ( state == STATE_WAITING_FOR_GOAL || atGoal() ) {
+        makePlan();
+
+      } else {
+        checkIfStuck();
+      }
+
+    } else {
+      ROS_WARN("Unknown global state.");
+      assert(2 == 3);
     }
 
     if (visualize_) {
