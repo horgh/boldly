@@ -105,6 +105,9 @@ void Explore::charge_complete_callback(const std_msgs::Empty::ConstPtr & msg) {
     ROS_WARN("Got signal we are charged.");
     setLocalState(STATE_WAITING_FOR_GOAL);
     last_time_at_home = ros::Time::now();
+
+    time_to_home = 0;
+    last_time_update_time_to_home = ros::Time::now();
   }
 }
 
@@ -190,6 +193,9 @@ Explore::Explore() :
 
   // Last time we were at home is right now
   last_time_at_home = ros::Time::now();
+
+  time_to_home = 0;
+  last_time_update_time_to_home = ros::Time::now();
 
   battery_duration = ros::Duration(BATTERY_TIME);
   initial_time_away_from_home = ros::Duration(INITIAL_EXPLORE_TIME);
@@ -423,6 +429,10 @@ void Explore::makePlan() {
   // Calculate potential from robot to each point on map
   explorer_->computePotentialFromRobot(explore_costmap_ros_, planner_);
 
+  // Since we are updating cost to points on map anyway, also update
+  // our time to go home.
+  updateTimeToHome();
+
   tf::Stamped<tf::Pose> robot_pose;
   explore_costmap_ros_->getRobotPose(robot_pose);
 
@@ -526,6 +536,24 @@ void Explore::reachedGoal(const actionlib::SimpleClientGoalState& status,
     frontier_blacklist_.push_back(frontier_goal);
     ROS_WARN("Adding current goal to black list (aborted, but reached goal).");
   }
+}
+
+/*
+  Only accurate if computePotential() recently called.
+*/
+int Explore::timeToHome() {
+  PoseStamped current_pose = currentPose();
+  int time_to_home = timeToTravel(&current_pose, &home_pose_msg.pose);
+  return time_to_home;
+}
+
+/*
+  Assume computePotential() has been recently/just called.
+  Update our time_to_home, and update when this was last calculated.
+*/
+void Explore::updateTimeToHome() {
+  time_to_home = timeToHome();
+  last_time_update_time_to_home = ros::Time::now();
 }
 
 /*
@@ -719,9 +747,7 @@ int Explore::timeToTravel(geometry_msgs::PoseStamped* source_pose_stamped, geome
 bool Explore::shouldGoHome_dynamic() {
   ROS_WARN("Cost to go home: %f", planner_->getPointPotential( home_pose_msg.pose.position ) );
 
-  // Get time to go home
-  PoseStamped current_pose = currentPose();
-  int time_to_home = timeToTravel(&current_pose, &home_pose_msg.pose);
+  int time_to_home = timeToHome();
   if (time_to_home == -1) {
     ROS_WARN("No plan to get home.");
     assert(1 == 0);
@@ -755,8 +781,15 @@ bool Explore::shouldGoHome_fast() {
   ROS_WARN("Time elapsed since charge: %d Time remaining on battery: %d",
     time_since_charge, battery_time_remaining);
 
+  ros::Duration time_since_time_to_home_updated = ros::Time::now() - last_time_update_time_to_home;
+
+  ROS_WARN("Time to home: %d Time since updated time to home: %d",
+    time_to_home, time_since_time_to_home_updated.sec);
+
   // If our battery time estimate says to go home, do so
-  if (time_since_charge + battery_safety_margin > battery_time_remaining) {
+  if (time_to_home + time_since_time_to_home_updated.sec
+    + battery_safety_margin > battery_time_remaining)
+  {
     ROS_WARN("Decided to return home.");
     return true;
   }

@@ -120,6 +120,8 @@ private:
 
   void removeUnsafeFrontiers(std::vector<geometry_msgs::Pose> * goals);
 
+  int timeToHome();
+  void updateTimeToHome();
   geometry_msgs::PoseStamped currentPose();
   double distanceForPlan(geometry_msgs::PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan);
   double angleChangeForPlan(geometry_msgs::PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan);
@@ -211,6 +213,10 @@ private:
   ros::Duration battery_duration;
   // In global initial state, after this much time we want to go home
   ros::Duration initial_time_away_from_home;
+
+  // Current time to go home. Periodically updated.
+  int time_to_home;
+  ros::Time last_time_update_time_to_home;
 };
 
 }
