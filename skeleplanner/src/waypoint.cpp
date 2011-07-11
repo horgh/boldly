@@ -18,6 +18,10 @@ inline float dist(int x1, int y1, int x2, int y2)
   return std::sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
 }
 
+inline bool inBounds(int x, int y, const costmap_2d::Costmap2D &costmap) {
+  return x >= 0 && y >= 0 && x < costmap.getSizeInCellsX() && y < costmap.getSizeInCellsY();
+}
+
 //calculate the minimum space around a point
 int calcSpace(int x, int y, const costmap_2d::Costmap2D &costmap, int ** memo)
 {
@@ -34,9 +38,12 @@ int calcSpace(int x, int y, const costmap_2d::Costmap2D &costmap, int ** memo)
       //note: int/float dist trunc. errors mean be conservative by 3(more?)
       startrad = INT_MAX;
       for(int i = -1; i <= 1; i++)
-	for(int j = -1; j <= 1; j++)
-	  if((i != 0 || j != 0) && memo[x+i][y+j] != -1)
+	for(int j = -1; j <= 1; j++) {
+	  if(!inBounds(x+i, y+j, costmap)) continue;
+	  if((i != 0 || j != 0) && memo[x+i][y+j] != -1) {
 	    startrad = min(startrad, memo[x+i][y+j]-3);
+	  }
+	}
       if(startrad == INT_MAX)
 	startrad = 0;
       startrad = max(startrad, 0);
@@ -48,6 +55,7 @@ int calcSpace(int x, int y, const costmap_2d::Costmap2D &costmap, int ** memo)
         {
 	  for(int j = y - rad; j <= y + rad; j += (i == x-rad || i == x+rad ? 1 : max(1, 2*rad)))
             {
+	      if(!inBounds(i, j, costmap)) continue;
 	      if(costmap.getCost(i, j) > IMPASSABLE_THRESH)
 		rtn = min((float)rtn, dist(i, j, x, y));
             }
@@ -117,6 +125,8 @@ Waypoint waypointBest(int x, int y, int ** memo, const costmap_2d::Costmap2D &co
         {
 	  for(int j = y - rad; j <= y + rad; j += (i == x-rad || i == x+rad ? 1 : max(1, 2*rad)))
             {
+	      if(!inBounds(i, j, costmap)) continue;
+
 	      if(dist(i, j, x, y) > WAYPOINTSPACE-1)
 		continue;
 
