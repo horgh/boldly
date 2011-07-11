@@ -13,6 +13,14 @@ using namespace std;
 #define IMPASSABLE_THRESH 127
 #define PASSABLE_THRESH 127
 
+struct MapWaypoint {
+  unsigned x, y;
+  int space;
+  std::vector<MapWaypoint*> neighbors;
+
+MapWaypoint(unsigned _x, unsigned _y, int _space) : x(_x), y(_y), space(_space) {};
+};
+
 inline float dist(int x1, int y1, int x2, int y2)
 {
   return std::sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
@@ -112,7 +120,7 @@ bool straightClear(int x1, int y1, int x2, int y2, const costmap_2d::Costmap2D &
   return true;
 }
 
-Waypoint waypointBest(int x, int y, int ** memo, const costmap_2d::Costmap2D &costmap, const vector<Waypoint*> &waypoints)
+MapWaypoint waypointBest(int x, int y, int ** memo, const costmap_2d::Costmap2D &costmap, const vector<MapWaypoint*> &waypoints)
 {
 
   int newm = -1;
@@ -138,7 +146,7 @@ Waypoint waypointBest(int x, int y, int ** memo, const costmap_2d::Costmap2D &co
 	      int tmps = calcSpace(i, j, costmap, memo);
 	      int otmps = tmps;
 	      int innerWaypoints = 0;
-	      for(vector<Waypoint*>::const_iterator w = waypoints.begin(); w != waypoints.end(); w++)
+	      for(vector<MapWaypoint*>::const_iterator w = waypoints.begin(); w != waypoints.end(); w++)
                 {
 		  tmps = min(tmps, (int)(dist(i, j, (*w)->x, (*w)->y)));
 		  if(dist(i, j, (*w)->x, (*w)->y) <= WAYPOINTSPACE)
@@ -167,9 +175,9 @@ Waypoint waypointBest(int x, int y, int ** memo, const costmap_2d::Costmap2D &co
     }
     
   if(newm == -1)
-    return Waypoint(-1, -1, -1);
+    return MapWaypoint(-1, -1, -1);
 
-  Waypoint rtn(newx, newy, newm);
+  MapWaypoint rtn(newx, newy, newm);
 
   return rtn;
 } 
@@ -179,13 +187,16 @@ Waypoint waypointBest(int x, int y, int ** memo, const costmap_2d::Costmap2D &co
 //however you can stop is short by specifying a maxPoints. Make maxPoints large (INT_MAX) if you want it to find
 //the complete topological map.
 //The other functions are workhorse functions, and are not meant for use outside of this function.
-vector<Waypoint*> * topoFromPoint(int x, int y, const costmap_2d::Costmap2D &costmap, bool showDebug)
+vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d::Costmap2D &costmap, bool showDebug)
 {
-    
-  Waypoint * home = new Waypoint(x, y, 0);
+  unsigned x, y;
+  costmap.worldToMap(worldx, worldy, x, y);
+  MapWaypoint * home = new MapWaypoint(x, y, 0);
 
-  vector<Waypoint*> *rtn = new vector<Waypoint*>();
+  vector<MapWaypoint*> *rtn = new vector<MapWaypoint*>();
+  vector<Waypoint*> *worldRtn = new vector<Waypoint*>();
   rtn->push_back(home);
+  worldRtn->push_back(new Waypoint(worldx, worldy, 0));
     
   //ignore list
   vector<bool> ignore;
@@ -207,8 +218,10 @@ vector<Waypoint*> * topoFromPoint(int x, int y, const costmap_2d::Costmap2D &cos
       if(showDebug && (i+1) % 5 == 0)
 	cout << "Finding Waypoint " << (i+1) << "..." << endl;
 
-      Waypoint * maxWaypoint = NULL;
-      Waypoint * newway = new Waypoint(0, 0, 0);
+      MapWaypoint *maxWaypoint = NULL;
+      Waypoint *worldMax = NULL;
+      MapWaypoint *newway = new MapWaypoint(0, 0, 0);
+      Waypoint *newworld = new Waypoint(0, 0, 0);
       while(maxWaypoint == NULL)
         {
 
@@ -216,10 +229,12 @@ vector<Waypoint*> * topoFromPoint(int x, int y, const costmap_2d::Costmap2D &cos
 	  //always find new max, as new waypoints can change the max. Assume [0]==home
 	  for(int j = 0; j < rtn->size(); j++)
             {
-	      Waypoint * tmp = (*rtn)[j];
+	      MapWaypoint * tmp = (*rtn)[j];
+	      Waypoint *worldtmp = (*worldRtn)[j];
 	      if(!ignore[j] && (maxWaypoint == NULL || (tmp->space >= maxWaypoint->space && costmap.getCost(tmp->x, tmp->y) < PASSABLE_THRESH)))
                 {
 		  maxWaypoint = tmp;
+		  worldMax = worldtmp;
 		  besti = j;
                 }
             }
@@ -233,6 +248,7 @@ vector<Waypoint*> * topoFromPoint(int x, int y, const costmap_2d::Costmap2D &cos
             {
 	      ignore[besti] = true;
 	      maxWaypoint = NULL;
+	      worldMax = NULL;
 	      continue;
             }
         }
@@ -241,12 +257,15 @@ vector<Waypoint*> * topoFromPoint(int x, int y, const costmap_2d::Costmap2D &cos
 	break;
                 
       rtn->push_back(newway);
+      newworld->space = newway->space;
+      costmap.mapToWorld(newway->x, newway->y, newworld->x, newworld->y);
+      worldRtn->push_back(newworld);
       ignore.push_back(false);
 
       //only recalc waypointBest for nearby waypoints
       for(int j = 1; j < rtn->size()-1; j++)
         {
-	  Waypoint * tmp = (*rtn)[j];
+	  MapWaypoint * tmp = (*rtn)[j];
 
 	  if(tmp->x == newway->x && tmp->y == newway->y)
             {
@@ -263,11 +282,18 @@ vector<Waypoint*> * topoFromPoint(int x, int y, const costmap_2d::Costmap2D &cos
       //GUIimage->draw_line(maxWaypoint->x, maxWaypoint->y, newway->x, newway->y, green, 0.5);
       maxWaypoint->neighbors.push_back(newway);
       newway->neighbors.push_back(maxWaypoint);
+      worldMax->neighbors.push_back(newworld);
+      newworld->neighbors.push_back(worldMax);
 
       //if we've hit our frontier, stop finding waypoints.
       //if(colorSum(newway->x, newway->y, &image) < GREYTHRESH && colorSum(newway->x, newway->y, &image) > BLACKTHRESH)
 
     }
-    
-  return rtn;
+
+  for(std::vector<MapWaypoint*>::iterator i = rtn->begin(); i != rtn->end(); ++i) {
+    delete *i;
+  }
+  delete rtn;
+
+  return worldRtn;
 }
