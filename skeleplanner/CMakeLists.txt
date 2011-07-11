@@ -33,6 +33,7 @@ rosbuild_add_library(${PROJECT_NAME}
   src/waypoint.cpp
   )
 
+
 # skeletester
 rosbuild_add_executable(skeletester src/skeletester.cpp)
 target_link_libraries(skeletester ${PROJECT_NAME})

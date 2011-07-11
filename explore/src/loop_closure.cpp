@@ -210,7 +210,7 @@ LoopClosure::addNode(const tf::Pose& pose)
     planner_start.pose = temp_pose;
 
     //we'll only compute the potential once from our position
-    planner_->computePotential(planner_start.pose.position);
+    //planner_->computePotential(planner_start.pose.position);
 
     add = true;
     

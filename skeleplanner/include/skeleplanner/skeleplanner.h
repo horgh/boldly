@@ -1,3 +1,6 @@
+#ifndef SKELEPLANNER_H_
+#define SKELEPLANNER_H_
+
 #include <nav_core/base_global_planner.h>
 
 #include "skeleplanner/waypoint.h"
@@ -34,3 +37,5 @@ public:
   int dist_between(Waypoint* x, Waypoint* y);
   std::vector<Waypoint*> aStar(Waypoint* start, Waypoint* goal);
 };
+
+#endif

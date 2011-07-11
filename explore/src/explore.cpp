@@ -49,7 +49,7 @@
 #define VOLTAGE_WARNING 12.0
 
 // Our battery is a timer. Makes us go home when its up
-#define BATTERY_TIMER
+//#define BATTERY_TIMER
 
 // Always periodically return (uses INITIAL_EXPLORE_TIME) rather than
 // operate with our voltage logic. Requires BATTERY_TIMER as well.
@@ -163,8 +163,12 @@ Explore::Explore() :
   explore_costmap_ros_ = new Costmap2DROS(std::string("explore_costmap"), tf_);
   explore_costmap_ros_->clearRobotFootprint();
 
-  planner_ = new navfn::NavfnROS(std::string("explore_planner"), explore_costmap_ros_);
+  //planner_ = new navfn::NavfnROS(std::string("explore_planner"), explore_costmap_ros_);
+  planner_ = new SkelePlanner();
+  planner_->initialize(std::string("explore_planner"), explore_costmap_ros_);
+
   explorer_ = new ExploreFrontier();
+  /*
   loop_closure_ = new LoopClosure(loop_closure_addition_dist_min,
         loop_closure_loop_dist_min,
         loop_closure_loop_dist_max,
@@ -173,6 +177,7 @@ Explore::Explore() :
         move_base_client_,
         *explore_costmap_ros_,
         client_mutex_);
+   */
 
   // Assume start position is our home. Record it
   tf::Stamped<tf::Pose> robot_pose;
@@ -363,6 +368,7 @@ void Explore::publishGoal(const geometry_msgs::Pose& goal){
     - Must have called computePotentialFromRobot() first
       (this is currently done prior to calling makePlan() which calls this function)
 */
+/*
 void Explore::removeUnsafeFrontiers(std::vector<geometry_msgs::Pose> * goals) {
   // Indices in this vector correspond to indices in the goals vector
   std::vector<int> goal_time_costs;
@@ -420,6 +426,7 @@ void Explore::removeUnsafeFrontiers(std::vector<geometry_msgs::Pose> * goals) {
   // Recompute potential from robot as we need it later
   explorer_->computePotentialFromRobot(explore_costmap_ros_, planner_);
 }
+*/
 
 /*
 	Get goals from explore_frontier & choose one to go to
@@ -433,7 +440,7 @@ void Explore::makePlan() {
     return;
 
   // Calculate potential from robot to each point on map
-  explorer_->computePotentialFromRobot(explore_costmap_ros_, planner_);
+  //explorer_->computePotentialFromRobot(explore_costmap_ros_, planner_);
 
   // Since we are updating cost to points on map anyway, also update
   // our time to go home.
@@ -473,6 +480,8 @@ void Explore::makePlan() {
   goal_pose.header.frame_id = explore_costmap_ros_->getGlobalFrameID();
   goal_pose.header.stamp = ros::Time::now();
 
+  PoseStamped robot_pose_stamped = currentPose();
+
   int blacklist_count = 0;
   for (unsigned int i = 0; i < goals.size(); i++) {
     goal_pose.pose = goals[i];
@@ -482,7 +491,8 @@ void Explore::makePlan() {
     }
 
     // Build plan to given goal. If such a plan exists, we can use it
-    valid_plan = (planner_->getPlanFromPotential(goal_pose, plan) && !plan.empty());
+    //valid_plan = (planner_->getPlanFromPotential(goal_pose, plan) && !plan.empty());
+    valid_plan = planner_->makePlan(robot_pose_stamped, goal_pose, plan) && !plan.empty();
     if (valid_plan) {
       break;
     }
@@ -722,7 +732,11 @@ int Explore::timeToTravel(geometry_msgs::PoseStamped* source_pose_stamped, geome
   target_pose_stamped.header.frame_id = explore_costmap_ros_->getGlobalFrameID();
   target_pose_stamped.header.stamp = ros::Time::now();
   target_pose_stamped.pose = *target_pose;
-  bool valid_plan = planner_->getPlanFromPotential(target_pose_stamped, plan) && !plan.empty();
+
+  PoseStamped robot_pose_stamped = currentPose();
+
+  //bool valid_plan = planner_->getPlanFromPotential(target_pose_stamped, plan) && !plan.empty();
+  bool valid_plan = planner_->makePlan(robot_pose_stamped, target_pose_stamped, plan) && !plan.empty();
   if (!valid_plan) {
     return -1;
   }
@@ -751,7 +765,7 @@ int Explore::timeToTravel(geometry_msgs::PoseStamped* source_pose_stamped, geome
   Note: Must have called computePotentialFromRobot() prior to calling this
 */
 bool Explore::shouldGoHome_dynamic() {
-  ROS_WARN("Cost to go home: %f", planner_->getPointPotential( home_pose_msg.pose.position ) );
+  //ROS_WARN("Cost to go home: %f", planner_->getPointPotential( home_pose_msg.pose.position ) );
 
   int time_to_home = timeToHome();
   if (time_to_home == -1) {
@@ -1016,11 +1030,13 @@ void Explore::execute() {
 
   while (node_.ok()) {
 
+/*
     if (close_loops_) {
       tf::Stamped<tf::Pose> robot_pose;
       explore_costmap_ros_->getRobotPose(robot_pose);
       loop_closure_->updateGraph(robot_pose);
     }
+    */
 
 /*
 #ifdef BATTERY_TIMER
