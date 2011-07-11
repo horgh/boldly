@@ -23,7 +23,6 @@ void SkelePlanner::wipeTopo() {
 
 void SkelePlanner::initialize(std::string name, costmap_2d::Costmap2DROS *costmapros) {
   this->costmapros = costmapros;
-  update();
 }
 
 void SkelePlanner::update() {
