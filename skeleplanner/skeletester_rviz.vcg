@@ -48,6 +48,24 @@ Explore\ Map.Topic=/skeletester_map
 Frontiers.Enabled=1
 Frontiers.Marker\ Topic=skeletester_marker
 Frontiers.skeletester=1
+Grid\ Cells.Alpha=1
+Grid\ Cells.ColorR=1
+Grid\ Cells.ColorG=0
+Grid\ Cells.ColorB=0.717647
+Grid\ Cells.Enabled=1
+Grid\ Cells.Topic=/skeletester/skeletester_costmap/obstacles
+Grid\ Cells2.Alpha=1
+Grid\ Cells2.ColorR=0
+Grid\ Cells2.ColorG=0.823529
+Grid\ Cells2.ColorB=1
+Grid\ Cells2.Enabled=1
+Grid\ Cells2.Topic=/skeletester/skeletester_costmap/inflated_obstacles
+Grid\ Cells3.Alpha=1
+Grid\ Cells3.ColorR=1
+Grid\ Cells3.ColorG=1
+Grid\ Cells3.ColorB=0
+Grid\ Cells3.Enabled=1
+Grid\ Cells3.Topic=/skeletester/skeletester_costmap/unknown_space
 Grid.Alpha=0.5
 Grid.Cell\ Size=1
 Grid.ColorR=0.968627
@@ -79,8 +97,8 @@ TF.Update\ Interval=0
 Tool\ 2D\ Nav\ GoalTopic=goal
 Tool\ 2D\ Pose\ EstimateTopic=initialpose
 Camera\ Type=rviz::OrbitViewController
-Camera\ Config=0.001 0.00762798 60.9464 4.73054 -6.56143 -9.15148
-Property\ Grid\ State=selection=Frontiers.Enabled.Frontiers.Marker Topic;expanded=.Global Options,.Global StatusTopStatus,TF.Enabled.TF.StatusTopStatus,TF.Enabled.TF.Tree,Frontiers.Enabled,Frontiers.Enabled.Frontiers.Namespaces,Planner Path.Enabled,Controller Path.Enabled,Base.Enabled,Explore Map.Enabled;scrollpos=0,0;splitterpos=210,420;ispageselected=1
+Camera\ Config=0.001 0.00762798 65.4791 -21.8526 -6.53452 -51.7423
+Property\ Grid\ State=selection=Grid Cells2.Enabled;expanded=.Global Options,.Global StatusTopStatus,TF.Enabled.TF.StatusTopStatus,TF.Enabled.TF.Tree,Frontiers.Enabled,Frontiers.Enabled.Frontiers.Namespaces,Planner Path.Enabled,Controller Path.Enabled,Base.Enabled,Explore Map.Enabled,Grid Cells.Enabled,Grid Cells2.Enabled,Grid Cells3.Enabled;scrollpos=0,24;splitterpos=210,420;ispageselected=1
 [Display0]
 Name=Grid
 Package=rviz
@@ -113,3 +131,15 @@ ClassName=rviz::PolygonDisplay
 Name=Explore Map
 Package=rviz
 ClassName=rviz::MapDisplay
+[Display8]
+Name=Grid Cells
+Package=rviz
+ClassName=rviz::GridCellsDisplay
+[Display9]
+Name=Grid Cells2
+Package=rviz
+ClassName=rviz::GridCellsDisplay
+[Display10]
+Name=Grid Cells3
+Package=rviz
+ClassName=rviz::GridCellsDisplay

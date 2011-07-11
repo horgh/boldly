@@ -3,7 +3,7 @@ include "sick.inc"
 define segway position
 (
   color "gray"
-  size3 [0.685  0.79 1.75]
+  size3 [0.685  0.79 31.75]
   origin3 [0 0 0]
   gui_nose 1
   drive "diff"
