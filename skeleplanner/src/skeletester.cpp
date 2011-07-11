@@ -58,7 +58,7 @@ void visualize_edge(double x1, double y1, double x2, double y2,
   p.y = y1;
   marker.points.push_back(p);
 
-  p.x = x1;
+  p.x = x2;
   p.y = y2;
   marker.points.push_back(p);
 
