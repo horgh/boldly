@@ -75,7 +75,8 @@ bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geome
 
   // TODO: A* from begin to end.
   std::vector<Waypoint*> waypoint_plan = aStar(begin, end);
-  waypoints_to_plan(&plan, &waypoint_plan);
+  // XXX uncommented since segfault, but will be needed
+  //waypoints_to_plan(&plan, &waypoint_plan);
   
   return true;
 }

@@ -46,10 +46,8 @@ Explore\ Map.Draw\ Behind=0
 Explore\ Map.Enabled=1
 Explore\ Map.Topic=/skeletester_map
 Frontiers.Enabled=1
-Frontiers.Marker\ Topic=visualization_marker
-Frontiers.explore_goal=1
-Frontiers.frontiers=1
-Frontiers.loop_closure=1
+Frontiers.Marker\ Topic=skeletester_marker
+Frontiers.skeletester=1
 Grid.Alpha=0.5
 Grid.Cell\ Size=1
 Grid.ColorR=0.968627
@@ -81,8 +79,8 @@ TF.Update\ Interval=0
 Tool\ 2D\ Nav\ GoalTopic=goal
 Tool\ 2D\ Pose\ EstimateTopic=initialpose
 Camera\ Type=rviz::OrbitViewController
-Camera\ Config=0.446 0.0176255 59.3074 -4.34871 -3.71842 -3.64595
-Property\ Grid\ State=selection=Target Frame;expanded=.Global Options,.Global StatusTopStatus,TF.Enabled.TF.StatusTopStatus,TF.Enabled.TF.Tree,Frontiers.Enabled,Frontiers.Enabled.Frontiers.Namespaces,Planner Path.Enabled,Controller Path.Enabled,Base.Enabled,Explore Map.Enabled;scrollpos=0,0;splitterpos=210,420;ispageselected=1
+Camera\ Config=0.001 0.00762798 60.9464 4.73054 -6.56143 -9.15148
+Property\ Grid\ State=selection=Frontiers.Enabled.Frontiers.Marker Topic;expanded=.Global Options,.Global StatusTopStatus,TF.Enabled.TF.StatusTopStatus,TF.Enabled.TF.Tree,Frontiers.Enabled,Frontiers.Enabled.Frontiers.Namespaces,Planner Path.Enabled,Controller Path.Enabled,Base.Enabled,Explore Map.Enabled;scrollpos=0,0;splitterpos=210,420;ispageselected=1
 [Display0]
 Name=Grid
 Package=rviz

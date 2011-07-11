@@ -10,7 +10,7 @@
 -->
   <node pkg="stage" type="stageros" name="stage" args="$(find bosch_worlds)/skeletester.world" respawn="false" output="screen" />
   <!-- stage needs this apparently -->
-  <node pkg="tf" type="static_transform_publisher" name="fake_localize" args="0 0 0 0 0 0 map odom 10" />
+  <node pkg="tf" type="static_transform_publisher" name="fake_localize" args="45 16 0 0 0 0 map odom 10" />
 
   <!-- for stage as well -->
   <include file="$(find skeleplanner)/move.xml" />

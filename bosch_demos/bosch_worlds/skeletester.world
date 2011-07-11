@@ -38,11 +38,13 @@ floorplan
   #size3 [20.0 20.0 2.0]
   #size3 [20000.0 20000.0 20000.0]
 	size [20 20 2]
-  pose3 [0.0 0.0 0.0]
+  #pose [0.0 0.0 0.0 0.0]
+  pose [10.0 10.0 0.0 0.0]
+  #pose [-24.4 -14.8 0.0 0.0]
 )
 
 segway( 
-  pose3 [0 0 0] 
+  pose [0.0 0.0 0.0 0.0] 
   name "segway" 
   color "gray"
 )

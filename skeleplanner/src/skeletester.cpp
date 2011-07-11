@@ -126,6 +126,16 @@ int main(int argc, char** argv) {
   ROS_WARN("Initialising SkelePlanner object...");
   SkelePlanner skele_planner;
   skele_planner.initialize("skeletester", costmap_);
+
+  // Make a plan from robot's location to its location
+  tf::Stamped<tf::Pose> robot_pose;
+  costmap_->getRobotPose(robot_pose);
+  geometry_msgs::PoseStamped robot_pose_stamped;
+  tf::poseStampedTFToMsg(robot_pose, robot_pose_stamped);
+
+  std::vector<geometry_msgs::PoseStamped> plan;
+  skele_planner.makePlan(robot_pose_stamped, robot_pose_stamped, plan);
+
   ROS_WARN("SkelePlanner object initialised.");
 
   marker_id = 0;
@@ -139,6 +149,7 @@ int main(int argc, char** argv) {
     // First publish the current occupancy grid
     publish_map(costmap_, &map_pub);
 
+    ROS_WARN("number of nodes %d", skele_planner.topomap->size());
 
     // Markers for each node in the topological map
     std::vector<visualization_msgs::Marker> markers;
