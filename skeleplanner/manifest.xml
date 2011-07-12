@@ -12,12 +12,19 @@
   <depend package="nav_core"/>
   <depend package="costmap_2d"/>
 
+  <!-- for exporting as baseglobalplanner plugin -->
+  <depend package="pluginlib" />
+  <!--
+  <depend package="base_global_planner" />
+  -->
+
   <!-- for skeletester -->
   <depend package="visualization_msgs" />
   <depend package="tf" />
 
   <export>
-  <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lskeleplanner" />
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lskeleplanner" />
+    <nav_core plugin="${prefix}/bgp_plugin.xml" />
   </export>
 
 </package>

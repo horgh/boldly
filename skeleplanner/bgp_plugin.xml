@@ -1,0 +1,8 @@
+<!-- copied from stacks/navigation/carrot_planner/bgp_plugin.xml -->
+<library path="lib/libskeleplanner">
+  <class name="skeleplanner/SkelePlanner" type="SkelePlanner" base_class_type="nav_core::BaseGlobalPlanner">
+    <description>
+      A* topographical map planner.
+    </description>
+  </class>
+</library>

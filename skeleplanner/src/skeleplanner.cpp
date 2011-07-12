@@ -1,7 +1,10 @@
 #include "skeleplanner/skeleplanner.h"
+#include <pluginlib/class_list_macros.h>
 
 #include <cmath>
 #include <algorithm>
+
+PLUGINLIB_DECLARE_CLASS(skeleplanner, SkelePlanner, SkelePlanner, nav_core::BaseGlobalPlanner)
 
 #define DEBUG
 

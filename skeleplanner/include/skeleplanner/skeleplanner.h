@@ -7,7 +7,7 @@
 
 #include "skeleplanner/waypoint.h"
 
-class SkelePlanner : nav_core::BaseGlobalPlanner {
+class SkelePlanner : public nav_core::BaseGlobalPlanner {
 protected:
   costmap_2d::Costmap2D costmap;
   costmap_2d::Costmap2DROS *costmapros;

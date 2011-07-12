@@ -149,7 +149,7 @@ Explore::Explore() :
   charged_subscriber_ = node_.subscribe<std_msgs::Empty>("charge_complete", 1, &Explore::charge_complete_callback, this);
   battery_voltage = -1.0;
 
-  private_nh.param("navfn/robot_base_frame", robot_base_frame_, std::string("base_link"));
+//  private_nh.param("navfn/robot_base_frame", robot_base_frame_, std::string("base_link"));
   private_nh.param("planner_frequency", planner_frequency_, 1.0);
   private_nh.param("progress_timeout", progress_timeout_, PROGRESS_TIMEOUT);
   private_nh.param("visualize", visualize_, 1);
