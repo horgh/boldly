@@ -88,7 +88,7 @@ bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geome
 
   // A*
   std::vector<Waypoint*> waypoint_plan = aStar(begin, end);
-  waypoints_to_plan(&plan, &waypoint_plan, &start);
+  waypoints_to_plan(&plan, &waypoint_plan);
 
   // XXX Hack? Always add goal to plan too.
   // Since we will usually not have a topo node at specific goal point
@@ -101,8 +101,7 @@ bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geome
 /*
   Take Waypoint plan and make PoseStamped plan
 */
-//void SkelePlanner::waypoints_to_plan(std::vector<geometry_msgs::PoseStamped>* plan, std::vector<Waypoint*>* waypoint_plan) {
-void SkelePlanner::waypoints_to_plan(std::vector<geometry_msgs::PoseStamped>* plan, std::vector<Waypoint*>* waypoint_plan, const geometry_msgs::PoseStamped* start_pose_stamped) {
+void SkelePlanner::waypoints_to_plan(std::vector<geometry_msgs::PoseStamped>* plan, std::vector<Waypoint*>* waypoint_plan) {
   geometry_msgs::PoseStamped pose_stamped;
   pose_stamped.header.frame_id = costmapros->getGlobalFrameID();
   pose_stamped.header.stamp = ros::Time::now();
@@ -114,9 +113,13 @@ void SkelePlanner::waypoints_to_plan(std::vector<geometry_msgs::PoseStamped>* pl
     pose_stamped.pose.position.y = (*it)->y;
     pose_stamped.pose.position.z = 0.0;
 
-    // XXX Need to set quaternion too?
-    // Hack. Use start quaternion for every quaternion...
-    pose_stamped.pose.orientation = start_pose_stamped->pose.orientation;
+    // XXX Don't know whether this needs to be set. NavfnROS seems to set all
+    // to 0.0, 0.0, 0.0, 1.0
+    // May be the default anyway so this is not needed?
+    pose_stamped.pose.orientation.x = 0.0;
+    pose_stamped.pose.orientation.y = 0.0;
+    pose_stamped.pose.orientation.z = 0.0;
+    pose_stamped.pose.orientation.w = 1.0;
 
     plan->push_back( pose_stamped );
   }
