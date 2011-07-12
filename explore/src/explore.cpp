@@ -492,7 +492,18 @@ void Explore::makePlan() {
 
     // Build plan to given goal. If such a plan exists, we can use it
     //valid_plan = (planner_->getPlanFromPotential(goal_pose, plan) && !plan.empty());
-    valid_plan = planner_->makePlan(robot_pose_stamped, goal_pose, plan) && !plan.empty();
+    //valid_plan = planner_->makePlan(robot_pose_stamped, goal_pose, plan) && !plan.empty();
+    bool makePlan_result = planner_->makePlan(robot_pose_stamped, goal_pose, plan);
+    valid_plan = makePlan_result && !plan.empty();
+#ifdef DEBUG
+    ROS_WARN("Got a plan with %d PoseStampeds (makeplan() in explore)", plan.size());
+    if (!makePlan_result) {
+      ROS_WARN("makePlan() from planner returned false.");
+    }
+    if (!valid_plan) {
+      ROS_WARN("Got valid_plan false");
+    }
+#endif
     if (valid_plan) {
       break;
     }

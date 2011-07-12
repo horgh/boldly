@@ -2,6 +2,7 @@
 #define SKELEPLANNER_H_
 
 #include <nav_core/base_global_planner.h>
+#include <iostream>
 
 #include "skeleplanner/waypoint.h"
 

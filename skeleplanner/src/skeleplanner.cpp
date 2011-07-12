@@ -3,6 +3,8 @@
 #include <cmath>
 #include <algorithm>
 
+#define DEBUG
+
 SkelePlanner::SkelePlanner() :
   topomap(NULL), gotSafeOrigin(false) {
 }
@@ -73,10 +75,9 @@ bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geome
 
   Waypoint *end = topomap->at(std::min_element(dists.begin(), dists.end()) - dists.begin());
 
-  // TODO: A* from begin to end.
+  // A*
   std::vector<Waypoint*> waypoint_plan = aStar(begin, end);
-  // XXX uncommented since segfault, but will be needed
-  //waypoints_to_plan(&plan, &waypoint_plan);
+  waypoints_to_plan(&plan, &waypoint_plan);
   
   return true;
 }
@@ -85,17 +86,19 @@ bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geome
   Take Waypoint plan and make PoseStamped plan
 */
 void SkelePlanner::waypoints_to_plan(std::vector<geometry_msgs::PoseStamped>* plan, std::vector<Waypoint*>* waypoint_plan) {
+  geometry_msgs::PoseStamped pose_stamped;
+  pose_stamped.header.frame_id = costmapros->getGlobalFrameID();
+  pose_stamped.header.stamp = ros::Time::now();
   // waypoints are in reverse order
-  for (std::vector<Waypoint*>::reverse_iterator it = waypoint_plan->rbegin(); it != waypoint_plan->rend(); it++) {
-    geometry_msgs::PoseStamped pose;
-    pose.header.frame_id = costmapros->getGlobalFrameID();
-    pose.header.stamp = ros::Time::now();
-
+  for (std::vector<Waypoint*>::reverse_iterator it = waypoint_plan->rbegin();
+    it != waypoint_plan->rend(); it++)
+  {
+    pose_stamped.pose.position.x = (*it)->x;
+    pose_stamped.pose.position.y = (*it)->y;
+    pose_stamped.pose.position.z = 0.0;
     // XXX Need to set quaternion too?
-    pose.pose.position.x = (*it)->x;
-    pose.pose.position.y = (*it)->y;
-    pose.pose.position.z = 0.0;
-    plan->push_back( pose );
+
+    plan->push_back( pose_stamped );
   }
 }
 
@@ -114,11 +117,12 @@ Waypoint* SkelePlanner::find_min_score_waypoint(std::vector<Waypoint*>* open_set
       min_score = (*f_score)[min_waypoint];
     }
   }
+  assert(min_waypoint != NULL);
   return min_waypoint;
 }
 
 /*
-  XXX Wrong
+  XXX Wrong?
 */
 int SkelePlanner::heuristic_cost_estimate(Waypoint* x, Waypoint* goal) {
   return dist_between(x, goal);
@@ -130,12 +134,38 @@ int SkelePlanner::heuristic_cost_estimate(Waypoint* x, Waypoint* goal) {
 std::vector<Waypoint*> SkelePlanner::reconstruct_path(std::map<Waypoint*, Waypoint*>* came_from, Waypoint* point) {
   std::vector<Waypoint*> path;
 
-  path.push_back(point);
+  // Can be NULL here in the case that we planned a path to&from same location
+  if (point != NULL) {
+    path.push_back(point);
+  }
+#ifdef DEBUG
+  else {
+    std::cerr << "** SkelePlanner had a NULL in path." << std::endl;
+  }
+#endif
 
   while (came_from->count( point ) > 0) {
     point = (*came_from)[point];
-    path.push_back(point);
+    // Same as above check
+    if (point != NULL) {
+      path.push_back(point);
+    }
+#ifdef DEBUG
+    else {
+      std::cerr << "** SkelePlanner had a NULL in path." << std::endl;
+    }
+#endif
   }
+
+#ifdef DEBUG
+  std::cout << "Returning path with size " << path.size() << " to point at address " << point << std::endl;
+  for (std::vector<Waypoint*>::iterator it = path.begin(); it != path.end(); it++) {
+    std::cout << "Memory address of waypoint in path: " << *it << std::endl;
+  }
+  for (std::map<Waypoint*, Waypoint*>::iterator it = came_from->begin(); it != came_from->end(); it++) {
+    std::cout << "came_from: Memory address 1: " << it->first << " 2: " << it->second << std::endl;
+  }
+#endif
 
   return path;
 }
@@ -171,6 +201,12 @@ int SkelePlanner::dist_between(Waypoint* x, Waypoint* y) {
   Translated from wikipedia pseudocode!
 */
 std::vector<Waypoint*> SkelePlanner::aStar(Waypoint* start, Waypoint* goal) {
+#ifdef DEBUG
+  std::cout << "A*: trying to find path from waypoint at (" << start << ") (" << start->x
+    << ", " << start->y << ") to waypoint goal at (" << goal << ") (" << goal->x
+    << ", " << goal->y << ")" << std::endl;
+#endif
+
   // set of nodes already evaluated
   std::vector<Waypoint*> closed_set;
   // set of tentative nodes to be evaluated
@@ -179,6 +215,12 @@ std::vector<Waypoint*> SkelePlanner::aStar(Waypoint* start, Waypoint* goal) {
 
   // map of navigated nodes
   std::map<Waypoint*, Waypoint*> came_from;
+
+  // XXX Hack. We came from our current location to get to our current location.
+  // Without this we are segfaulting if we try to go from start to goal where start == goal
+  // as immediately return reconstruct_path() since x == goal, but we haven't yet
+  // filled that.
+  //came_from[start] = start;
 
   // cost from start along best known path
   std::map<Waypoint*, int> g_score;
@@ -194,8 +236,9 @@ std::vector<Waypoint*> SkelePlanner::aStar(Waypoint* start, Waypoint* goal) {
   while ( !open_set.empty() ) {
     Waypoint *x = find_min_score_waypoint(&open_set, &f_score);
 
-    if (x == goal)
+    if (x == goal) {
       return reconstruct_path(&came_from, came_from[goal]);
+    }
 
     // Remove from open set, add to closed set
     EraseAll(x, open_set);
