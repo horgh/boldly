@@ -43,6 +43,12 @@ Frontiers.Enabled=1
 Frontiers.Marker\ Topic=visualization_marker
 Frontiers.explore_goal=1
 Frontiers.frontiers=1
+Global\ Path.Alpha=1
+Global\ Path.ColorR=0.1
+Global\ Path.ColorG=1
+Global\ Path.ColorB=0
+Global\ Path.Enabled=1
+Global\ Path.Topic=/move_base/NavfnROS/plan
 Grid.Alpha=0.5
 Grid.Cell\ Size=1
 Grid.ColorR=0.968627
@@ -58,6 +64,12 @@ Grid.OffsetZ=0
 Grid.Plane=0
 Grid.Plane\ Cell\ Count=20
 Grid.Reference\ Frame=<Fixed Frame>
+Local\ Path.Alpha=1
+Local\ Path.ColorR=1
+Local\ Path.ColorG=0
+Local\ Path.ColorB=0.662745
+Local\ Path.Enabled=1
+Local\ Path.Topic=/move_base/TrajectoryPlannerROS/local_plan
 TF.All\ Enabled=1
 TF.Enabled=1
 TF.Frame\ Timeout=15
@@ -71,8 +83,8 @@ Topo\ Markers.skeletester=1
 Tool\ 2D\ Nav\ GoalTopic=goal
 Tool\ 2D\ Pose\ EstimateTopic=initialpose
 Camera\ Type=rviz::OrbitViewController
-Camera\ Config=0.001 6.2658 30.486 0.54687 -2.37155 -0.78385
-Property\ Grid\ State=selection=TF.Enabled;expanded=TF./base_footprint/base_footprint,TF./base_laser_link/base_laser_link,TF./base_link/base_link,TF./map/map,TF./odom/odom,TF.Enabled.TF.Tree,TF./mapTree/map,TF./odomTree/odom,TF./base_footprintTree/base_footprint,TF./base_linkTree/base_link,TF./base_laser_linkTree/base_laser_link,Frontiers.Enabled.Frontiers.Namespaces,Topo Markers.Enabled.Topo Markers.Status,Topo Markers.Enabled.Topo Markers.Namespaces;scrollpos=0,0;splitterpos=210,436;ispageselected=1
+Camera\ Config=0.061 6.2308 30.486 0.54687 -2.37155 -0.78385
+Property\ Grid\ State=selection=TF.Enabled;expanded=TF./base_footprint/base_footprint,TF./base_laser_link/base_laser_link,TF./base_link/base_link,TF./map/map,TF./odom/odom,TF.Enabled.TF.Tree,TF./mapTree/map,TF./odomTree/odom,TF./base_footprintTree/base_footprint,TF./base_linkTree/base_link,TF./base_laser_linkTree/base_laser_link,Frontiers.Enabled.Frontiers.Namespaces,Topo Markers.Enabled.Topo Markers.Namespaces;scrollpos=0,0;splitterpos=210,436;ispageselected=1
 [Display0]
 Name=Grid
 Package=rviz
@@ -90,14 +102,22 @@ Name=Frontiers
 Package=rviz
 ClassName=rviz::MarkerDisplay
 [Display4]
+Name=Global Path
+Package=rviz
+ClassName=rviz::PathDisplay
+[Display5]
+Name=Local Path
+Package=rviz
+ClassName=rviz::PathDisplay
+[Display6]
 Name=Base
 Package=rviz
 ClassName=rviz::PolygonDisplay
-[Display5]
+[Display7]
 Name=Explore Map
 Package=rviz
 ClassName=rviz::MapDisplay
-[Display6]
+[Display8]
 Name=Topo Markers
 Package=rviz
 ClassName=rviz::MarkerDisplay
