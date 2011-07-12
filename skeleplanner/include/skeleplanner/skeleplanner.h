@@ -16,6 +16,7 @@ protected:
   bool gotSafeOrigin;
   // used for publishing visualisation
   int marker_id;
+  double r_, g_, b_, a_;
 
   void wipeTopo();
 

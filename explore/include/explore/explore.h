@@ -162,6 +162,7 @@ private:
   bool done_exploring_;
 
   ros::Publisher marker_publisher_;
+  ros::Publisher topomap_marker_publisher_;
   ros::Publisher marker_array_publisher_;
   ros::Publisher map_publisher_;
   ros::Subscriber voltage_subscriber_;

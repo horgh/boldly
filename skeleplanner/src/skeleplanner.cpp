@@ -10,8 +10,12 @@
 #endif
 
 SkelePlanner::SkelePlanner() :
-  topomap(NULL), gotSafeOrigin(false), marker_id(0) {
-}
+  topomap(NULL), gotSafeOrigin(false), marker_id(0),
+  // red like loop closure
+  //r_(1.0), g_(0.0), b_(0.0), a_(1.0)
+  // yellow
+  r_(255.0), g_(255.0), b_(0.0), a_(1.0)
+  { }
 
 SkelePlanner::~SkelePlanner() {
   if(topomap) {
@@ -360,13 +364,16 @@ void SkelePlanner::publish_topomap(ros::Publisher* marker_pub) {
   marker_id = 0;
   std::vector<visualization_msgs::Marker> markers;
 
+#ifdef DEBUG
+  ROS_WARN("SkelePlanner publishing %d nodes in topomap", topomap->size());
+#endif
   // Markers for each node in the topological map
   for (std::vector<Waypoint*>::const_iterator it = topomap->begin();
     it != topomap->end();
     ++it)
   {
-    // 0.5 scale, red colour
-    visualize_node( (*it)->x, (*it)->y, 0.5, 1.0, 0.0, 0.0, 1.0, &markers);
+    // 0.5 scale, red colour: 1.0, 0.0, 0.0, 1.0
+    visualize_node( (*it)->x, (*it)->y, 0.5, r_, g_, b_, a_, &markers);
   }
 
   // Markers for the links between each node
@@ -379,8 +386,8 @@ void SkelePlanner::publish_topomap(ros::Publisher* marker_pub) {
       it2 != (*it)->neighbors.end();
       ++it2)
     {
-      // 0.25 scale, red colour
-      visualize_edge((*it)->x, (*it)->y, (*it2)->x, (*it2)->y, 0.25, 1.0, 0.0, 0.0, 1.0, &markers);
+      // 0.25 scale
+      visualize_edge((*it)->x, (*it)->y, (*it2)->x, (*it2)->y, 0.25, r_, g_, b_, a_, &markers);
     }
   }
 

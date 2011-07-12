@@ -37,6 +37,10 @@
 // Compile with some debugging
 #define DEBUG
 
+// Publish visualisations.
+// XXX Currently only disables publishing topomap.
+#define VISUALISE
+
 // If uncommented, use frontier comparison algorithm where we don't try to go to those
 // frontiers which we deem unsafe due to battery life, but may go to others intead
 //#define FRONTIER_COMPARE
@@ -135,6 +139,9 @@ Explore::Explore() :
   ros::NodeHandle private_nh("~");
 
   marker_publisher_ = node_.advertise<Marker>("visualization_marker",10);
+#ifdef VISUALISE
+  topomap_marker_publisher_ = node_.advertise<Marker>("topomap_marker", 10);
+#endif
   marker_array_publisher_ = node_.advertise<MarkerArray>("visualization_marker_array",10);
   map_publisher_ = private_nh.advertise<nav_msgs::OccupancyGrid>("map", 1, true);
   map_server_ = private_nh.advertiseService("explore_map", &Explore::mapCallback, this);
@@ -497,6 +504,12 @@ void Explore::makePlan() {
     valid_plan = makePlan_result && !plan.empty();
 #ifdef DEBUG
     ROS_WARN("Got a plan with %d PoseStampeds (makeplan() in explore)", plan.size());
+    for (std::vector<geometry_msgs::PoseStamped>::const_iterator it = plan.begin();
+      it != plan.end();
+      ++it)
+    {
+      ROS_WARN("\t PoseStamped at (%f, %f)", it->pose.position.x, it->pose.position.y);
+    }
     if (!makePlan_result) {
       ROS_WARN("makePlan() from planner returned false.");
     }
@@ -1139,8 +1152,13 @@ void Explore::execute() {
       for (uint i=0; i < markers.size(); i++)
         marker_publisher_.publish(markers[i]);
 
-      // and map
+      // and map (occupancy)
+
       publishMap();
+#ifdef VISUALISE
+      // and topomap
+      planner_->publish_topomap(&topomap_marker_publisher_);
+#endif
     }
 
     last_pose = currentPose();

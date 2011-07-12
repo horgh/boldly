@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
   ros::init(argc, argv, "skeletester");
   ros::NodeHandle n;
 
-  ros::Publisher marker_pub = n.advertise<visualization_msgs::Marker>("skeletester_marker", 10);
+  ros::Publisher marker_pub = n.advertise<visualization_msgs::Marker>("skeletester_marker", 100);
   ros::Publisher map_pub = n.advertise<nav_msgs::OccupancyGrid>("skeletester_map", 1, true);
 
   tf::TransformListener tf_(ros::Duration(10.0));
