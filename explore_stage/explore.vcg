@@ -35,12 +35,6 @@ Base.ColorG=1
 Base.ColorB=0
 Base.Enabled=1
 Base.Topic=/move_base/local_costmap/robot_footprint
-Controller\ Path.Alpha=1
-Controller\ Path.ColorR=0
-Controller\ Path.ColorG=0.0901961
-Controller\ Path.ColorB=1
-Controller\ Path.Enabled=1
-Controller\ Path.Topic=/move_base/TrajectoryPlannerROS/local_plan
 Explore\ Map.Alpha=0.7
 Explore\ Map.Draw\ Behind=0
 Explore\ Map.Enabled=1
@@ -64,27 +58,21 @@ Grid.OffsetZ=0
 Grid.Plane=0
 Grid.Plane\ Cell\ Count=20
 Grid.Reference\ Frame=<Fixed Frame>
-Markers.Enabled=1
-Markers.Marker\ Topic=topomap_marker
-Markers.skeletester=1
-Planner\ Path.Alpha=1
-Planner\ Path.ColorR=0.1
-Planner\ Path.ColorG=1
-Planner\ Path.ColorB=0
-Planner\ Path.Enabled=1
-Planner\ Path.Topic=/move_base/NavfnROS/plan
 TF.All\ Enabled=1
-TF.Enabled=0
+TF.Enabled=1
 TF.Frame\ Timeout=15
 TF.Show\ Arrows=1
 TF.Show\ Axes=1
 TF.Show\ Names=1
 TF.Update\ Interval=0
+Topo\ Markers.Enabled=1
+Topo\ Markers.Marker\ Topic=topomap_marker
+Topo\ Markers.skeletester=1
 Tool\ 2D\ Nav\ GoalTopic=goal
 Tool\ 2D\ Pose\ EstimateTopic=initialpose
 Camera\ Type=rviz::OrbitViewController
-Camera\ Config=0.061 6.2308 30.486 0.54687 -2.37155 -0.78385
-Property\ Grid\ State=selection=Markers.Enabled.Markers.Marker Topic;expanded=TF.Enabled.TF.StatusTopStatus,TF.Enabled.TF.Tree,Frontiers.Enabled,Frontiers.Enabled.Frontiers.Namespaces,Markers.Enabled,Markers.Enabled.Markers.StatusTopStatus,Markers.Enabled.Markers.Namespaces;scrollpos=0,0;splitterpos=210,436;ispageselected=1
+Camera\ Config=0.001 6.2658 30.486 0.54687 -2.37155 -0.78385
+Property\ Grid\ State=selection=TF.Enabled;expanded=TF./base_footprint/base_footprint,TF./base_laser_link/base_laser_link,TF./base_link/base_link,TF./map/map,TF./odom/odom,TF.Enabled.TF.Tree,TF./mapTree/map,TF./odomTree/odom,TF./base_footprintTree/base_footprint,TF./base_linkTree/base_link,TF./base_laser_linkTree/base_laser_link,Frontiers.Enabled.Frontiers.Namespaces,Topo Markers.Enabled.Topo Markers.Status,Topo Markers.Enabled.Topo Markers.Namespaces;scrollpos=0,0;splitterpos=210,436;ispageselected=1
 [Display0]
 Name=Grid
 Package=rviz
@@ -102,22 +90,20 @@ Name=Frontiers
 Package=rviz
 ClassName=rviz::MarkerDisplay
 [Display4]
-Name=Planner Path
-Package=rviz
-ClassName=rviz::PathDisplay
-[Display5]
-Name=Controller Path
-Package=rviz
-ClassName=rviz::PathDisplay
-[Display6]
 Name=Base
 Package=rviz
 ClassName=rviz::PolygonDisplay
-[Display7]
+[Display5]
 Name=Explore Map
 Package=rviz
 ClassName=rviz::MapDisplay
-[Display8]
-Name=Markers
+[Display6]
+Name=Topo Markers
 Package=rviz
 ClassName=rviz::MarkerDisplay
+[TF.]
+base_footprintEnabled=1
+base_laser_linkEnabled=1
+base_linkEnabled=1
+mapEnabled=1
+odomEnabled=1
