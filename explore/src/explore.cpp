@@ -126,6 +126,62 @@ void Explore::battery_state_callback(const p2os_driver::BatteryState::ConstPtr &
   battery_voltage = msg->voltage;
 }
 
+/*
+  Add an arrow marker to the given markers vector
+*/
+void Explore::visualize_arrow(int id, double x, double y, double scale, double r,
+  double g, double b, double a, std::vector<visualization_msgs::Marker>* markers)
+{
+  visualization_msgs::Marker m;
+  m.header.frame_id = "map";
+  m.header.stamp = ros::Time::now();
+  m.ns = "skeletester2";
+  m.id = id;
+  m.type = Marker::ARROW;
+  m.pose.position.x = x;
+  m.pose.position.y = y;
+  m.pose.position.z = 0.0;
+  // 1.0 for frontier arrow
+  m.scale.x = scale;
+  m.scale.y = scale;
+  m.scale.z = scale;
+  m.color.r = r;
+  m.color.g = g;
+  m.color.b = b;
+  m.color.a = a;
+
+  m.lifetime = ros::Duration(5.0);
+
+  markers->push_back( m );
+}
+
+/*
+  Publish on the topomap_marker_publisher_ the given poses as though they
+  constituted a path
+*/
+void Explore::publish_topo_path(std::vector<geometry_msgs::PoseStamped>* path) {
+  std::vector<visualization_msgs::Marker> markers;
+
+  int marker_id = 0;
+  for (std::vector<geometry_msgs::PoseStamped>::const_iterator it = path->begin();
+    it != path->end();
+    ++it)
+  {
+    // 0.25 scale, hot pink 255,0,169,1
+    // XXX Using this in skeleplanner object doesn't account for marker_id changing...
+    //planner_->visualize_node(it->pose.position.x, it->pose.position.y, 0.25, 255.0, 0.0, 169.0, 1.0, &markers);
+    // 2.0 scale
+    visualize_arrow(marker_id++, it->pose.position.x, it->pose.position.y, 2.0, 255.0, 0.0, 169.0, 1.0, &markers);
+  }
+
+  for (std::vector<visualization_msgs::Marker>::const_iterator it = markers.begin();
+    it != markers.end();
+    ++it)
+  {
+    topomap_marker_publisher_.publish( *it );
+  }
+}
+
 Explore::Explore() :
   node_(),
   tf_(ros::Duration(10.0)),
@@ -502,6 +558,7 @@ void Explore::makePlan() {
     //valid_plan = planner_->makePlan(robot_pose_stamped, goal_pose, plan) && !plan.empty();
     bool makePlan_result = planner_->makePlan(robot_pose_stamped, goal_pose, plan);
     valid_plan = makePlan_result && !plan.empty();
+
 #ifdef DEBUG
     ROS_WARN("Got a plan with %d PoseStampeds (makeplan() in explore)", plan.size());
     for (std::vector<geometry_msgs::PoseStamped>::const_iterator it = plan.begin();
@@ -527,6 +584,11 @@ void Explore::makePlan() {
     goal.target_pose = goal_pose;
     current_goal_pose_stamped_ = goal_pose;
     move_base_client_.sendGoal(goal, boost::bind(&Explore::reachedGoal, this, _1, _2, goal_pose));
+
+    // draw this plan. Add goal as well so we visualize it the same way
+    plan.push_back( goal_pose );
+    publish_topo_path(&plan);
+
     ROS_WARN("Sent new goal to move_base.");
 
     setLocalState(STATE_EXPLORING);
