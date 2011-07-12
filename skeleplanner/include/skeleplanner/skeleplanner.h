@@ -2,7 +2,8 @@
 #define SKELEPLANNER_H_
 
 #include <nav_core/base_global_planner.h>
-#include <iostream>
+#include <ros/ros.h>
+#include <visualization_msgs/Marker.h>
 
 #include "skeleplanner/waypoint.h"
 
@@ -11,13 +12,14 @@ protected:
   costmap_2d::Costmap2D costmap;
   costmap_2d::Costmap2DROS *costmapros;
   geometry_msgs::PoseStamped lastOrigin, safeOrigin;
+  std::vector<Waypoint*> *topomap;
   bool gotSafeOrigin;
+  // used for publishing visualisation
+  int marker_id;
 
   void wipeTopo();
 
 public:
-  std::vector<Waypoint*> *topomap;
-
   SkelePlanner();
   ~SkelePlanner();
 
@@ -25,6 +27,7 @@ public:
   void update();
   bool makePlan(const geometry_msgs::PoseStamped &start, const geometry_msgs::PoseStamped &goal, std::vector< geometry_msgs::PoseStamped > &plan);
 
+  // A* functions
   void waypoints_to_plan(std::vector<geometry_msgs::PoseStamped>* plan, std::vector<Waypoint*>* waypoint_plan);
   Waypoint* find_min_score_waypoint(std::vector<Waypoint*>* open_set, std::map<Waypoint*, int>* f_score);
   int heuristic_cost_estimate(Waypoint* x, Waypoint* goal);
@@ -37,6 +40,16 @@ public:
 
   int dist_between(Waypoint* x, Waypoint* y);
   std::vector<Waypoint*> aStar(Waypoint* start, Waypoint* goal);
+
+  // Drawing functions
+  void visualize_node(double x, double y, double scale, double r, double g,
+    double b, double a, std::vector<visualization_msgs::Marker>* markers);
+
+  void visualize_edge(double x1, double y1, double x2, double y2,
+    double scale, double r, double g, double b, double a,
+    std::vector<visualization_msgs::Marker>* markers);
+
+  void publish_topomap(ros::Publisher* marker_pub);
 };
 
 #endif

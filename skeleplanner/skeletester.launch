@@ -28,10 +28,10 @@
 -->
 
   <!-- skeletester -->
-<!--
   <node pkg="skeleplanner" type="skeletester" name="skeletester" respawn="false" output="screen">
+<!--
+  <node launch-prefix="gdb - -args " pkg="skeleplanner" type="skeletester" name="skeletester" respawn="false" output="screen">
 -->
-  <node launch-prefix="gdb --args " pkg="skeleplanner" type="skeletester" name="skeletester" respawn="false" output="screen">
     <rosparam file="$(find skeleplanner)/costmap_common.yaml" command="load" ns="skeletester_costmap" />
     <rosparam file="$(find skeleplanner)/skeletester_costmap.yaml" command="load" />
 <!--
