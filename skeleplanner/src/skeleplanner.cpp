@@ -88,7 +88,12 @@ bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geome
 
   // A*
   std::vector<Waypoint*> waypoint_plan = aStar(begin, end);
-  waypoints_to_plan(&plan, &waypoint_plan);
+  waypoints_to_plan(&plan, &waypoint_plan, &start);
+
+  // XXX Hack? Always add goal to plan too.
+  // Since we will usually not have a topo node at specific goal point
+  // (when using the current frontier selector, anyway)
+  plan.push_back( goal );
   
   return true;
 }
@@ -96,7 +101,8 @@ bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geome
 /*
   Take Waypoint plan and make PoseStamped plan
 */
-void SkelePlanner::waypoints_to_plan(std::vector<geometry_msgs::PoseStamped>* plan, std::vector<Waypoint*>* waypoint_plan) {
+//void SkelePlanner::waypoints_to_plan(std::vector<geometry_msgs::PoseStamped>* plan, std::vector<Waypoint*>* waypoint_plan) {
+void SkelePlanner::waypoints_to_plan(std::vector<geometry_msgs::PoseStamped>* plan, std::vector<Waypoint*>* waypoint_plan, const geometry_msgs::PoseStamped* start_pose_stamped) {
   geometry_msgs::PoseStamped pose_stamped;
   pose_stamped.header.frame_id = costmapros->getGlobalFrameID();
   pose_stamped.header.stamp = ros::Time::now();
@@ -107,7 +113,10 @@ void SkelePlanner::waypoints_to_plan(std::vector<geometry_msgs::PoseStamped>* pl
     pose_stamped.pose.position.x = (*it)->x;
     pose_stamped.pose.position.y = (*it)->y;
     pose_stamped.pose.position.z = 0.0;
+
     // XXX Need to set quaternion too?
+    // Hack. Use start quaternion for every quaternion...
+    pose_stamped.pose.orientation = start_pose_stamped->pose.orientation;
 
     plan->push_back( pose_stamped );
   }

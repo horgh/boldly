@@ -29,7 +29,8 @@ public:
   bool makePlan(const geometry_msgs::PoseStamped &start, const geometry_msgs::PoseStamped &goal, std::vector< geometry_msgs::PoseStamped > &plan);
 
   // A* functions
-  void waypoints_to_plan(std::vector<geometry_msgs::PoseStamped>* plan, std::vector<Waypoint*>* waypoint_plan);
+  //void waypoints_to_plan(std::vector<geometry_msgs::PoseStamped>* plan, std::vector<Waypoint*>* waypoint_plan);
+  void waypoints_to_plan(std::vector<geometry_msgs::PoseStamped>* plan, std::vector<Waypoint*>* waypoint_plan, const geometry_msgs::PoseStamped* start_pose_stamped);
   Waypoint* find_min_score_waypoint(std::vector<Waypoint*>* open_set, std::map<Waypoint*, int>* f_score);
   int heuristic_cost_estimate(Waypoint* x, Waypoint* goal);
   std::vector<Waypoint*> reconstruct_path(std::map<Waypoint*, Waypoint*>* came_from, Waypoint* point);
