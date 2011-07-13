@@ -567,6 +567,7 @@ void Explore::makePlan() {
     {
       ROS_WARN("\t PoseStamped at (%f, %f)", it->pose.position.x, it->pose.position.y);
     }
+    ROS_WARN("Plan is for goal at %f,%f", goal_pose.pose.position.x, goal_pose.pose.position.y);
     if (!makePlan_result) {
       ROS_WARN("makePlan() from planner returned false.");
     }

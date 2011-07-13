@@ -114,12 +114,14 @@ void SkelePlanner::expand_plan(std::vector<geometry_msgs::PoseStamped>* plan)
     ++it)
   { 
     old_plan.push_back( *it );
+    ROS_WARN("old plan %f, %f", it->pose.position.x, it->pose.position.y);
   }
   plan->clear();
 
   double x_current, y_current,
     x_next, y_next, 
     delta = 0.01;
+    //delta = 0.10;
 
   geometry_msgs::PoseStamped pose_stamped;
   pose_stamped.header.frame_id = costmapros->getGlobalFrameID();
@@ -134,6 +136,7 @@ void SkelePlanner::expand_plan(std::vector<geometry_msgs::PoseStamped>* plan)
   {
     // Add the current pose to the new plan
     plan->push_back( *it );
+    ROS_WARN("adding main pt %f, %f", it->pose.position.x, it->pose.position.y);
 
     next_it = it+1;
     if (next_it == old_plan.end()) {
@@ -151,13 +154,23 @@ void SkelePlanner::expand_plan(std::vector<geometry_msgs::PoseStamped>* plan)
     done = false;
     x_done = false;
     y_done = false;
+
+    //double sign_x = x_current - x_next > 0.0 ? 1.0 : -1.0;
+    //double sign_y = y_current - y_next > 0.0 ? 1.0 : -1.0;
+    double sign_x = x_current - x_next > 0.0 ? -1.0 : 1.0;
+    double sign_y = y_current - y_next > 0.0 ? -1.0 : 1.0;
+
+    ROS_WARN("sign x %f, sign y %f, diff x %f diff y %f", sign_x, sign_y,
+      x_current - x_next, y_current - y_next);
+    //return;
+
     while (!done) {
       x_done = fabs(x_current - x_next) < delta;
       if (!x_done)
-        x_current += delta;
+        x_current += delta * sign_x;
       y_done = fabs(y_current - y_next) < delta;
       if (!y_done)
-        y_current += delta;
+        y_current += delta * sign_y;
 
       done = x_done && y_done;
       if (!done) {
@@ -165,6 +178,7 @@ void SkelePlanner::expand_plan(std::vector<geometry_msgs::PoseStamped>* plan)
         pose_stamped.pose.position.y = y_current;
 
         plan->push_back( pose_stamped );
+        ROS_WARN("adding intermediate pt %f, %f", pose_stamped.pose.position.x, pose_stamped.pose.position.y);
       }
     }
   }
