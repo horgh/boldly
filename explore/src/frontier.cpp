@@ -24,7 +24,14 @@ double pathDistance(const geometry_msgs::PoseStamped &currentPose, const geometr
   return pathDistance;
 }
 
-PoseStamped chooseFrontier(const PoseStamped &currentPose, float currentBattery, nav_core::BaseGlobalPlanner &planner) {
+PoseStamped chooseFrontier(const PoseStamped &currentPose, float currentBattery, const costmap_2d::Costmap2D &costmap, nav_core::BaseGlobalPlanner &planner) {
+  // Use costmap.mapToWorld(unsigned mapx, unsigned mapy, double &x, double &y);
+  // and costmap.worldToMap(double worldx, double worldy, unsigned &x, unsigned &y);
+  // to convert between world and map coordinates, and query the cost (high is bad)
+  // of a cell with costmap.getCost(unsigned mapx, unsigned mapy);
+
+  // Note that PoseStamped objects use world coordinates.
+  
   // Example path distance determination:
   geometry_msgs::PoseStamped frontier;
   frontier.position.z = 0.0;
