@@ -861,6 +861,7 @@ void Explore::reachedHomeCallback(const actionlib::SimpleClientGoalState& status
 void Explore::waitForInitialVoltage() {
   ros::Rate r(10.0);
   while ( node_.ok() && battery_voltage == -1.0 ) {
+    ROS_WARN("Waiting for initial voltage before starting... (use voltage_simulate if simulating)");
     r.sleep();
   }
   voltage_initial = battery_voltage;
