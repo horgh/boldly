@@ -1,4 +1,4 @@
-CMPT 415: Summer 2011
+# CMPT 415: Summer 2011
 
 A ROS stack for running an energy aware exploration robot.
 
@@ -7,7 +7,7 @@ The robot controller runs both in Stage and on the Pioneer 3DX robot.
 Required ROS version: ROS Diamondback.
 Development and robot computers running Ubuntu 10.04 LTS.
 
-Details on individual stacks/packages contained here:
+## Details on individual stacks/packages contained here:
 
 - bosch_demos: Stage maps/worlds/definitions. Primarily taken from the
   Bosch ROS repository (http://www.ros.org/wiki/bosch-ros-pkg), though with
@@ -35,7 +35,7 @@ Details on individual stacks/packages contained here:
   recognise objects that a laser does not (such as glass). Assumes use of
   sonars on the Pioneer 3DX and a Sick LMS laser.
 
-Solutions to problems encountered in running the above with ROS / on our
+## Solutions to problems encountered in running the above with ROS / on our
 robot:
 
 - Return code -4 from move_base and explore on the Pioneer 3DX: When this
