@@ -13,7 +13,7 @@ PLUGINLIB_DECLARE_CLASS(skeleplanner, SkelePlanner, SkelePlanner, nav_core::Base
 #endif
 
 SkelePlanner::SkelePlanner() :
-  topomap(NULL), gotSafeOrigin(false), marker_id(0),
+  topomap(NULL), gotSafeOrigin(false), marker_id(0), marker_id_last(0),
   // red like loop closure
   //r_(1.0), g_(0.0), b_(0.0), a_(1.0)
   // yellow
@@ -499,12 +499,26 @@ void SkelePlanner::publish_topomap(ros::Publisher* marker_pub) {
     }
   }
 
+  // Delete any markers past that which we just published (stops strange
+  // visualisation behaviour in rviz)
+  // Taken from getVisualizationMarkers() in explore_frontier
+  // Doesn't seem to work.
+  /*
+  for ( ; marker_id < marker_id_last; ++marker_id) {
+    visualization_msgs::Marker m;
+    m.action = visualization_msgs::Marker::DELETE;
+    m.id = marker_id;
+    markers.push_back(visualization_msgs::Marker(m));
+  }
+  marker_id_last = markers.size();
+  */
+
   // Now publish all of these markers
-  for (std::vector<visualization_msgs::Marker>::const_iterator it = markers.begin();
+  for (std::vector<visualization_msgs::Marker>::iterator it = markers.begin();
     it != markers.end();
     ++it)
   {
-    it->lifetime = ros::Duration(5);
+    it->lifetime = ros::Duration(1);
     marker_pub->publish( *it );
   }
 }
