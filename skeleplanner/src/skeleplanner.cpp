@@ -85,10 +85,11 @@ bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geome
   }
 
   Waypoint *end = topomap->at(std::min_element(dists.begin(), dists.end()) - dists.begin());
+  // TODO: Verify that goal is reachable from end
 
   // A*
   std::vector<Waypoint*> waypoint_plan = aStar(begin, end);
-  waypoints_to_plan(&plan, &waypoint_plan);
+  waypoints_to_plan(plan, waypoint_plan);
 
   // XXX Hack? Always add goal to plan too.
   // Since we will usually not have a topo node at specific goal point
@@ -187,13 +188,13 @@ void SkelePlanner::expand_plan(std::vector<geometry_msgs::PoseStamped>* plan)
 /*
   Take Waypoint plan and make PoseStamped plan
 */
-void SkelePlanner::waypoints_to_plan(std::vector<geometry_msgs::PoseStamped>* plan, std::vector<Waypoint*>* waypoint_plan) {
+void SkelePlanner::waypoints_to_plan(std::vector<geometry_msgs::PoseStamped>& plan, const std::vector<Waypoint*> &waypoint_plan) {
   geometry_msgs::PoseStamped pose_stamped;
   pose_stamped.header.frame_id = costmapros->getGlobalFrameID();
   pose_stamped.header.stamp = ros::Time::now();
   // waypoints are in reverse order
-  for (std::vector<Waypoint*>::reverse_iterator it = waypoint_plan->rbegin();
-    it != waypoint_plan->rend(); it++)
+  for (std::vector<Waypoint*>::const_reverse_iterator it = waypoint_plan.rbegin();
+    it != waypoint_plan.rend(); it++)
   {
     pose_stamped.pose.position.x = (*it)->x;
     pose_stamped.pose.position.y = (*it)->y;
@@ -207,7 +208,7 @@ void SkelePlanner::waypoints_to_plan(std::vector<geometry_msgs::PoseStamped>* pl
     pose_stamped.pose.orientation.z = 0.0;
     pose_stamped.pose.orientation.w = 1.0;
 
-    plan->push_back( pose_stamped );
+    plan.push_back( pose_stamped );
   }
 }
 
