@@ -63,7 +63,7 @@
 #define START_SAFETY_MARGIN 0
 
 // Initial explore time before we return home (initial behaviour)
-#define INITIAL_EXPLORE_TIME 10
+#define INITIAL_EXPLORE_TIME 30
 
 /*
   Possible global states
@@ -100,7 +100,7 @@ using namespace geometry_msgs;
 
 namespace explore {
 
-double sign(double x){
+double sign(double x) {
   return x < 0.0 ? -1.0 : 1.0;
 }
 
@@ -138,7 +138,6 @@ Explore::Explore() :
   marker_array_publisher_ = node_.advertise<MarkerArray>("visualization_marker_array",10);
   topomap_marker_publisher_ = node_.advertise<Marker>("topomap_marker", 1000);
   map_publisher_ = private_nh.advertise<nav_msgs::OccupancyGrid>("map", 1, true);
-  map_server_ = private_nh.advertiseService("explore_map", &Explore::mapCallback, this);
   voltage_subscriber_ = node_.subscribe<p2os_driver::BatteryState>("battery_state", 1, &Explore::battery_state_callback, this);
   charged_subscriber_ = node_.subscribe<std_msgs::Empty>("charge_complete", 1, &Explore::charge_complete_callback, this);
   battery_voltage = -1.0;
@@ -155,7 +154,6 @@ Explore::Explore() :
   private_nh.param("loop_closure_addition_dist_min", loop_closure_addition_dist_min, 2.5);
   private_nh.param("loop_closure_loop_dist_min", loop_closure_loop_dist_min, 6.0);
   private_nh.param("loop_closure_loop_dist_max", loop_closure_loop_dist_max, 20.0);
-  //private_nh.param("loop_closure_loop_dist_max", loop_closure_loop_dist_max, 100.0);
   private_nh.param("loop_closure_slam_entropy_max", loop_closure_slam_entropy_max, 3.0);
   private_nh.param("potential_scale", potential_scale_, 1e-3);
   private_nh.param("orientation_scale", orientation_scale_, 0.0); // TODO: set this back to 0.318 once getOrientationChange is fixed
@@ -188,15 +186,6 @@ Explore::Explore() :
     home_pose_msg.pose.position.x,
     home_pose_msg.pose.position.y,
     home_pose_msg.pose.position.z);
-/*
-  ROS_WARN("Quaternion %f %f %f %f",
-    home_pose_msg.pose.orientation.x,
-    home_pose_msg.pose.orientation.y,
-    home_pose_msg.pose.orientation.z,
-    home_pose_msg.pose.orientation.w
-  );
-  ROS_WARN("Yaw at home %f", tf::getYaw(robot_pose_msg.pose.orientation));
-*/
 
   // Last time we were at home is right now
   last_time_at_home = ros::Time::now();
@@ -221,7 +210,7 @@ Explore::Explore() :
 
   battery_safety_margin = START_SAFETY_MARGIN;
 
-  last_pose = currentPose();
+  last_pose = currentPoseStamped();
 
 #ifdef BATTERY_TIMER
   global_state = GLOBAL_STATE_INITIAL;
@@ -246,46 +235,6 @@ Explore::~Explore() {
 
   if(explore_costmap_ros_ != NULL)
     delete explore_costmap_ros_;
-}
-
-/*
-	Called when map service on this node is queried?
-	Returns map data (whether occupied, etc) in form of nav_msgs::GetMap::Response
-*/
-bool Explore::mapCallback(nav_msgs::GetMap::Request  &req,
-                          nav_msgs::GetMap::Response &res)
-{
-  ROS_DEBUG("mapCallback");
-  Costmap2D explore_costmap;
-  explore_costmap_ros_->getCostmapCopy(explore_costmap);
-
-  res.map.info.width = explore_costmap.getSizeInCellsX();
-  res.map.info.height = explore_costmap.getSizeInCellsY();
-  res.map.info.resolution = explore_costmap.getResolution();
-  res.map.info.origin.position.x = explore_costmap.getOriginX();
-  res.map.info.origin.position.y = explore_costmap.getOriginY();
-  res.map.info.origin.position.z = 0;
-  res.map.info.origin.orientation.x = 0;
-  res.map.info.origin.orientation.y = 0;
-  res.map.info.origin.orientation.z = 0;
-  res.map.info.origin.orientation.w = 1;
-
-  int size = res.map.info.width * res.map.info.height;
-  const unsigned char* map = explore_costmap.getCharMap();
-
-  //res.map.set_data_size(size);
-  // XXX May be wrong. Previously was the above
-  res.map.data.resize(size);
-  for (int i=0; i<size; i++) {
-    if (map[i] == NO_INFORMATION)
-      res.map.data[i] = -1;
-    else if (map[i] == LETHAL_OBSTACLE)
-      res.map.data[i] = 100;
-    else
-      res.map.data[i] = 0;
-  }
-
-  return true;
 }
 
 /*
@@ -378,7 +327,7 @@ void Explore::removeUnsafeFrontiers(std::vector<geometry_msgs::Pose> * goals) {
   }
 #endif
 
-  geometry_msgs::PoseStamped current_pose_stamped = currentPose();
+  geometry_msgs::PoseStamped current_pose_stamped = currentPoseStamped();
 
   // Assuming we have called computePotentialFromRobot()
   // First we find time cost from robot's current position to each goal
@@ -537,8 +486,7 @@ bool Explore::goalOnBlacklist(const geometry_msgs::PoseStamped& goal){
 void Explore::reachedGoal(const actionlib::SimpleClientGoalState& status,
     const move_base_msgs::MoveBaseResultConstPtr& result,
     geometry_msgs::PoseStamped frontier_goal)
-  {
-
+{
   ROS_WARN("Reached goal.");
   setLocalState(STATE_WAITING_FOR_GOAL);
 
@@ -552,7 +500,7 @@ void Explore::reachedGoal(const actionlib::SimpleClientGoalState& status,
   Only accurate if computePotential() recently called.
 */
 int Explore::timeToHome() {
-  PoseStamped current_pose = currentPose();
+  PoseStamped current_pose = currentPoseStamped();
   int time_to_home = timeToTravel(&current_pose, &home_pose_msg.pose);
   return time_to_home;
 }
@@ -569,16 +517,16 @@ void Explore::updateTimeToHome() {
 /*
   Get the robot's current pose
 */
-geometry_msgs::PoseStamped Explore::currentPose() {
+geometry_msgs::PoseStamped Explore::currentPoseStamped() {
   tf::Stamped<tf::Pose> robot_pose;
   explore_costmap_ros_->getRobotPose(robot_pose);
 
-  PoseStamped robot_pose_msg;
-  tf::poseStampedTFToMsg(robot_pose, robot_pose_msg);
+  PoseStamped robot_pose_stamped;
+  tf::poseStampedTFToMsg(robot_pose, robot_pose_stamped);
 
   //ROS_WARN("Robot pose currently %f, %f", robot_pose_msg.pose.position.x, robot_pose_msg.pose.position.y);
 
-  return robot_pose_msg;
+  return robot_pose_stamped;
 }
 
 /*
@@ -625,7 +573,7 @@ double Explore::angleChangeForPlan(PoseStamped * pose, std::vector<geometry_msgs
   True if our current pose is "close enough" to given pose
 */
 bool Explore::closeEnoughToPoseStamped(geometry_msgs::PoseStamped * pose_stamped) {
-  PoseStamped current_pose = currentPose();
+  PoseStamped current_pose = currentPoseStamped();
 
   double x_diff = fabs(current_pose.pose.position.x - pose_stamped->pose.position.x);
   double y_diff = fabs(current_pose.pose.position.y - pose_stamped->pose.position.y);
@@ -664,7 +612,7 @@ bool Explore::atGoal() {
   Otherwise we are going home, so try to move in a random direction
 */
 void Explore::checkIfStuck() {
-  PoseStamped current_pose = currentPose();
+  PoseStamped current_pose = currentPoseStamped();
 
   double dist = distanceBetweenTwoPoses(&last_pose.pose, &current_pose.pose);
   if (dist < 0.10) {
@@ -1027,35 +975,6 @@ void Explore::execute() {
       loop_closure_->updateGraph(robot_pose);
     }
 
-/*
-#ifdef BATTERY_TIMER
-    // Decide whether we should go home to charge
-    if ( state != STATE_HEADING_HOME_CHARGE && shouldGoHome_fast() ) {
-      goHome(STATE_HEADING_HOME_CHARGE);
-
-    // Go home, but don't stay there to charge if we are in initial behaviour
-    } else if ( state == STATE_EXPLORING_INITIAL && shouldGoHome_initial() ) {
-      goHome(STATE_HEADING_HOME);
-    
-    // If we're heading home, see if we're there
-    } else if ( (state == STATE_HEADING_HOME || state == STATE_HEADING_HOME_CHARGE)
-      && atHome() )
-    {
-      reachedHome();
-
-    // else if continued below
-    } else
-#endif
-
-    // Find new exploration goal and send it to move_base.
-    if (state == STATE_WAITING_FOR_GOAL || atGoal() ) {
-      makePlan();
-
-    // We may get stuck, so deal with it
-    } else {
-      checkIfStuck();
-    }
-*/
 #ifdef BATTERY_TIMER
     // Initial behaviour
     if (global_state == GLOBAL_STATE_INITIAL) {
@@ -1122,14 +1041,14 @@ void Explore::execute() {
 
       // and topomap
       // first generate a topomap (this happens with makePlan, though we don't want a plan...)
-      geometry_msgs::PoseStamped current_pose_stamped = currentPose();
+      geometry_msgs::PoseStamped current_pose_stamped = currentPoseStamped();
       std::vector<geometry_msgs::PoseStamped> plan_empty;
       skeleplanner_->makePlan( current_pose_stamped, current_pose_stamped, plan_empty );
       // then publish it
       skeleplanner_->publish_topomap(&topomap_marker_publisher_);
     }
 
-    last_pose = currentPose();
+    last_pose = currentPoseStamped();
     r.sleep();
   }
 

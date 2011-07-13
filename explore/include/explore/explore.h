@@ -115,15 +115,13 @@ private:
    */
 //  void resetCostmaps(double size_x, double size_y);
 
-  bool mapCallback(nav_msgs::GetMap::Request  &req, nav_msgs::GetMap::Response &res);
-
   bool goalOnBlacklist(const geometry_msgs::PoseStamped& goal);
 
   void removeUnsafeFrontiers(std::vector<geometry_msgs::Pose> * goals);
 
   int timeToHome();
   void updateTimeToHome();
-  geometry_msgs::PoseStamped currentPose();
+  geometry_msgs::PoseStamped currentPoseStamped();
   double distanceForPlan(geometry_msgs::PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan);
   double angleChangeForPlan(geometry_msgs::PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan);
   bool closeEnoughToPoseStamped(geometry_msgs::PoseStamped * pose_stamped);
@@ -167,7 +165,6 @@ private:
   ros::Publisher map_publisher_;
   ros::Subscriber voltage_subscriber_;
   ros::Subscriber charged_subscriber_;
-  ros::ServiceServer map_server_;
 
   ExploreFrontier* explorer_;
 
