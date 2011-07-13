@@ -88,6 +88,8 @@ bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geome
   // TODO: Verify that goal is reachable from end
 
   // A*
+  // We aren't using this for planning right now. So don't find a plan.
+/*
   std::vector<Waypoint*> waypoint_plan = aStar(begin, end);
   waypoints_to_plan(plan, waypoint_plan);
 
@@ -97,6 +99,7 @@ bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geome
   plan.push_back( goal );
 
   expand_plan(&plan);
+*/
   
   return true;
 }
