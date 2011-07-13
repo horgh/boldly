@@ -54,6 +54,7 @@
 #include <cmath>
 #include <p2os_driver/BatteryState.h>
 #include <std_msgs/Empty.h>
+#include <skeleplanner/skeleplanner.h>
 
 
 namespace explore {
@@ -162,6 +163,7 @@ private:
 
   ros::Publisher marker_publisher_;
   ros::Publisher marker_array_publisher_;
+  ros::Publisher topomap_marker_publisher_;
   ros::Publisher map_publisher_;
   ros::Subscriber voltage_subscriber_;
   ros::Subscriber charged_subscriber_;
@@ -217,6 +219,8 @@ private:
   // Current time to go home. Periodically updated.
   int time_to_home;
   ros::Time last_time_update_time_to_home;
+
+  SkelePlanner *skeleplanner_;
 };
 
 }

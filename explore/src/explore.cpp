@@ -136,6 +136,7 @@ Explore::Explore() :
 
   marker_publisher_ = node_.advertise<Marker>("visualization_marker",10);
   marker_array_publisher_ = node_.advertise<MarkerArray>("visualization_marker_array",10);
+  topomap_marker_publisher_ = node_.advertise<Marker>("topomap_marker", 1000);
   map_publisher_ = private_nh.advertise<nav_msgs::OccupancyGrid>("map", 1, true);
   map_server_ = private_nh.advertiseService("explore_map", &Explore::mapCallback, this);
   voltage_subscriber_ = node_.subscribe<p2os_driver::BatteryState>("battery_state", 1, &Explore::battery_state_callback, this);
@@ -228,6 +229,9 @@ Explore::Explore() :
   global_state = GLOBAL_STATE_EXPLORE;
 #endif
   state = STATE_WAITING_FOR_GOAL;
+
+  skeleplanner_ = new SkelePlanner();
+  skeleplanner_->initialize(std::string("skeleplanner"), explore_costmap_ros_);
 }
 
 Explore::~Explore() {
@@ -1112,8 +1116,16 @@ void Explore::execute() {
       for (uint i=0; i < markers.size(); i++)
         marker_publisher_.publish(markers[i]);
 
-      // and map
+      // and occupancy map
       publishMap();
+
+      // and topomap
+      // first generate a topomap (this happens with makePlan, though we don't want a plan...)
+      geometry_msgs::PoseStamped current_pose_stamped = currentPose();
+      std::vector<geometry_msgs::PoseStamped> plan_empty;
+      skeleplanner_->makePlan( current_pose_stamped, current_pose_stamped, plan_empty );
+      // then publish it
+      skeleplanner_->publish_topomap(&topomap_marker_publisher_);
     }
 
     last_pose = currentPose();
