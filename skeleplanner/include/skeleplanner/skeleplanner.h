@@ -28,6 +28,8 @@ public:
   void update();
   bool makePlan(const geometry_msgs::PoseStamped &start, const geometry_msgs::PoseStamped &goal, std::vector< geometry_msgs::PoseStamped > &plan);
 
+  void expand_plan(std::vector<geometry_msgs::PoseStamped>* plan);
+
   // A* functions
   void waypoints_to_plan(std::vector<geometry_msgs::PoseStamped>* plan, std::vector<Waypoint*>* waypoint_plan);
   Waypoint* find_min_score_waypoint(std::vector<Waypoint*>* open_set, std::map<Waypoint*, int>* f_score);

@@ -46,6 +46,29 @@ void publish_map(costmap_2d::Costmap2DROS* costmap_2d_ros, ros::Publisher* map_p
   map_pub->publish(map);
 }
 
+/*
+  Test expand_plan() in skeleplanner
+*/
+void test_expand_plan(SkelePlanner *skele_planner) {
+  std::vector<geometry_msgs::PoseStamped> plan;
+  geometry_msgs::PoseStamped pose_stamped;
+  pose_stamped.pose.position.x = 0.0;
+  pose_stamped.pose.position.y = 0.0;
+  plan.push_back( pose_stamped );
+  pose_stamped.pose.position.x = 1.0;
+  pose_stamped.pose.position.y = 1.0;
+  plan.push_back( pose_stamped );
+
+  skele_planner->expand_plan( &plan );
+
+  for (std::vector<geometry_msgs::PoseStamped>::const_iterator it = plan.begin();
+    it != plan.end();
+    ++it)
+  {
+    ROS_WARN("%f, %f", it->pose.position.x, it->pose.position.y);
+  }
+}
+
 int main(int argc, char** argv) {
   ros::init(argc, argv, "skeletester");
   ros::NodeHandle n;
@@ -71,6 +94,8 @@ int main(int argc, char** argv) {
   skele_planner.makePlan(robot_pose_stamped, robot_pose_stamped, plan);
 
   ROS_WARN("SkelePlanner object initialised.");
+
+  test_expand_plan(&skele_planner);
 
   // 1hz
   ros::Rate loop_rate(1);

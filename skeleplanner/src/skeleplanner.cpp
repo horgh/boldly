@@ -94,8 +94,80 @@ bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geome
   // Since we will usually not have a topo node at specific goal point
   // (when using the current frontier selector, anyway)
   plan.push_back( goal );
+
+  expand_plan(&plan);
   
   return true;
+}
+
+/*
+  The result from A* is a plan with poses too far apart (waypoints) which
+  fails to work with the local planner (?).
+
+  Fill the gaps between these poses with new poses.
+*/
+void SkelePlanner::expand_plan(std::vector<geometry_msgs::PoseStamped>* plan)
+{
+  std::vector<geometry_msgs::PoseStamped> old_plan;
+  for (std::vector<geometry_msgs::PoseStamped>::const_iterator it = plan->begin();
+    it != plan->end();
+    ++it)
+  { 
+    old_plan.push_back( *it );
+  }
+  plan->clear();
+
+  double x_current, y_current,
+    x_next, y_next, 
+    delta = 0.01;
+
+  geometry_msgs::PoseStamped pose_stamped;
+  pose_stamped.header.frame_id = costmapros->getGlobalFrameID();
+  pose_stamped.header.stamp = ros::Time::now();
+  
+  bool done, x_done, y_done;
+  std::vector<geometry_msgs::PoseStamped>::const_iterator next_it;
+
+  for (std::vector<geometry_msgs::PoseStamped>::const_iterator it = old_plan.begin();
+    it != old_plan.end();
+    ++it)
+  {
+    // Add the current pose to the new plan
+    plan->push_back( *it );
+
+    next_it = it+1;
+    if (next_it == old_plan.end()) {
+      //ROS_WARN("Ended correctly.");
+      continue;
+    }
+
+    // And add poses in delta steps up to the next pose
+    x_current = it->pose.position.x;
+    y_current = it->pose.position.y;
+
+    x_next = next_it->pose.position.x;
+    y_next = next_it->pose.position.y;
+
+    done = false;
+    x_done = false;
+    y_done = false;
+    while (!done) {
+      x_done = fabs(x_current - x_next) < delta;
+      if (!x_done)
+        x_current += delta;
+      y_done = fabs(y_current - y_next) < delta;
+      if (!y_done)
+        y_current += delta;
+
+      done = x_done && y_done;
+      if (!done) {
+        pose_stamped.pose.position.x = x_current;
+        pose_stamped.pose.position.y = y_current;
+
+        plan->push_back( pose_stamped );
+      }
+    }
+  }
 }
 
 /*
