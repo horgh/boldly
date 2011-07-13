@@ -63,6 +63,7 @@ void SkelePlanner::update() {
 
 bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geometry_msgs::PoseStamped &goal, std::vector< geometry_msgs::PoseStamped > &plan) {
   lastOrigin = start;
+  /*
   if(!gotSafeOrigin) {
     update();
     if(!gotSafeOrigin) {
@@ -70,6 +71,8 @@ bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geome
       return false;
     }
   }
+  */
+  update();
   
   std::vector<float> dists(topomap->size());
   for(size_t i = 0; i < topomap->size(); ++i) {
@@ -501,6 +504,7 @@ void SkelePlanner::publish_topomap(ros::Publisher* marker_pub) {
     it != markers.end();
     ++it)
   {
+    it->lifetime = ros::Duration(5);
     marker_pub->publish( *it );
   }
 }

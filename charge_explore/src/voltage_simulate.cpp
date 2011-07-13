@@ -49,7 +49,8 @@ int main(int argc, char** argv) {
 
     // Decrease by 0.1 every second if we're not at cut off
     if (battery_state.voltage > VOLTAGE_CUTOFF)
-      battery_state.voltage += -0.1;
+      //battery_state.voltage += -0.1;
+      battery_state.voltage += -0.01;
 
     ros::spinOnce();
     loop_rate.sleep();

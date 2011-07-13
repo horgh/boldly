@@ -672,7 +672,8 @@ void Explore::checkIfStuck() {
   } else {
     time_since_progress_ = 0.0;
   }
-  ROS_WARN("Time since progress: %f", time_since_progress_);
+  ROS_WARN("Time since progress: %f (in global state %d, local state %d)", time_since_progress_,
+    global_state, state);
 
   if (time_since_progress_ > progress_timeout_) {
     ROS_WARN("Decided we're stuck.");
