@@ -76,6 +76,7 @@ int calcSpace(int x, int y, const costmap_2d::Costmap2D &costmap, int ** memo)
 	  return rtn;
         }
     }
+  return rtn;
 }
 
 bool straightClear(int x1, int y1, int x2, int y2, const costmap_2d::Costmap2D &costmap, int ** memo)

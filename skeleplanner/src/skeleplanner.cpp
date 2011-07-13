@@ -4,7 +4,7 @@
 #include <algorithm>
 
 SkelePlanner::SkelePlanner() :
-  topomap(NULL), gotSafeOrigin(false) {
+  gotSafeOrigin(false), topomap(NULL) {
 }
 
 SkelePlanner::~SkelePlanner() {
