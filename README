@@ -1,0 +1,61 @@
+CMPT 415: Summer 2011
+
+A ROS stack for running an energy aware exploration robot.
+
+The robot controller runs both in Stage and on the Pioneer 3DX robot.
+
+Required ROS version: ROS Diamondback.
+Development and robot computers running Ubuntu 10.04 LTS.
+
+Details on individual stacks/packages contained here:
+
+- bosch_demos: Stage maps/worlds/definitions. Primarily taken from the
+  Bosch ROS repository (http://www.ros.org/wiki/bosch-ros-pkg), though with
+  our own additions & edits.
+
+- charge_explore: Nodes for (very) simple voltage simulation and signalling
+  recharge.
+
+- explore: Our actual controller. A customised version of the explore
+  package from the Bosch ROS repository (see above, and
+  http://www.ros.org/wiki/exploration).
+
+- explore_pioneer: Configuration and launch scripts for running the explore
+  controller on a Pioneer 3DX.
+
+- explore_stage: Configuration and launch scripts for running the explore
+  controller in Stage. Again, primarily taken from the Bosch ROS repository
+  (http://www.ros.org/wiki/exploration) but marginally customised.
+
+- skeleplanner: Topographical BaseGlobalPlanner plugin (though we don't use
+  it as our global planner, and it is not fully functional as a global
+  planner). Creates a topographical map given a costmap.
+
+- sonarify: Node which filters sonar and laser data in an attempt to
+  recognise objects that a laser does not (such as glass). Assumes use of
+  sonars on the Pioneer 3DX and a Sick LMS laser.
+
+Solutions to problems encountered in running the above with ROS / on our
+robot:
+
+- Return code -4 from move_base and explore on the Pioneer 3DX: When this
+  occurred, required recompilation of perception_pcl and navigation stacks
+  as our Pioneer 3DX's computer did not have some compiler flags which the
+  packages compiled for Ubuntu assumed. These can be disabled in the cmake
+  options in perception_pcl.
+
+- sicktoolbox_wrapper not launching correctly: See
+  http://answers.ros.org/question/257/unable-to-get-data-from-sick-laser-on-pioneer
+  Applying the fix above requires recompiling sicktoolbox:
+  - svn co https://code.ros.org/svn/ros-pkg/stacks/laser_drivers/trunk/sicktoolbox
+  - rosmake sicktoolbox to get the code
+  - go into build/ find SickLMS.cc
+    (build/sicktoolbox-1.0/c++/drivers/lms/sicklms-1.0/SickLMS.cc)
+  - go to line 2320 and add
+    std::cout << "Sleeping for 35 seconds..." <<
+    std::endl; sleep(35);
+  - Do not modify sicktoolbox_wrapper itself, just sicktoolbox
+
+- Serial connections seemingly not working: Ensure the IRQs for the serial
+  ports match those in the BIOS. The kernel did not autodetect these for
+  us. Use: setserial /dev/ttyX irq #
