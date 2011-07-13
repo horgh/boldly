@@ -6,7 +6,7 @@
 double pathDistance(const geometry_msgs::PoseStamped &currentPose, const geometry_msgs::PoseStamped &frontier, nav_core::BaseGlobalPlanner &planner) {
   std::vector<geometry_msgs::PoseStamped> plan;
   if(!planner.makePlan(currentPose, goal, plan)) {
-    // Frontier is unreachable
+    return -1;
   }
   double pathDistance = 0;
   if(plan.size() > 1) {
@@ -32,4 +32,7 @@ PoseStamped chooseFrontier(const PoseStamped &currentPose, float currentBattery,
   frontier.position.x = 42.0;
   frontier.position.y = 42.0;
   double distance = pathDistance(currentPose, frontier, planner);
+  if(distance < 0) {
+    // Frontier is unreachable
+  }
 }
