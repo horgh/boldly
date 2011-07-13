@@ -76,11 +76,10 @@ bool ExploreFrontier::getFrontiers(Costmap2DROS& costmap, std::vector<geometry_m
 }
 
 float ExploreFrontier::getFrontierCost(const Frontier& frontier) {
-//  ROS_DEBUG("cost of frontier: %f, at position: (%.2f, %.2f, %.2f)", planner_->getPointPotential(frontier.pose.position),
-     // frontier.pose.position.x, frontier.pose.position.y, tf::getYaw(frontier.pose.orientation));
+  ROS_DEBUG("cost of frontier: %f, at position: (%.2f, %.2f, %.2f)", planner_->getPointPotential(frontier.pose.position),
+      frontier.pose.position.x, frontier.pose.position.y, tf::getYaw(frontier.pose.orientation));
   if (planner_ != NULL)
-    //return planner_->getPointPotential(frontier.pose.position); // / 20000.0;
-    return 10.0;
+    return planner_->getPointPotential(frontier.pose.position); // / 20000.0;
   else
     return 1.0;
 }
@@ -133,8 +132,7 @@ void ExploreFrontier::computePotentialFromRobot(Costmap2DROS* costmap, navfn::Na
   Must call ExploreFrontier::computePotential() first
   Note: This is always called by makePlan() in explore
 */
-//bool ExploreFrontier::getExplorationGoals(Costmap2DROS& costmap, tf::Stamped<tf::Pose> robot_pose, navfn::NavfnROS* planner, std::vector<geometry_msgs::Pose>& goals, double potential_scale, double orientation_scale, double gain_scale)
-bool ExploreFrontier::getExplorationGoals(Costmap2DROS& costmap, tf::Stamped<tf::Pose> robot_pose, SkelePlanner* planner, std::vector<geometry_msgs::Pose>& goals, double potential_scale, double orientation_scale, double gain_scale)
+bool ExploreFrontier::getExplorationGoals(Costmap2DROS& costmap, tf::Stamped<tf::Pose> robot_pose, navfn::NavfnROS* planner, std::vector<geometry_msgs::Pose>& goals, double potential_scale, double orientation_scale, double gain_scale)
 {
   findFrontiers(costmap);
   if (frontiers_.size() == 0)

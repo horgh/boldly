@@ -54,7 +54,7 @@
 #include <cmath>
 #include <p2os_driver/BatteryState.h>
 #include <std_msgs/Empty.h>
-#include <skeleplanner/skeleplanner.h>
+
 
 namespace explore {
 
@@ -67,9 +67,6 @@ public:
 
   void charge_complete_callback(const std_msgs::Empty::ConstPtr & msg);
   void battery_state_callback(const p2os_driver::BatteryState::ConstPtr & msg);
-  void visualize_arrow(int id, double x, double y, double scale, double r,
-    double g, double b, double a, std::vector<visualization_msgs::Marker>* markers);
-  void publish_topo_path(std::vector<geometry_msgs::PoseStamped>* path);
 
   /**
    * @brief  Constructor
@@ -159,13 +156,11 @@ private:
 
   actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> move_base_client_;
 
-  //navfn::NavfnROS* planner_;
-  SkelePlanner* planner_;
+  navfn::NavfnROS* planner_;
   std::string robot_base_frame_;
   bool done_exploring_;
 
   ros::Publisher marker_publisher_;
-  ros::Publisher topomap_marker_publisher_;
   ros::Publisher marker_array_publisher_;
   ros::Publisher map_publisher_;
   ros::Subscriber voltage_subscriber_;

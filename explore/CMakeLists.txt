@@ -27,4 +27,3 @@ rosbuild_link_boost(explore_lib thread)
 # Explore
 rosbuild_add_executable(explore src/explore.cpp)
 target_link_libraries(explore explore_lib)
-target_link_libraries(explore skeleplanner)

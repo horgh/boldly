@@ -37,10 +37,6 @@
 // Compile with some debugging
 #define DEBUG
 
-// Publish visualisations.
-// XXX Currently only disables publishing topomap.
-#define VISUALISE
-
 // If uncommented, use frontier comparison algorithm where we don't try to go to those
 // frontiers which we deem unsafe due to battery life, but may go to others intead
 //#define FRONTIER_COMPARE
@@ -53,7 +49,7 @@
 #define VOLTAGE_WARNING 12.0
 
 // Our battery is a timer. Makes us go home when its up
-//#define BATTERY_TIMER
+#define BATTERY_TIMER
 
 // Always periodically return (uses INITIAL_EXPLORE_TIME) rather than
 // operate with our voltage logic. Requires BATTERY_TIMER as well.
@@ -126,62 +122,6 @@ void Explore::battery_state_callback(const p2os_driver::BatteryState::ConstPtr &
   battery_voltage = msg->voltage;
 }
 
-/*
-  Add an arrow marker to the given markers vector
-*/
-void Explore::visualize_arrow(int id, double x, double y, double scale, double r,
-  double g, double b, double a, std::vector<visualization_msgs::Marker>* markers)
-{
-  visualization_msgs::Marker m;
-  m.header.frame_id = "map";
-  m.header.stamp = ros::Time::now();
-  m.ns = "skeletester2";
-  m.id = id;
-  m.type = Marker::ARROW;
-  m.pose.position.x = x;
-  m.pose.position.y = y;
-  m.pose.position.z = 0.0;
-  // 1.0 for frontier arrow
-  m.scale.x = scale;
-  m.scale.y = scale;
-  m.scale.z = scale;
-  m.color.r = r;
-  m.color.g = g;
-  m.color.b = b;
-  m.color.a = a;
-
-  m.lifetime = ros::Duration(5.0);
-
-  markers->push_back( m );
-}
-
-/*
-  Publish on the topomap_marker_publisher_ the given poses as though they
-  constituted a path
-*/
-void Explore::publish_topo_path(std::vector<geometry_msgs::PoseStamped>* path) {
-  std::vector<visualization_msgs::Marker> markers;
-
-  int marker_id = 0;
-  for (std::vector<geometry_msgs::PoseStamped>::const_iterator it = path->begin();
-    it != path->end();
-    ++it)
-  {
-    // 0.25 scale, hot pink 255,0,169,1
-    // XXX Using this in skeleplanner object doesn't account for marker_id changing...
-    //planner_->visualize_node(it->pose.position.x, it->pose.position.y, 0.25, 255.0, 0.0, 169.0, 1.0, &markers);
-    // 2.0 scale
-    visualize_arrow(marker_id++, it->pose.position.x, it->pose.position.y, 2.0, 255.0, 0.0, 169.0, 1.0, &markers);
-  }
-
-  for (std::vector<visualization_msgs::Marker>::const_iterator it = markers.begin();
-    it != markers.end();
-    ++it)
-  {
-    topomap_marker_publisher_.publish( *it );
-  }
-}
-
 Explore::Explore() :
   node_(),
   tf_(ros::Duration(10.0)),
@@ -195,9 +135,6 @@ Explore::Explore() :
   ros::NodeHandle private_nh("~");
 
   marker_publisher_ = node_.advertise<Marker>("visualization_marker",10);
-#ifdef VISUALISE
-  topomap_marker_publisher_ = node_.advertise<Marker>("topomap_marker", 10);
-#endif
   marker_array_publisher_ = node_.advertise<MarkerArray>("visualization_marker_array",10);
   map_publisher_ = private_nh.advertise<nav_msgs::OccupancyGrid>("map", 1, true);
   map_server_ = private_nh.advertiseService("explore_map", &Explore::mapCallback, this);
@@ -205,7 +142,7 @@ Explore::Explore() :
   charged_subscriber_ = node_.subscribe<std_msgs::Empty>("charge_complete", 1, &Explore::charge_complete_callback, this);
   battery_voltage = -1.0;
 
-//  private_nh.param("navfn/robot_base_frame", robot_base_frame_, std::string("base_link"));
+  private_nh.param("navfn/robot_base_frame", robot_base_frame_, std::string("base_link"));
   private_nh.param("planner_frequency", planner_frequency_, 1.0);
   private_nh.param("progress_timeout", progress_timeout_, PROGRESS_TIMEOUT);
   private_nh.param("visualize", visualize_, 1);
@@ -226,12 +163,8 @@ Explore::Explore() :
   explore_costmap_ros_ = new Costmap2DROS(std::string("explore_costmap"), tf_);
   explore_costmap_ros_->clearRobotFootprint();
 
-  //planner_ = new navfn::NavfnROS(std::string("explore_planner"), explore_costmap_ros_);
-  planner_ = new SkelePlanner();
-  planner_->initialize(std::string("explore_planner"), explore_costmap_ros_);
-
+  planner_ = new navfn::NavfnROS(std::string("explore_planner"), explore_costmap_ros_);
   explorer_ = new ExploreFrontier();
-  /*
   loop_closure_ = new LoopClosure(loop_closure_addition_dist_min,
         loop_closure_loop_dist_min,
         loop_closure_loop_dist_max,
@@ -240,7 +173,6 @@ Explore::Explore() :
         move_base_client_,
         *explore_costmap_ros_,
         client_mutex_);
-   */
 
   // Assume start position is our home. Record it
   tf::Stamped<tf::Pose> robot_pose;
@@ -431,7 +363,6 @@ void Explore::publishGoal(const geometry_msgs::Pose& goal){
     - Must have called computePotentialFromRobot() first
       (this is currently done prior to calling makePlan() which calls this function)
 */
-/*
 void Explore::removeUnsafeFrontiers(std::vector<geometry_msgs::Pose> * goals) {
   // Indices in this vector correspond to indices in the goals vector
   std::vector<int> goal_time_costs;
@@ -489,7 +420,6 @@ void Explore::removeUnsafeFrontiers(std::vector<geometry_msgs::Pose> * goals) {
   // Recompute potential from robot as we need it later
   explorer_->computePotentialFromRobot(explore_costmap_ros_, planner_);
 }
-*/
 
 /*
 	Get goals from explore_frontier & choose one to go to
@@ -503,7 +433,7 @@ void Explore::makePlan() {
     return;
 
   // Calculate potential from robot to each point on map
-  //explorer_->computePotentialFromRobot(explore_costmap_ros_, planner_);
+  explorer_->computePotentialFromRobot(explore_costmap_ros_, planner_);
 
   // Since we are updating cost to points on map anyway, also update
   // our time to go home.
@@ -543,8 +473,6 @@ void Explore::makePlan() {
   goal_pose.header.frame_id = explore_costmap_ros_->getGlobalFrameID();
   goal_pose.header.stamp = ros::Time::now();
 
-  PoseStamped robot_pose_stamped = currentPose();
-
   int blacklist_count = 0;
   for (unsigned int i = 0; i < goals.size(); i++) {
     goal_pose.pose = goals[i];
@@ -554,27 +482,7 @@ void Explore::makePlan() {
     }
 
     // Build plan to given goal. If such a plan exists, we can use it
-    //valid_plan = (planner_->getPlanFromPotential(goal_pose, plan) && !plan.empty());
-    //valid_plan = planner_->makePlan(robot_pose_stamped, goal_pose, plan) && !plan.empty();
-    bool makePlan_result = planner_->makePlan(robot_pose_stamped, goal_pose, plan);
-    valid_plan = makePlan_result && !plan.empty();
-
-#ifdef DEBUG
-    ROS_WARN("Got a plan with %d PoseStampeds (makeplan() in explore)", plan.size());
-    for (std::vector<geometry_msgs::PoseStamped>::const_iterator it = plan.begin();
-      it != plan.end();
-      ++it)
-    {
-      ROS_WARN("\t PoseStamped at (%f, %f)", it->pose.position.x, it->pose.position.y);
-    }
-    ROS_WARN("Plan is for goal at %f,%f", goal_pose.pose.position.x, goal_pose.pose.position.y);
-    if (!makePlan_result) {
-      ROS_WARN("makePlan() from planner returned false.");
-    }
-    if (!valid_plan) {
-      ROS_WARN("Got valid_plan false");
-    }
-#endif
+    valid_plan = (planner_->getPlanFromPotential(goal_pose, plan) && !plan.empty());
     if (valid_plan) {
       break;
     }
@@ -585,11 +493,6 @@ void Explore::makePlan() {
     goal.target_pose = goal_pose;
     current_goal_pose_stamped_ = goal_pose;
     move_base_client_.sendGoal(goal, boost::bind(&Explore::reachedGoal, this, _1, _2, goal_pose));
-
-    // draw this plan. Add goal as well so we visualize it the same way
-    plan.push_back( goal_pose );
-    publish_topo_path(&plan);
-
     ROS_WARN("Sent new goal to move_base.");
 
     setLocalState(STATE_EXPLORING);
@@ -819,11 +722,7 @@ int Explore::timeToTravel(geometry_msgs::PoseStamped* source_pose_stamped, geome
   target_pose_stamped.header.frame_id = explore_costmap_ros_->getGlobalFrameID();
   target_pose_stamped.header.stamp = ros::Time::now();
   target_pose_stamped.pose = *target_pose;
-
-  PoseStamped robot_pose_stamped = currentPose();
-
-  //bool valid_plan = planner_->getPlanFromPotential(target_pose_stamped, plan) && !plan.empty();
-  bool valid_plan = planner_->makePlan(robot_pose_stamped, target_pose_stamped, plan) && !plan.empty();
+  bool valid_plan = planner_->getPlanFromPotential(target_pose_stamped, plan) && !plan.empty();
   if (!valid_plan) {
     return -1;
   }
@@ -852,7 +751,7 @@ int Explore::timeToTravel(geometry_msgs::PoseStamped* source_pose_stamped, geome
   Note: Must have called computePotentialFromRobot() prior to calling this
 */
 bool Explore::shouldGoHome_dynamic() {
-  //ROS_WARN("Cost to go home: %f", planner_->getPointPotential( home_pose_msg.pose.position ) );
+  ROS_WARN("Cost to go home: %f", planner_->getPointPotential( home_pose_msg.pose.position ) );
 
   int time_to_home = timeToHome();
   if (time_to_home == -1) {
@@ -1117,13 +1016,11 @@ void Explore::execute() {
 
   while (node_.ok()) {
 
-/*
     if (close_loops_) {
       tf::Stamped<tf::Pose> robot_pose;
       explore_costmap_ros_->getRobotPose(robot_pose);
       loop_closure_->updateGraph(robot_pose);
     }
-    */
 
 /*
 #ifdef BATTERY_TIMER
@@ -1215,13 +1112,8 @@ void Explore::execute() {
       for (uint i=0; i < markers.size(); i++)
         marker_publisher_.publish(markers[i]);
 
-      // and map (occupancy)
-
+      // and map
       publishMap();
-#ifdef VISUALISE
-      // and topomap
-      planner_->publish_topomap(&topomap_marker_publisher_);
-#endif
     }
 
     last_pose = currentPose();

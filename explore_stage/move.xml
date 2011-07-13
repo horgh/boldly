@@ -4,14 +4,11 @@
 
     <rosparam file="$(find explore_stage)/config/costmap_common.yaml" command="load" ns="global_costmap" />
     <rosparam file="$(find explore_stage)/explore/global_costmap.yaml" command="load" />
-    <!--
     <rosparam file="$(find explore_stage)/explore/navfn_params.yaml" command="load" />
-    -->
     
     <rosparam file="$(find explore_stage)/config/costmap_common.yaml" command="load" ns="local_costmap" />
     <rosparam file="$(find explore_stage)/explore/local_costmap.yaml" command="load" />
     <rosparam file="$(find explore_stage)/explore/trajectory_planner_params.yaml" command="load" />
     <param name="controller_frequency" type="double" value="5.0" />
-    <param name="base_global_planner" value="SkelePlanner" />
   </node>
 </launch>
