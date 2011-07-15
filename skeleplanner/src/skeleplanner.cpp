@@ -118,20 +118,28 @@ bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geome
 */
 void SkelePlanner::expand_plan(std::vector<geometry_msgs::PoseStamped>* plan)
 {
-  std::vector<geometry_msgs::PoseStamped> old_plan;
+#ifdef DEBUG
+  ROS_WARN("expand_plan(): Original plan has poses:");
+#endif
+  std::vector<geometry_msgs::PoseStamped> original_plan;
   for (std::vector<geometry_msgs::PoseStamped>::const_iterator it = plan->begin();
     it != plan->end();
     ++it)
   { 
-    old_plan.push_back( *it );
-    ROS_WARN("old plan %f, %f", it->pose.position.x, it->pose.position.y);
+    original_plan.push_back( *it );
+#ifdef DEBUG
+    ROS_WARN("\tOriginal plan pose: %f, %f", it->pose.position.x, it->pose.position.y);
+#endif
   }
   plan->clear();
 
   double x_current, y_current,
-    x_next, y_next, 
+    x_next, y_next,
+    sign_x, sign_y;
+
+  // 0.20 seems sufficient. We could do this based on resolution...
+  double delta = 0.20;
     //delta = 0.01;
-    delta = 0.20;
     //delta = 0.10;
 
   geometry_msgs::PoseStamped pose_stamped;
@@ -147,17 +155,25 @@ void SkelePlanner::expand_plan(std::vector<geometry_msgs::PoseStamped>* plan)
   bool done, x_done, y_done;
   std::vector<geometry_msgs::PoseStamped>::const_iterator next_it;
 
-  for (std::vector<geometry_msgs::PoseStamped>::const_iterator it = old_plan.begin();
-    it != old_plan.end();
+  // For each pose in the original plan, add intermediary points
+  for (std::vector<geometry_msgs::PoseStamped>::const_iterator it = original_plan.begin();
+    it != original_plan.end();
     ++it)
   {
-    // Add the current pose to the new plan
+    // Add the original plan pose to the new plan
+    // (These are the points which are too far apart which we
+    // are filling in)
     plan->push_back( *it );
-    ROS_WARN("adding main pt %f, %f", it->pose.position.x, it->pose.position.y);
+#ifdef DEBUG
+    ROS_WARN("expand_plan(): Adding primary planned point %f, %f",
+      it->pose.position.x, it->pose.position.y);
+#endif
 
     next_it = it+1;
-    if (next_it == old_plan.end()) {
-      //ROS_WARN("Ended correctly.");
+    if (next_it == original_plan.end()) {
+#ifdef DEBUG
+      ROS_WARN("expand_plan() ended correctly.");
+#endif
       continue;
     }
 
@@ -172,14 +188,14 @@ void SkelePlanner::expand_plan(std::vector<geometry_msgs::PoseStamped>* plan)
     x_done = false;
     y_done = false;
 
-    //double sign_x = x_current - x_next > 0.0 ? 1.0 : -1.0;
-    //double sign_y = y_current - y_next > 0.0 ? 1.0 : -1.0;
-    double sign_x = x_current - x_next > 0.0 ? -1.0 : 1.0;
-    double sign_y = y_current - y_next > 0.0 ? -1.0 : 1.0;
+    // To know which way to move our points
+    sign_x = x_current - x_next > 0.0 ? -1.0 : 1.0;
+    sign_y = y_current - y_next > 0.0 ? -1.0 : 1.0;
 
-    ROS_WARN("sign x %f, sign y %f, diff x %f diff y %f", sign_x, sign_y,
-      x_current - x_next, y_current - y_next);
-    //return;
+#ifdef DEBUG
+    ROS_WARN("expand_plan(): sign x %f, sign y %f, diff x %f diff y %f",
+      sign_x, sign_y, x_current - x_next, y_current - y_next);
+#endif
 
     while (!done) {
       x_done = fabs(x_current - x_next) < delta;
@@ -195,7 +211,10 @@ void SkelePlanner::expand_plan(std::vector<geometry_msgs::PoseStamped>* plan)
         pose_stamped.pose.position.y = y_current;
 
         plan->push_back( pose_stamped );
-        ROS_WARN("adding intermediate pt %f, %f", pose_stamped.pose.position.x, pose_stamped.pose.position.y);
+#ifdef DEBUG
+        ROS_WARN("expand_plan(): Adding intermediate point %f, %f",
+          pose_stamped.pose.position.x, pose_stamped.pose.position.y);
+#endif
       }
     }
   }
@@ -266,7 +285,7 @@ std::vector<Waypoint*> SkelePlanner::reconstruct_path(std::map<Waypoint*, Waypoi
   }
 #ifdef DEBUG
   else {
-    std::cerr << "** SkelePlanner had a NULL in path." << std::endl;
+    ROS_WARN("** SkelePlanner had a NULL in path.");
   }
 #endif
 
@@ -278,7 +297,7 @@ std::vector<Waypoint*> SkelePlanner::reconstruct_path(std::map<Waypoint*, Waypoi
     }
 #ifdef DEBUG
     else {
-      std::cerr << "** SkelePlanner had a NULL in path." << std::endl;
+      ROS_WARN("** SkelePlanner had a NULL in path."); 
     }
 #endif
   }
@@ -346,6 +365,7 @@ std::vector<Waypoint*> SkelePlanner::aStar(Waypoint* start, Waypoint* goal) {
   // Without this we are segfaulting if we try to go from start to goal where start == goal
   // as immediately return reconstruct_path() since x == goal, but we haven't yet
   // filled that.
+  // Seems unneeded? Or not solves the problem. I forget!
   //came_from[start] = start;
 
   // cost from start along best known path
