@@ -1,5 +1,8 @@
 <launch>
+<!--
   <node pkg="explore" type="explore" respawn="false" name="explore" output="screen" >
+-->
+  <node launch-prefix="gdb -ex run --args" pkg="explore" type="explore" respawn="false" name="explore" output="screen" >
     <rosparam file="$(find explore_stage)/config/footprint.yaml" command="load" />
 
     <rosparam file="$(find explore_stage)/config/costmap_common.yaml" command="load" ns="explore_costmap" />

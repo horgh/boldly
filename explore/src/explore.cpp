@@ -1221,7 +1221,7 @@ void Explore::execute() {
       publishMap();
 #ifdef VISUALISE
       // and topomap
-      planner_->publish_topomap(&topomap_marker_publisher_);
+      //planner_->publish_topomap(&topomap_marker_publisher_);
 #endif
     }
 

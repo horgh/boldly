@@ -36,6 +36,7 @@ void SkelePlanner::wipeTopo() {
 
 void SkelePlanner::initialize(std::string name, costmap_2d::Costmap2DROS *costmapros) {
   this->costmapros = costmapros;
+  ROS_WARN("HELLO SKELEPLANNER 1");
 }
 
 void SkelePlanner::update() {
@@ -43,33 +44,54 @@ void SkelePlanner::update() {
   if(topomap) {
     wipeTopo();
   }
-  std::vector<Waypoint*> *result = topoFromPoint(lastOrigin.pose.position.x, lastOrigin.pose.position.y, costmap);
+  ROS_WARN("HELLO SKELEPLANNER 2a");
+  //std::vector<Waypoint*> *result = topoFromPoint(lastOrigin.pose.position.x, lastOrigin.pose.position.y, costmap);
+  std::vector<Waypoint*> *result = topoFromPoint(lastOrigin.pose.position.x, lastOrigin.pose.position.y, costmap, true);
   gotSafeOrigin = result->size() > 1;
+  ROS_WARN("HELLO SKELEPLANNER 2b");
 
   if(gotSafeOrigin) {
     // Not trapped!
     safeOrigin = lastOrigin;
+    ROS_WARN("HELLO SKELEPLANNER 2c");
   } else {
+    ROS_WARN("HELLO SKELEPLANNER 2d");
     for(std::vector<Waypoint*>::iterator i = result->begin(); i != result->end(); ++i) {
       delete *i;
     }
     delete result;
+    ROS_WARN("HELLO SKELEPLANNER 2e");
     
-    result = topoFromPoint(safeOrigin.pose.position.x, safeOrigin.pose.position.y, costmap);
+    //result = topoFromPoint(safeOrigin.pose.position.x, safeOrigin.pose.position.y, costmap);
+    result = topoFromPoint(safeOrigin.pose.position.x, safeOrigin.pose.position.y, costmap, true);
     gotSafeOrigin = result->size() > 1;
+    ROS_WARN("HELLO SKELEPLANNER 2f");
   }
   topomap = result;
+  ROS_WARN("HELLO SKELEPLANNER 2g");
 }
 
 bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geometry_msgs::PoseStamped &goal, std::vector< geometry_msgs::PoseStamped > &plan) {
+  plan.clear();
+  plan.push_back(start);
+  plan.push_back(goal);
+  expand_plan(&plan);
+  return true;
+}
+/*
+bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geometry_msgs::PoseStamped &goal, std::vector< geometry_msgs::PoseStamped > &plan) {
+  ROS_WARN("HELLO SKELEPLANNER 2");
+  plan.clear();
   lastOrigin = start;
   if(!gotSafeOrigin) {
     update();
     if(!gotSafeOrigin) {
       // No way out from start exists
+      ROS_WARN("HELLO SKELEPLANNER <-- RETURNED FALSE");
       return false;
     }
   }
+  ROS_WARN("HELLO SKELEPLANNER 3");
   
   std::vector<float> dists(topomap->size());
   for(size_t i = 0; i < topomap->size(); ++i) {
@@ -86,6 +108,7 @@ bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geome
 
   Waypoint *end = topomap->at(std::min_element(dists.begin(), dists.end()) - dists.begin());
   // TODO: Verify that goal is reachable from end
+  ROS_WARN("HELLO SKELEPLANNER 4");
 
   // A*
   std::vector<Waypoint*> waypoint_plan = aStar(begin, end);
@@ -95,14 +118,17 @@ bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geome
   // Since we will usually not have a topo node at specific goal point
   // (when using the current frontier selector, anyway)
   plan.push_back( goal );
+  ROS_WARN("HELLO SKELEPLANNER 5");
 
   expand_plan(&plan);
 
   // remove goal, since other planners do not include goal as part of plan
   plan.pop_back();
+  ROS_WARN("HELLO SKELEPLANNER 6");
   
   return true;
 }
+*/
 
 /*
   The result from A* is a plan with poses too far apart (waypoints) which
