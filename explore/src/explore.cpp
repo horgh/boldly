@@ -122,6 +122,36 @@ void Explore::battery_state_callback(const p2os_driver::BatteryState::ConstPtr &
   battery_voltage = msg->voltage;
 }
 
+/*
+  Add an arrow marker to the given markers vector
+*/
+void Explore::visualize_arrow(int id, double x, double y, double scale, double r,
+  double g, double b, double a, std::vector<visualization_msgs::Marker>* markers)
+{
+  visualization_msgs::Marker m;
+  m.header.frame_id = "map";
+  m.header.stamp = ros::Time::now();
+  m.ns = "skeletester2";
+  m.id = id;
+  //m.type = visualization_msgs::Marker::ARROW;
+  m.type = visualization_msgs::Marker::SPHERE;
+  m.pose.position.x = x;
+  m.pose.position.y = y;
+  m.pose.position.z = 0.0;
+  // 1.0 for frontier arrow
+  m.scale.x = scale;
+  m.scale.y = scale;
+  m.scale.z = scale;
+  m.color.r = r;
+  m.color.g = g;
+  m.color.b = b;
+  m.color.a = a;
+
+  m.lifetime = ros::Duration(5.0);
+
+  markers->push_back( m );
+}
+
 Explore::Explore() :
   node_(),
   tf_(ros::Duration(10.0)),
@@ -136,7 +166,7 @@ Explore::Explore() :
 
   marker_publisher_ = node_.advertise<Marker>("visualization_marker",10);
   marker_array_publisher_ = node_.advertise<MarkerArray>("visualization_marker_array",10);
-  topomap_marker_publisher_ = node_.advertise<Marker>("topomap_marker", 1000);
+  topomap_marker_publisher_ = node_.advertise<Marker>("topomap_marker", 3000);
   map_publisher_ = private_nh.advertise<nav_msgs::OccupancyGrid>("map", 1, true);
   voltage_subscriber_ = node_.subscribe<p2os_driver::BatteryState>("battery_state", 1, &Explore::battery_state_callback, this);
   charged_subscriber_ = node_.subscribe<std_msgs::Empty>("charge_complete", 1, &Explore::charge_complete_callback, this);
