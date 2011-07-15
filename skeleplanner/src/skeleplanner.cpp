@@ -97,6 +97,9 @@ bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geome
   plan.push_back( goal );
 
   expand_plan(&plan);
+
+  // remove goal, since other planners do not include goal as part of plan
+  plan.pop_back();
   
   return true;
 }
@@ -121,12 +124,19 @@ void SkelePlanner::expand_plan(std::vector<geometry_msgs::PoseStamped>* plan)
 
   double x_current, y_current,
     x_next, y_next, 
-    delta = 0.01;
+    //delta = 0.01;
+    delta = 0.20;
     //delta = 0.10;
 
   geometry_msgs::PoseStamped pose_stamped;
   pose_stamped.header.frame_id = costmapros->getGlobalFrameID();
   pose_stamped.header.stamp = ros::Time::now();
+
+  pose_stamped.pose.position.z = 0.0;
+  pose_stamped.pose.orientation.x = 0.0;
+  pose_stamped.pose.orientation.y = 0.0;
+  pose_stamped.pose.orientation.z = 0.0;
+  pose_stamped.pose.orientation.w = 1.0;
   
   bool done, x_done, y_done;
   std::vector<geometry_msgs::PoseStamped>::const_iterator next_it;
