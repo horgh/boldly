@@ -46,7 +46,7 @@
 //#define FRONTIER_COMPARE
 
 // Time until we decide we are stuck in seconds
-#define PROGRESS_TIMEOUT 30.0
+#define PROGRESS_TIMEOUT 10.0
 
 // Voltage that we consider too low and must charge. This should
 // be the same as robot starts sounding alarums

@@ -96,7 +96,7 @@ bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geome
   // (when using the current frontier selector, anyway)
   plan.push_back( goal );
 
-  expand_plan(&plan);
+  SkelePlanner::expand_plan(&plan);
 
   // remove goal, since other planners do not include goal as part of plan
   plan.pop_back();
@@ -129,7 +129,8 @@ void SkelePlanner::expand_plan(std::vector<geometry_msgs::PoseStamped>* plan)
     //delta = 0.10;
 
   geometry_msgs::PoseStamped pose_stamped;
-  pose_stamped.header.frame_id = costmapros->getGlobalFrameID();
+  //pose_stamped.header.frame_id = costmapros->getGlobalFrameID();
+  pose_stamped.header.frame_id = "map";
   pose_stamped.header.stamp = ros::Time::now();
 
   pose_stamped.pose.position.z = 0.0;
