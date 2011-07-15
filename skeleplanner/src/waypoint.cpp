@@ -33,7 +33,6 @@ inline bool inBounds(int x, int y, const costmap_2d::Costmap2D &costmap) {
 //calculate the minimum space around a point
 int calcSpace(int x, int y, const costmap_2d::Costmap2D &costmap, int ** memo)
 {
-
   if(memo != NULL && memo[x][y] != -1)
     return memo[x][y];
 
@@ -42,60 +41,61 @@ int calcSpace(int x, int y, const costmap_2d::Costmap2D &costmap, int ** memo)
     
   //DPify!
   if(memo != NULL && false)
-    {
-      //note: int/float dist trunc. errors mean be conservative by 3(more?)
-      startrad = INT_MAX;
-      for(int i = -1; i <= 1; i++)
-	for(int j = -1; j <= 1; j++) {
-	  if(!inBounds(x+i, y+j, costmap)) continue;
-	  if((i != 0 || j != 0) && memo[x+i][y+j] != -1) {
-	    startrad = min(startrad, memo[x+i][y+j]-3);
-	  }
-	}
+  {
+    //note: int/float dist trunc. errors mean be conservative by 3(more?)
+    startrad = INT_MAX;
+    for(int i = -1; i <= 1; i++)
+      for(int j = -1; j <= 1; j++) {
+        if(!inBounds(x+i, y+j, costmap))
+          continue;
+        if((i != 0 || j != 0) && memo[x+i][y+j] != -1) {
+          startrad = min(startrad, memo[x+i][y+j]-3);
+        }
+      }
+
       if(startrad == INT_MAX)
-	startrad = 0;
+        startrad = 0;
       startrad = max(startrad, 0);
-    }
+  }
     
   for(int rad = startrad; rad < INT_MAX; rad++)
-    {
+  {
       for(int i = x - rad; i <= x + rad; i++)
+      {
+        for(int j = y - rad; j <= y + rad; j += (i == x-rad || i == x+rad ? 1 : max(1, 2*rad)))
         {
-	  for(int j = y - rad; j <= y + rad; j += (i == x-rad || i == x+rad ? 1 : max(1, 2*rad)))
-            {
-	      if(!inBounds(i, j, costmap)) continue;
-	      if(costmap.getCost(i, j) > IMPASSABLE_THRESH)
-		rtn = min((float)rtn, dist(i, j, x, y));
-            }
+          if(!inBounds(i, j, costmap))
+            continue;
+          if(costmap.getCost(i, j) > IMPASSABLE_THRESH)
+            rtn = min((float)rtn, dist(i, j, x, y));
         }
+      }
         
-      if(rtn != INT_MAX && rad > rtn)
-        {
-	  if(memo != NULL)
-	    memo[x][y] = rtn;
-	  return rtn;
-        }
-    }
+      if(rtn != INT_MAX && rad > rtn) {
+        if(memo != NULL)
+          memo[x][y] = rtn;
+        return rtn;
+      }
+  }
   return rtn;
 }
 
 bool straightClear(int x1, int y1, int x2, int y2, const costmap_2d::Costmap2D &costmap, int ** memo)
 {
-
   if(x2-x1 == 0)
+  {
+    //annoying vertical line
+    int yinc = (y2-y1 > 0 ? 1 : -1);
+    for(int y = y1; y != y2; y += yinc)
     {
-      //annoying vertical line
-      int yinc = (y2-y1 > 0 ? 1 : -1);
-      for(int y = y1; y != y2; y += yinc)
-        {
-	  if(calcSpace(x1, y, costmap, memo) <= 1)
-	    return false;
-        }
-      return true;
+      if(calcSpace(x1, y, costmap, memo) <= 1)
+        return false;
     }
+    return true;
+  }
     
   //ensure left-to-right
-  if(x2-x1 < 0){
+  if(x2-x1 < 0) {
     int tx = x1;
     int ty = y1;
     x1 = x2;
@@ -111,69 +111,70 @@ bool straightClear(int x1, int y1, int x2, int y2, const costmap_2d::Costmap2D &
 
   //dont check the points themselves (?)
   for(float x = 0; x <= (x2-x1); x += xinc)
+  {
+    if(calcSpace((int)(x1+x), (int)(y1+(slope*x)), costmap, memo) <= 1)
     {
-      if(calcSpace((int)(x1+x), (int)(y1+(slope*x)), costmap, memo) <= 1)
-        {
-	  return false;
-        }
+      return false;
     }
+  }
 
   return true;
 }
 
 MapWaypoint waypointBest(int x, int y, int ** memo, const costmap_2d::Costmap2D &costmap, const vector<MapWaypoint*> &waypoints)
 {
-
   int newm = -1;
   int newx = -1;
   int newy = -1;
 
   for(int rad = WAYPOINTSPACE-1; rad >= 0; rad--)
+  {
+    for(int i = x - rad; i <= x + rad; i++)
     {
-      for(int i = x - rad; i <= x + rad; i++)
+      for(int j = y - rad; j <= y + rad; j += (i == x-rad || i == x+rad ? 1 : max(1, 2*rad)))
+      {
+        if(!inBounds(i, j, costmap))
+          continue;
+
+        if(dist(i, j, x, y) > WAYPOINTSPACE-1)
+          continue;
+
+        //make sure a straight line clear
+        if(!straightClear(i, j, x, y, costmap, memo))
+          continue;
+
+        //straightline clear on orig image
+        int tmps = calcSpace(i, j, costmap, memo);
+        int otmps = tmps;
+        int innerWaypoints = 0;
+        for(vector<MapWaypoint*>::const_iterator w = waypoints.begin(); w != waypoints.end(); w++)
         {
-	  for(int j = y - rad; j <= y + rad; j += (i == x-rad || i == x+rad ? 1 : max(1, 2*rad)))
-            {
-	      if(!inBounds(i, j, costmap)) continue;
-
-	      if(dist(i, j, x, y) > WAYPOINTSPACE-1)
-		continue;
-
-	      //make sure a straight line clear
-	      if(!straightClear(i, j, x, y, costmap, memo))
-		continue;
-
-	      //straightline clear on orig image
-	      int tmps = calcSpace(i, j, costmap, memo);
-	      int otmps = tmps;
-	      int innerWaypoints = 0;
-	      for(vector<MapWaypoint*>::const_iterator w = waypoints.begin(); w != waypoints.end(); w++)
-                {
-		  tmps = min(tmps, (int)(dist(i, j, (*w)->x, (*w)->y)));
-		  if(dist(i, j, (*w)->x, (*w)->y) <= WAYPOINTSPACE)
-		    innerWaypoints++;
-                }
-                
-	      //don't use new waypoints that are clustered around current ones
-	      if(innerWaypoints >= 2)
-		continue;
-                    
-	      if(tmps > newm)
-                {
-		  newm = tmps;
-		  newx = i;
-		  newy = j;
-
-		  if(newm >= rad)
-		    break;
-                }
-            }
-	  if(newm >= rad)
-	    break;
+          tmps = min(tmps, (int)(dist(i, j, (*w)->x, (*w)->y)));
+          if(dist(i, j, (*w)->x, (*w)->y) <= WAYPOINTSPACE)
+            innerWaypoints++;
         }
+                  
+        //don't use new waypoints that are clustered around current ones
+        if(innerWaypoints >= 2)
+          continue;
+                      
+        if(tmps > newm)
+        {
+          newm = tmps;
+          newx = i;
+          newy = j;
+
+          if(newm >= rad)
+            break;
+        }
+      }
+
       if(newm >= rad)
-	break;
+        break;
     }
+    if(newm >= rad)
+      break;
+  }
     
   if(newm == -1)
     return MapWaypoint(-1, -1, -1);
@@ -206,90 +207,88 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
   //for the DP
   int ** memo = new int*[costmap.getSizeInCellsX()];
   for(int i = 0; i < costmap.getSizeInCellsX(); i++)
-    {
-      memo[i] = new int[costmap.getSizeInCellsY()];
-      for(int j = 0; j < costmap.getSizeInCellsY(); j++)
-	memo[i][j] = -1;
-    }
+  {
+    memo[i] = new int[costmap.getSizeInCellsY()];
+    for(int j = 0; j < costmap.getSizeInCellsY(); j++)
+      memo[i][j] = -1;
+  }
 
   //add waypoints
   for(unsigned i = 0; true; ++i)
+  {
+    if(showDebug && (i+1) % 5 == 0)
+      cout << "Finding Waypoint " << (i+1) << "..." << endl;
+
+    MapWaypoint *maxWaypoint = NULL;
+    Waypoint *worldMax = NULL;
+    MapWaypoint *newway = new MapWaypoint(0, 0, 0);
+    Waypoint *newworld = new Waypoint(0, 0, 0);
+    while(maxWaypoint == NULL)
     {
-
-      if(showDebug && (i+1) % 5 == 0)
-	cout << "Finding Waypoint " << (i+1) << "..." << endl;
-
-      MapWaypoint *maxWaypoint = NULL;
-      Waypoint *worldMax = NULL;
-      MapWaypoint *newway = new MapWaypoint(0, 0, 0);
-      Waypoint *newworld = new Waypoint(0, 0, 0);
-      while(maxWaypoint == NULL)
+      int bestx, besty, besti;
+      //always find new max, as new waypoints can change the max. Assume [0]==home
+      for(int j = 0; j < rtn->size(); j++)
+      {
+        MapWaypoint * tmp = (*rtn)[j];
+        Waypoint *worldtmp = (*worldRtn)[j];
+        if(!ignore[j] && (maxWaypoint == NULL || (tmp->space >= maxWaypoint->space && costmap.getCost(tmp->x, tmp->y) < PASSABLE_THRESH)))
         {
-
-	  int bestx, besty, besti;
-	  //always find new max, as new waypoints can change the max. Assume [0]==home
-	  for(int j = 0; j < rtn->size(); j++)
-            {
-	      MapWaypoint * tmp = (*rtn)[j];
-	      Waypoint *worldtmp = (*worldRtn)[j];
-	      if(!ignore[j] && (maxWaypoint == NULL || (tmp->space >= maxWaypoint->space && costmap.getCost(tmp->x, tmp->y) < PASSABLE_THRESH)))
-                {
-		  maxWaypoint = tmp;
-		  worldMax = worldtmp;
-		  besti = j;
-                }
-            }
-        
-	  //no more space?
-	  if(maxWaypoint == NULL)
-	    break;
-                
-	  *newway = waypointBest(maxWaypoint->x, maxWaypoint->y, memo, costmap, *rtn);
-	  if(newway->x == -1)
-            {
-	      ignore[besti] = true;
-	      maxWaypoint = NULL;
-	      worldMax = NULL;
-	      continue;
-            }
+          maxWaypoint = tmp;
+          worldMax = worldtmp;
+          besti = j;
         }
-        
+      }
+          
+      //no more space?
       if(maxWaypoint == NULL)
-	break;
-                
-      rtn->push_back(newway);
-      newworld->space = newway->space;
-      costmap.mapToWorld(newway->x, newway->y, newworld->x, newworld->y);
-      worldRtn->push_back(newworld);
-      ignore.push_back(false);
-
-      //only recalc waypointBest for nearby waypoints
-      for(int j = 1; j < rtn->size()-1; j++)
-        {
-	  MapWaypoint * tmp = (*rtn)[j];
-
-	  if(tmp->x == newway->x && tmp->y == newway->y)
-            {
-	      if(showDebug)
-		cout << "WARNING: waypoint overlap" << endl;
-	      continue;
-            }
-
-	  if(dist(tmp->x, tmp->y, newway->x, newway->y) <= WAYPOINTSPACE)
-	    tmp->space = waypointBest(tmp->x, tmp->y, memo, costmap, *rtn).space;
-        }
-        
-      //debug
-      //GUIimage->draw_line(maxWaypoint->x, maxWaypoint->y, newway->x, newway->y, green, 0.5);
-      maxWaypoint->neighbors.push_back(newway);
-      newway->neighbors.push_back(maxWaypoint);
-      worldMax->neighbors.push_back(newworld);
-      newworld->neighbors.push_back(worldMax);
-
-      //if we've hit our frontier, stop finding waypoints.
-      //if(colorSum(newway->x, newway->y, &image) < GREYTHRESH && colorSum(newway->x, newway->y, &image) > BLACKTHRESH)
-
+        break;
+                  
+      *newway = waypointBest(maxWaypoint->x, maxWaypoint->y, memo, costmap, *rtn);
+      if(newway->x == -1)
+      {
+        ignore[besti] = true;
+        maxWaypoint = NULL;
+        worldMax = NULL;
+        continue;
+      }
     }
+        
+    if(maxWaypoint == NULL)
+      break;
+                
+    rtn->push_back(newway);
+    newworld->space = newway->space;
+    costmap.mapToWorld(newway->x, newway->y, newworld->x, newworld->y);
+    worldRtn->push_back(newworld);
+    ignore.push_back(false);
+
+    //only recalc waypointBest for nearby waypoints
+    for(int j = 1; j < rtn->size()-1; j++)
+    {
+      MapWaypoint * tmp = (*rtn)[j];
+
+      if(tmp->x == newway->x && tmp->y == newway->y)
+      {
+        if(showDebug)
+          cout << "WARNING: waypoint overlap" << endl;
+        continue;
+      }
+
+      if(dist(tmp->x, tmp->y, newway->x, newway->y) <= WAYPOINTSPACE)
+        tmp->space = waypointBest(tmp->x, tmp->y, memo, costmap, *rtn).space;
+    }
+
+    //debug
+    //GUIimage->draw_line(maxWaypoint->x, maxWaypoint->y, newway->x, newway->y, green, 0.5);
+    maxWaypoint->neighbors.push_back(newway);
+    newway->neighbors.push_back(maxWaypoint);
+    worldMax->neighbors.push_back(newworld);
+    newworld->neighbors.push_back(worldMax);
+
+    //if we've hit our frontier, stop finding waypoints.
+    //if(colorSum(newway->x, newway->y, &image) < GREYTHRESH && colorSum(newway->x, newway->y, &image) > BLACKTHRESH)
+
+  }
 
   for(std::vector<MapWaypoint*>::iterator i = rtn->begin(); i != rtn->end(); ++i) {
     delete *i;
