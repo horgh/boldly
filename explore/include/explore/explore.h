@@ -55,6 +55,7 @@
 #include <p2os_driver/BatteryState.h>
 #include <std_msgs/Empty.h>
 #include <skeleplanner/skeleplanner.h>
+#include <carrot_planner/carrot_planner.h>
 
 namespace explore {
 
@@ -160,7 +161,8 @@ private:
   actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> move_base_client_;
 
   //navfn::NavfnROS* planner_;
-  SkelePlanner* planner_;
+  //SkelePlanner* planner_;
+  carrot_planner::CarrotPlanner* planner_;
   std::string robot_base_frame_;
   bool done_exploring_;
 

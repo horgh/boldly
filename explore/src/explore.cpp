@@ -46,7 +46,7 @@
 //#define FRONTIER_COMPARE
 
 // Time until we decide we are stuck in seconds
-#define PROGRESS_TIMEOUT 10.0
+#define PROGRESS_TIMEOUT 30.0
 
 // Voltage that we consider too low and must charge. This should
 // be the same as robot starts sounding alarums
@@ -137,7 +137,8 @@ void Explore::visualize_arrow(int id, double x, double y, double scale, double r
   m.header.stamp = ros::Time::now();
   m.ns = "skeletester2";
   m.id = id;
-  m.type = Marker::ARROW;
+  //m.type = Marker::ARROW;
+  m.type = visualization_msgs::Marker::SPHERE;
   m.pose.position.x = x;
   m.pose.position.y = y;
   m.pose.position.z = 0.0;
@@ -171,7 +172,7 @@ void Explore::publish_topo_path(std::vector<geometry_msgs::PoseStamped>* path) {
     // XXX Using this in skeleplanner object doesn't account for marker_id changing...
     //planner_->visualize_node(it->pose.position.x, it->pose.position.y, 0.25, 255.0, 0.0, 169.0, 1.0, &markers);
     // 2.0 scale
-    visualize_arrow(marker_id++, it->pose.position.x, it->pose.position.y, 2.0, 255.0, 0.0, 169.0, 1.0, &markers);
+    visualize_arrow(marker_id++, it->pose.position.x, it->pose.position.y, 0.10, 255.0, 0.0, 169.0, 1.0, &markers);
   }
 
   for (std::vector<visualization_msgs::Marker>::const_iterator it = markers.begin();
@@ -196,7 +197,7 @@ Explore::Explore() :
 
   marker_publisher_ = node_.advertise<Marker>("visualization_marker",10);
 #ifdef VISUALISE
-  topomap_marker_publisher_ = node_.advertise<Marker>("topomap_marker", 10);
+  topomap_marker_publisher_ = node_.advertise<Marker>("topomap_marker", 3000);
 #endif
   marker_array_publisher_ = node_.advertise<MarkerArray>("visualization_marker_array",10);
   map_publisher_ = private_nh.advertise<nav_msgs::OccupancyGrid>("map", 1, true);
@@ -227,7 +228,8 @@ Explore::Explore() :
   explore_costmap_ros_->clearRobotFootprint();
 
   //planner_ = new navfn::NavfnROS(std::string("explore_planner"), explore_costmap_ros_);
-  planner_ = new SkelePlanner();
+  //planner_ = new SkelePlanner();
+  planner_ = new carrot_planner::CarrotPlanner();
   planner_->initialize(std::string("explore_planner"), explore_costmap_ros_);
 
   explorer_ = new ExploreFrontier();
@@ -587,7 +589,7 @@ void Explore::makePlan() {
     move_base_client_.sendGoal(goal, boost::bind(&Explore::reachedGoal, this, _1, _2, goal_pose));
 
     // draw this plan. Add goal as well so we visualize it the same way
-    plan.push_back( goal_pose );
+    //plan.push_back( goal_pose );
     publish_topo_path(&plan);
 
     ROS_WARN("Sent new goal to move_base.");
@@ -1220,7 +1222,7 @@ void Explore::execute() {
       publishMap();
 #ifdef VISUALISE
       // and topomap
-      planner_->publish_topomap(&topomap_marker_publisher_);
+      //planner_->publish_topomap(&topomap_marker_publisher_);
 #endif
     }
 

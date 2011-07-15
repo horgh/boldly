@@ -48,6 +48,7 @@
 #include <navfn/navfn_ros.h>
 #include <tf/transform_listener.h>
 #include <skeleplanner/skeleplanner.h>
+#include <carrot_planner/carrot_planner.h>
 
 namespace explore {
 
@@ -85,7 +86,8 @@ private:
   float costmapResolution_;
 
   //navfn::NavfnROS* planner_;
-  SkelePlanner* planner_;
+  //SkelePlanner* planner_;
+  carrot_planner::CarrotPlanner* planner_;
 protected:
   std::vector<Frontier> frontiers_;
 
@@ -146,7 +148,8 @@ public:
    * which would prevent planning.
    */
   //virtual bool getExplorationGoals(costmap_2d::Costmap2DROS& costmap, tf::Stamped<tf::Pose> robot_pose, navfn::NavfnROS* planner, std::vector<geometry_msgs::Pose>& goals, double cost_scale, double orientation_scale, double gain_scale);
-  virtual bool getExplorationGoals(costmap_2d::Costmap2DROS& costmap, tf::Stamped<tf::Pose> robot_pose, SkelePlanner* planner, std::vector<geometry_msgs::Pose>& goals, double cost_scale, double orientation_scale, double gain_scale);
+  //virtual bool getExplorationGoals(costmap_2d::Costmap2DROS& costmap, tf::Stamped<tf::Pose> robot_pose, SkelePlanner* planner, std::vector<geometry_msgs::Pose>& goals, double cost_scale, double orientation_scale, double gain_scale);
+  virtual bool getExplorationGoals(costmap_2d::Costmap2DROS& costmap, tf::Stamped<tf::Pose> robot_pose, carrot_planner::CarrotPlanner* planner, std::vector<geometry_msgs::Pose>& goals, double cost_scale, double orientation_scale, double gain_scale);
 
   /**
    * @brief  Returns markers representing all frontiers
