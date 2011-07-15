@@ -206,10 +206,8 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
   int ** memo = new int*[costmap.getSizeInCellsX()];
   for(int i = 0; i < costmap.getSizeInCellsX(); i++) {
     memo[i] = new int[costmap.getSizeInCellsY()];
-    cout << "1" << endl;
     for(int j = 0; j < costmap.getSizeInCellsY(); j++) {
       memo[i][j] = -1;
-      cout << "2" << endl;
     }
   }
 
@@ -222,10 +220,8 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
     Waypoint *worldMax = NULL;
     MapWaypoint *newway = new MapWaypoint(0, 0, 0);
     Waypoint *newworld = new Waypoint(0, 0, 0);
-    cout << "3" << endl;
 
     while(maxWaypoint == NULL) {
-      cout << "4" << endl;
       int bestx, besty, besti;
       //always find new max, as new waypoints can change the max. Assume [0]==home
       for(int j = 0; j < rtn->size(); j++) {
@@ -236,7 +232,6 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
           worldMax = worldtmp;
           besti = j;
         }
-        cout << "5" << endl;
       }
         
       //no more space?
@@ -264,7 +259,6 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
     //only recalc waypointBest for nearby waypoints
     for(int j = 1; j < rtn->size()-1; j++) {
       MapWaypoint * tmp = (*rtn)[j];
-      cout << "6" << endl;
       if(tmp->x == newway->x && tmp->y == newway->y) {
 	      if(showDebug)
           cout << "WARNING: waypoint overlap" << endl;
@@ -288,7 +282,6 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
   }
 
   for(std::vector<MapWaypoint*>::iterator i = rtn->begin(); i != rtn->end(); ++i) {
-    cout << "7" << endl;
     delete *i;
   }
   delete rtn;

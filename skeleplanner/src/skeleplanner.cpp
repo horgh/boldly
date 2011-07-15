@@ -44,10 +44,21 @@ void SkelePlanner::update() {
   if(topomap) {
     wipeTopo();
   }
+  ROS_WARN("SkelePlanner makePlan() costmap2d resolution (in update()): %f cells: %d by %d",
+    costmap.getResolution(), costmap.getSizeInCellsX(), costmap.getSizeInCellsY()
+  );
+
   ROS_WARN("HELLO SKELEPLANNER 2a");
+
   //std::vector<Waypoint*> *result = topoFromPoint(lastOrigin.pose.position.x, lastOrigin.pose.position.y, costmap);
+  ROS_WARN("topoFromPoint stuff %f, %f, %f %f",
+    lastOrigin.pose.position.x, lastOrigin.pose.position.y,
+    costmap.getOriginX(), costmap.getOriginY()
+  );
   std::vector<Waypoint*> *result = topoFromPoint(lastOrigin.pose.position.x, lastOrigin.pose.position.y, costmap, true);
+
   gotSafeOrigin = result->size() > 1;
+  ROS_WARN("topo size %d", result->size());
   ROS_WARN("HELLO SKELEPLANNER 2b");
 
   if(gotSafeOrigin) {
@@ -63,14 +74,25 @@ void SkelePlanner::update() {
     ROS_WARN("HELLO SKELEPLANNER 2e");
     
     //result = topoFromPoint(safeOrigin.pose.position.x, safeOrigin.pose.position.y, costmap);
+    ROS_WARN("topoFromPoint stuff r2 %f, %f, %f %f",
+      safeOrigin.pose.position.x, safeOrigin.pose.position.y,
+      costmap.getOriginX(), costmap.getOriginY()
+    );
+
     result = topoFromPoint(safeOrigin.pose.position.x, safeOrigin.pose.position.y, costmap, true);
     gotSafeOrigin = result->size() > 1;
+    ROS_WARN("topo size r2 %d", result->size());
     ROS_WARN("HELLO SKELEPLANNER 2f");
+
   }
   topomap = result;
   ROS_WARN("HELLO SKELEPLANNER 2g");
 }
 
+/*
+  Dumb planner just to show that it can actually move the robot
+*/
+/*
 bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geometry_msgs::PoseStamped &goal, std::vector< geometry_msgs::PoseStamped > &plan) {
   plan.clear();
   plan.push_back(start);
@@ -78,11 +100,37 @@ bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geome
   expand_plan(&plan);
   return true;
 }
-/*
+*/
+
 bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geometry_msgs::PoseStamped &goal, std::vector< geometry_msgs::PoseStamped > &plan) {
   ROS_WARN("HELLO SKELEPLANNER 2");
   plan.clear();
+
+  if (start.pose.position.x == goal.pose.position.x
+    && start.pose.position.y == goal.pose.position.y
+    && start.pose.position.z == goal.pose.position.z)
+  {
+    ROS_WARN("SkelePlanner makePlan() returning due to goal matching start.");
+    return false;
+  }
+
   lastOrigin = start;
+
+  ROS_WARN("SkelePlanner makePlan() costmap2dros resolution: %f", costmapros->getResolution());
+
+  ROS_WARN("Start is at (%f, %f, %f), (%f, %f, %f, %f), with stamp %d, frame %s",
+    start.pose.position.x, start.pose.position.y, start.pose.position.z,
+    start.pose.orientation.x, start.pose.orientation.y, start.pose.orientation.z, start.pose.orientation.w,
+    start.header.stamp.sec,
+    start.header.frame_id.c_str()
+  );
+  ROS_WARN("Goal is at (%f, %f, %f), (%f, %f, %f, %f), with stamp %d, frame %s",
+    goal.pose.position.x, goal.pose.position.y, goal.pose.position.z,
+    goal.pose.orientation.x, goal.pose.orientation.y, goal.pose.orientation.z, goal.pose.orientation.w,
+    goal.header.stamp.sec,
+    goal.header.frame_id.c_str()
+  );
+  /*
   if(!gotSafeOrigin) {
     update();
     if(!gotSafeOrigin) {
@@ -91,6 +139,8 @@ bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geome
       return false;
     }
   }
+  */
+  update();
   ROS_WARN("HELLO SKELEPLANNER 3");
   
   std::vector<float> dists(topomap->size());
@@ -128,7 +178,6 @@ bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geome
   
   return true;
 }
-*/
 
 /*
   The result from A* is a plan with poses too far apart (waypoints) which

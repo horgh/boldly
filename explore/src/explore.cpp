@@ -591,7 +591,11 @@ void Explore::makePlan() {
     plan.push_back( goal_pose );
     publish_topo_path(&plan);
 
-    ROS_WARN("Sent new goal to move_base.");
+    ROS_WARN("Sent new goal to move_base: (%f, %f, %f)", 
+      goal.target_pose.pose.position.x,
+      goal.target_pose.pose.position.y,
+      goal.target_pose.pose.position.z
+    );
 
     setLocalState(STATE_EXPLORING);
     time_since_progress_ = 0.0;
@@ -776,7 +780,7 @@ void Explore::checkIfStuck() {
       ROS_WARN("Adding current goal to black list.");
       setLocalState(STATE_WAITING_FOR_GOAL);
     } else if (state == STATE_HEADING_HOME) {
-      moveRandomDirection();
+      //moveRandomDirection();
     } else {
       ROS_WARN("*** We're stuck but didn't expect this state! ***");
       assert(9 == 10);
@@ -1221,7 +1225,7 @@ void Explore::execute() {
       publishMap();
 #ifdef VISUALISE
       // and topomap
-      //planner_->publish_topomap(&topomap_marker_publisher_);
+      planner_->publish_topomap(&topomap_marker_publisher_);
 #endif
     }
 
