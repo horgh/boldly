@@ -58,7 +58,7 @@
 #define VOLTAGE_WARNING 11.5
 
 // Our battery is a timer. Makes us go home when its up
-// With constant battery time, always use BATTERY_TIME as our battery life
+// With CONSTANT_BATTERY_TIME, always use INITIAL_EXPLORE_TIME as our battery life
 // otherwise we use time until we hear warning voltage
 #define BATTERY_TIMER
 

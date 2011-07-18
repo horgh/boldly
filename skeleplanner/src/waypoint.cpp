@@ -8,18 +8,11 @@
 using namespace std;
 
 #define WAYPOINTRAD 3
-#define WAYPOINTSPACE 40
+//#define WAYPOINTSPACE 40
+#define WAYPOINTSPACE 20
 
 #define IMPASSABLE_THRESH 127
 #define PASSABLE_THRESH 127
-
-struct MapWaypoint {
-  unsigned x, y;
-  int space;
-  std::vector<MapWaypoint*> neighbors;
-
-MapWaypoint(unsigned _x, unsigned _y, int _space) : x(_x), y(_y), space(_space) {};
-};
 
 inline float dist(int x1, int y1, int x2, int y2)
 {
@@ -189,7 +182,7 @@ MapWaypoint waypointBest(int x, int y, int ** memo, const costmap_2d::Costmap2D 
 //however you can stop is short by specifying a maxPoints. Make maxPoints large (INT_MAX) if you want it to find
 //the complete topological map.
 //The other functions are workhorse functions, and are not meant for use outside of this function.
-vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d::Costmap2D &costmap, bool showDebug, Topostore * memory=NULL)
+vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d::Costmap2D &costmap, bool showDebug, Topostore * memory)
 {
   unsigned x, y;
   MapWaypoint * home;
@@ -203,8 +196,8 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
   {
     costmap.worldToMap(worldx, worldy, x, y);
     home = new MapWaypoint(x, y, 0);
-    rtn = new vector<MapWaypoint*>()
-    worldRtn = new vector<Waypoint*>()
+    rtn = new vector<MapWaypoint*>();
+    worldRtn = new vector<Waypoint*>();
     rtn->push_back(home);
     worldRtn->push_back(new Waypoint(worldx, worldy, 0));
     ignore = new vector<bool>();
@@ -253,7 +246,8 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
       {
         MapWaypoint * tmp = (*rtn)[j];
         Waypoint *worldtmp = (*worldRtn)[j];
-        if(!ignore[j] && (maxWaypoint == NULL || (tmp->space >= maxWaypoint->space && costmap.getCost(tmp->x, tmp->y) < PASSABLE_THRESH)))
+        //if(!ignore[j] && (maxWaypoint == NULL || (tmp->space >= maxWaypoint->space && costmap.getCost(tmp->x, tmp->y) < PASSABLE_THRESH)))
+        if(!(*ignore)[j] && (maxWaypoint == NULL || (tmp->space >= maxWaypoint->space && costmap.getCost(tmp->x, tmp->y) < PASSABLE_THRESH)))
         {
           maxWaypoint = tmp;
           worldMax = worldtmp;
@@ -268,7 +262,7 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
       *newway = waypointBest(maxWaypoint->x, maxWaypoint->y, memo, costmap, *rtn);
       if(newway->x == -1)
       {
-        ignore[besti] = true;
+        (*ignore)[besti] = true;
         maxWaypoint = NULL;
         worldMax = NULL;
         continue;
@@ -279,10 +273,10 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
       break;
                 
     rtn->push_back(newway);
-    newworld->space = newway->space;u
+    newworld->space = newway->space;
     costmap.mapToWorld(newway->x, newway->y, newworld->x, newworld->y);
     worldRtn->push_back(newworld);
-    ignore.push_back(false);
+    ignore->push_back(false);
 
     //only recalc waypointBest for nearby waypoints
     for(int j = 1; j < rtn->size()-1; j++)
@@ -312,10 +306,14 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
 
   }
 
+/*
+  XXX Do we now have a memory leak with this corrupted?
+
   for(std::vector<MapWaypoint*>::iterator i = rtn->begin(); i != rtn->end(); ++i) {
     delete *i;
   }
-  delete rtn;
+  //delete rtn;
+  */
 
   return worldRtn;
 }

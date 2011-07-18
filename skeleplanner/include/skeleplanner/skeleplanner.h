@@ -19,6 +19,7 @@ protected:
   // track how many markers published last time
   int marker_id_last;
   double r_, g_, b_, a_;
+  Topostore* topo_memory;
 
   void wipeTopo();
 
