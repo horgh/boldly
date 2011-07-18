@@ -34,6 +34,11 @@
  *
  *********************************************************************/
 
+// When we're in simulation we want some things to be faster, such as
+// PROGRESS_TIMEOUT and INITIAL_EXPLORE_TIME
+// so uncomment this to do so
+#define SIMULATION
+
 // Compile with some debugging
 #define DEBUG
 
@@ -42,13 +47,19 @@
 //#define FRONTIER_COMPARE
 
 // Time until we decide we are stuck in seconds
+#ifdef SIMULATION
 #define PROGRESS_TIMEOUT 10.0
+#else
+#define PROGRESS_TIMEOUT 30.0
+#endif
 
 // Voltage that we consider too low and must charge. This should
 // be the same as robot starts sounding alarums
-#define VOLTAGE_WARNING 12.0
+#define VOLTAGE_WARNING 11.5
 
 // Our battery is a timer. Makes us go home when its up
+// With constant battery time, always use BATTERY_TIME as our battery life
+// otherwise we use time until we hear warning voltage
 #define BATTERY_TIMER
 
 // Always periodically return (uses INITIAL_EXPLORE_TIME) rather than
@@ -63,7 +74,11 @@
 #define START_SAFETY_MARGIN 0
 
 // Initial explore time before we return home (initial behaviour)
+#ifdef SIMULATION
 #define INITIAL_EXPLORE_TIME 30
+#else
+#define INITIAL_EXPLORE_TIME 300
+#endif
 
 /*
   Possible global states
@@ -247,6 +262,7 @@ Explore::Explore() :
 #else
   global_state = GLOBAL_STATE_EXPLORE;
 #endif
+
   state = STATE_WAITING_FOR_GOAL;
 
   skeleplanner_ = new SkelePlanner();
@@ -661,7 +677,11 @@ void Explore::checkIfStuck() {
       ROS_WARN("Adding current goal to black list.");
       setLocalState(STATE_WAITING_FOR_GOAL);
     } else if (state == STATE_HEADING_HOME) {
+      // Try to move in a random direction to get unstuck
       moveRandomDirection();
+      // The above sent a new goal to move_base. When it's done, we need to
+      // return to heading home.
+      goHome();
     } else {
       ROS_WARN("*** We're stuck but didn't expect this state! ***");
       assert(9 == 10);
@@ -839,6 +859,8 @@ int Explore::batteryTimeRemaining() {
   Send goal to go home to base
 */
 void Explore::goHome() {
+  ROS_WARN("Going home...");
+
   // XXX Maybe we should call computePotential() and make a plan to go home
   // rather than just sending a goal.
   // Also, maybe we should be doing that periodically as we go home to ensure

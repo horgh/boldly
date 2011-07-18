@@ -14,7 +14,7 @@
 
 // XXX should match p2os
 #define VOLTAGE_INITIAL 15.0
-#define VOLTAGE_CUTOFF 12.0
+#define VOLTAGE_CUTOFF 11.0
 
 using namespace std;
 
