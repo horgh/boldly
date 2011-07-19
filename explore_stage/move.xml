@@ -10,5 +10,10 @@
     <rosparam file="$(find explore_stage)/explore/local_costmap.yaml" command="load" />
     <rosparam file="$(find explore_stage)/explore/trajectory_planner_params.yaml" command="load" />
     <param name="controller_frequency" type="double" value="5.0" />
+    <param name="allow_unknown" type="bool" value="false" />
+    <param name="navfn/allow_unknown" type="bool" value="false" />
+    <param name="navfnros/allow_unknown" type="bool" value="false" />
+    <param name="NavfnROS/allow_unknown" type="bool" value="false" />
+    <param name="Navfn/allow_unknown" type="bool" value="false" />
   </node>
 </launch>

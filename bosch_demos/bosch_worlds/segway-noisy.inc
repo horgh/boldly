@@ -10,6 +10,8 @@ define segway position
 
   localization "odom"
   odom_error [0 0.03 0 0.0 0.01 0.03]
+  # For no error, use this
+  #localization "gps"
 
   blocks 1
   block[0].points 8

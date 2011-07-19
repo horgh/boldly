@@ -256,6 +256,7 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose>
   */
   costmap_2d::Costmap2D costmap2;
   costmap.getCostmapCopy(costmap2);
+  // This gets each frontier's topological rating
   std::vector<FrontierStats*>* frontier_stats = frontierRatings(weightedFrontiers, costmap2, topo_map, 0);
 
   rated_frontiers_.clear();
@@ -626,11 +627,15 @@ Point openPoint(WeightedFrontier frontier, const costmap_2d::Costmap2D &costmap)
         {
             for(int j = y - rad; j <= y + rad; j += (i == x-rad || i == x+rad ? 1 : std::max(1, 2*rad)))
             {
+                if (!inBounds(i, j, costmap)) {
+                  continue;
+                }
                 double tx, ty;
                 //costmap.worldToMap(i, j, tx, ty);
-                costmap.mapToWorld(i, j, tx, ty);
+                //costmap.mapToWorld(i, j, tx, ty);
                 //if(calcSpace(i, j, image, NULL) > 1)
-                if(costmap.getCost(tx, ty) < PASSABLE_THRESH)
+                //if(costmap.getCost(tx, ty) < PASSABLE_THRESH)
+                if(costmap.getCost(i, j) < PASSABLE_THRESH)
                     return Point(i, j);
             }
         }

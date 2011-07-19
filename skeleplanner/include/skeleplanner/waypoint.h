@@ -3,7 +3,8 @@
 
 #define WAYPOINTRAD 3
 //#define WAYPOINTSPACE 40
-#define WAYPOINTSPACE 20
+//#define WAYPOINTSPACE 20
+#define WAYPOINTSPACE 5
 
 #define IMPASSABLE_THRESH 127
 #define PASSABLE_THRESH 127
@@ -52,6 +53,10 @@ struct Topostore{
     
     Topostore(MapWaypoint * home_, std::vector<MapWaypoint*>* rtn_, std::vector<Waypoint*>* worldRtn_, std::vector<bool> *ignore_, int **memo_) : home(home_), rtn(rtn_), worldRtn(worldRtn_), ignore(ignore_), memo(memo_) {};
 };
+
+inline bool inBounds(int x, int y, const costmap_2d::Costmap2D &costmap) {
+  return x >= 0 && y >= 0 && x < costmap.getSizeInCellsX() && y < costmap.getSizeInCellsY();
+}
 
 //std::vector<Waypoint*> *topoFromPoint(double x, double y, const costmap_2d::Costmap2D &costmap, bool showDebug=false);
 std::vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d::Costmap2D &costmap, bool showDebug=false, Topostore * memory=NULL);

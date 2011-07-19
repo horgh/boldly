@@ -12,10 +12,6 @@ inline float dist(int x1, int y1, int x2, int y2)
   return std::sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
 }
 
-inline bool inBounds(int x, int y, const costmap_2d::Costmap2D &costmap) {
-  return x >= 0 && y >= 0 && x < costmap.getSizeInCellsX() && y < costmap.getSizeInCellsY();
-}
-
 //calculate the minimum space around a point
 int calcSpace(int x, int y, const costmap_2d::Costmap2D &costmap, int ** memo)
 {
