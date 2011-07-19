@@ -12,6 +12,8 @@ explore_costmap:
   width: 60.0
   height: 60.0
   resolution: 0.2
+  #resolution: 0.02
+  #resolution: 0.1
   origin_x: -30.0
   origin_y: -30.0
   track_unknown_space: true

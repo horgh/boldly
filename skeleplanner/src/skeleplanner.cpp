@@ -43,7 +43,8 @@ void SkelePlanner::update() {
   if(topomap) {
     wipeTopo();
   }
-  std::vector<Waypoint*> *result = topoFromPoint(lastOrigin.pose.position.x, lastOrigin.pose.position.y, costmap);
+  //std::vector<Waypoint*> *result = topoFromPoint(lastOrigin.pose.position.x, lastOrigin.pose.position.y, costmap);
+  std::vector<Waypoint*> *result = topoFromPoint(0.0, 0.0, costmap);
   gotSafeOrigin = result->size() > 1;
 
   if(gotSafeOrigin) {
@@ -55,7 +56,8 @@ void SkelePlanner::update() {
     }
     delete result;
     
-    result = topoFromPoint(safeOrigin.pose.position.x, safeOrigin.pose.position.y, costmap);
+    //result = topoFromPoint(safeOrigin.pose.position.x, safeOrigin.pose.position.y, costmap);
+    result = topoFromPoint(0.0, 0.0, costmap);
     gotSafeOrigin = result->size() > 1;
   }
   topomap = result;

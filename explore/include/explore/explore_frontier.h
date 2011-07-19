@@ -72,6 +72,20 @@ struct WeightedFrontier {
   WeightedFrontier(const WeightedFrontier& copy) { frontier = copy.frontier; cost = copy.cost; }
 };
 
+struct RatedFrontier {
+  WeightedFrontier weighted_frontier;
+  double rating;
+  bool operator<(const RatedFrontier& o) const {
+    //return rating < o.rating;
+    return rating > o.rating;
+  }
+  RatedFrontier():weighted_frontier(),rating(0.0) {}
+  RatedFrontier(const RatedFrontier& copy) {
+    weighted_frontier = copy.weighted_frontier;
+    rating = copy.rating;
+  }
+};
+
 /**
  * @class ExploreFrontier
  * @brief A class that will identify frontiers in a partially explored map
@@ -86,6 +100,8 @@ private:
   navfn::NavfnROS* planner_;
 protected:
   std::vector<Frontier> frontiers_;
+
+  std::vector<RatedFrontier> rated_frontiers_;
 
   /**
    * @brief Finds frontiers and populates frontiers_
@@ -143,7 +159,10 @@ public:
    * improves the robustness of goals which may lie near other obstacles
    * which would prevent planning.
    */
+
   virtual bool getExplorationGoals(costmap_2d::Costmap2DROS& costmap, tf::Stamped<tf::Pose> robot_pose, navfn::NavfnROS* planner, std::vector<geometry_msgs::Pose>& goals, double cost_scale, double orientation_scale, double gain_scale);
+
+  bool rateFrontiers(costmap_2d::Costmap2DROS& costmap, tf::Stamped<tf::Pose> robot_pose, navfn::NavfnROS* planner, std::vector<geometry_msgs::Pose>& goals, double potential_scale, double orientation_scale, double gain_scale);
 
   /**
    * @brief  Returns markers representing all frontiers

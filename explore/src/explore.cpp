@@ -60,7 +60,7 @@
 // Our battery is a timer. Makes us go home when its up
 // With CONSTANT_BATTERY_TIME, always use INITIAL_EXPLORE_TIME as our battery life
 // otherwise we use time until we hear warning voltage
-#define BATTERY_TIMER
+//#define BATTERY_TIMER
 
 // Always periodically return (uses INITIAL_EXPLORE_TIME) rather than
 // operate with our voltage logic. Requires BATTERY_TIMER as well.
@@ -444,7 +444,8 @@ void Explore::makePlan() {
   std::vector<geometry_msgs::Pose> goals;
 
   // Find frontier goals
-  if (! explorer_->getExplorationGoals(*explore_costmap_ros_, robot_pose, planner_, goals, potential_scale_, orientation_scale_, gain_scale_) ) {
+  //if (! explorer_->getExplorationGoals(*explore_costmap_ros_, robot_pose, planner_, goals, potential_scale_, orientation_scale_, gain_scale_) ) {
+  if (! explorer_->rateFrontiers(*explore_costmap_ros_, robot_pose, planner_, goals, potential_scale_, orientation_scale_, gain_scale_) ) {
     ROS_WARN("No frontiers found?");
   }
 
@@ -1067,8 +1068,9 @@ void Explore::execute() {
 #endif
 
       // We need a new exploration goal
-      if ( state == STATE_WAITING_FOR_GOAL || atGoal() ) {
+      if ( state == STATE_WAITING_FOR_GOAL || atGoal() || (ros::Time::now() - last_goal_chosen).sec > 10) {
         makePlan();
+        last_goal_chosen = ros::Time::now();
 
       // We can get stuck (if we're not charging), so handle it.
       } else if ( state != STATE_CHARGING ) {

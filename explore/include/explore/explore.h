@@ -220,6 +220,8 @@ private:
   ros::Time last_time_update_time_to_home;
 
   SkelePlanner *skeleplanner_;
+
+  ros::Time last_goal_chosen;
 };
 
 }

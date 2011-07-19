@@ -125,6 +125,156 @@ void ExploreFrontier::computePotentialFromRobot(Costmap2DROS* costmap, navfn::Na
   computePotentialFromPoint(costmap, planner, & robot_pose_msg.pose.position );
 }
 
+//geometry_msgs::Pose ExploreFrontier::rateFrontiers(std::vector<geometry_msgs::Pose>& goals) {
+bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose> robot_pose, navfn::NavfnROS* planner, std::vector<geometry_msgs::Pose>& goals, double potential_scale, double orientation_scale, double gain_scale)
+{
+  findFrontiers(costmap);
+  if (frontiers_.size() == 0)
+    return false;
+
+/*
+  geometry_msgs::Point start;
+  start.x = robot_pose.getOrigin().x();
+  start.y = robot_pose.getOrigin().y();
+  start.z = robot_pose.getOrigin().z();
+
+  planner->computePotential(start);
+*/
+
+  planner_ = planner;
+  costmapResolution_ = costmap.getResolution();
+
+  //we'll make sure that we set goals for the frontier at least the circumscribed
+  //radius away from unknown space
+  float step = -1.0 * costmapResolution_;
+  int c = ceil(costmap.getCircumscribedRadius() / costmapResolution_);
+  WeightedFrontier goal;
+  std::vector<WeightedFrontier> weightedFrontiers;
+  weightedFrontiers.reserve(frontiers_.size() * c);
+
+  double average_frontier_size = 0.0;
+  for (uint i=0; i < frontiers_.size(); i++) {
+    Frontier& frontier = frontiers_[i];
+    WeightedFrontier weightedFrontier;
+    weightedFrontier.frontier = frontier;
+
+    tf::Point p(frontier.pose.position.x, frontier.pose.position.y, frontier.pose.position.z);
+    tf::Quaternion bt;
+    tf::quaternionMsgToTF(frontier.pose.orientation, bt);
+    tf::Vector3 v(cos(bt.getAngle()), sin(bt.getAngle()), 0.0);
+
+    for (int j=0; j <= c; j++) {
+      tf::Vector3 check_point = p + (v * (step * j));
+      weightedFrontier.frontier.pose.position.x = check_point.x();
+      weightedFrontier.frontier.pose.position.y = check_point.y();
+      weightedFrontier.frontier.pose.position.z = check_point.z();
+
+      //weightedFrontier.cost = potential_scale * getFrontierCost(weightedFrontier.frontier) + orientation_scale * getOrientationChange(weightedFrontier.frontier, robot_pose) - gain_scale * getFrontierGain(weightedFrontier.frontier, costmapResolution_);
+      weightedFrontier.cost = potential_scale * getFrontierCost(weightedFrontier.frontier) + orientation_scale
+        * getOrientationChange(weightedFrontier.frontier, robot_pose);
+//      weightedFrontier.cost = getFrontierCost(weightedFrontier.frontier) - getFrontierGain(weightedFrontier.frontier, costmapResolution_);
+//      ROS_DEBUG("cost: %f (%f * %f + %f * %f - %f * %f)",
+//          weightedFrontier.cost,
+//          potential_scale,
+//          getFrontierCost(weightedFrontier.frontier),
+//          orientation_scale,
+//          getOrientationChange(weightedFrontier.frontier, robot_pose),
+//          gain_scale,
+//          getFrontierGain(weightedFrontier.frontier, costmapResolution_) );
+      weightedFrontiers.push_back(weightedFrontier);
+    }
+    average_frontier_size += gain_scale * getFrontierGain(weightedFrontier.frontier, costmapResolution_);
+  }
+
+  average_frontier_size /= frontiers_.size();
+
+  goals.clear();
+  goals.reserve(weightedFrontiers.size());
+  std::sort(weightedFrontiers.begin(), weightedFrontiers.end());
+
+  // Filter frontiers
+  for (std::vector<WeightedFrontier>::iterator it = weightedFrontiers.begin(); it != weightedFrontiers.end(); ) {
+    double size = gain_scale * getFrontierGain(it->frontier, costmapResolution_);
+    if (size < average_frontier_size / 2.0) {
+      it = weightedFrontiers.erase(it);
+      continue;
+    }
+    ++it;
+  }
+
+  // Group frontiers
+  for (std::vector<WeightedFrontier>::iterator it = weightedFrontiers.begin(); it != weightedFrontiers.end(); ) {
+    for (std::vector<WeightedFrontier>::iterator it2 = it+1; it2 != weightedFrontiers.end(); ) {
+      double dx = it->frontier.pose.position.x - it2->frontier.pose.position.x;
+      double dy = it->frontier.pose.position.y - it2->frontier.pose.position.y;
+      double dist = sqrt(dx*dx + dy*dy);
+      double size_in_coords_we_want1 = gain_scale * getFrontierGain(it->frontier, costmapResolution_);
+      double size_in_coords_we_want2 = gain_scale * getFrontierGain(it2->frontier, costmapResolution_);
+      //if (dist < std::max(it->frontier.size, it2->frontier.size) / 2.0) {
+      if (dist < std::max(size_in_coords_we_want1, size_in_coords_we_want2) / 2.0) {
+        WeightedFrontier weighted_frontier;
+        weighted_frontier.frontier.pose.position.x = ( it->frontier.pose.position.x + it2->frontier.pose.position.x ) / 2.0;
+        weighted_frontier.frontier.pose.position.y = ( it->frontier.pose.position.y + it2->frontier.pose.position.y ) / 2.0;
+        weighted_frontier.frontier.pose.position.z = 0.0;
+
+        /*
+        weighted_frontier.frontier.pose.orientation.x = 0.0;
+        weighted_frontier.frontier.pose.orientation.y = 0.0;
+        weighted_frontier.frontier.pose.orientation.z = 0.0;
+        weighted_frontier.frontier.pose.orientation.w = 0.0;
+        */
+        weighted_frontier.frontier.pose.orientation.x = it->frontier.pose.orientation.x;
+        weighted_frontier.frontier.pose.orientation.y = it->frontier.pose.orientation.y;
+        weighted_frontier.frontier.pose.orientation.z = it->frontier.pose.orientation.z;
+        weighted_frontier.frontier.pose.orientation.w = it->frontier.pose.orientation.w;
+
+        weighted_frontier.frontier.size = (it->frontier.size + it2->frontier.size)/2.0 + (dist * costmapResolution_);
+        weighted_frontier.cost = (it->cost + it2->cost) / 2.0;
+        (*it) = weighted_frontier;
+        it2 = weightedFrontiers.erase(it2);
+        continue;
+      }
+      ++it2;
+    }
+    ++it;
+  }
+
+  double max_area = 0.0;
+  double max_cost = 0.0;
+  for (std::vector<WeightedFrontier>::const_iterator it = weightedFrontiers.begin(); it != weightedFrontiers.end(); ++it) {
+    if (it->cost > max_cost) {
+      max_cost = it->cost;
+    }
+    max_area = std::max(gain_scale * getFrontierGain(it->frontier, costmapResolution_), max_area);
+  }
+
+  double lambda = 1.0/2000.0;
+  std::vector<RatedFrontier> rated_frontiers;
+  ROS_WARN("!@(*&@#@(*&#(@*#&@(*#&");
+  for (std::vector<WeightedFrontier>::const_iterator it = weightedFrontiers.begin(); it != weightedFrontiers.end(); ++it) {
+    //double size = gain_scale * getFrontierGain(it->frontier, costmapResolution_);
+    double size = (gain_scale * getFrontierGain(it->frontier, costmapResolution_)) / max_area;
+    //double rating = size * exp(-1.0*lambda*it->cost);
+    double rating = size / (it->cost / max_cost);
+
+    ROS_WARN("A %f L %f rating %f lambda %f", size, (it->cost / max_cost), rating, lambda);
+
+    RatedFrontier rated_frontier;
+    rated_frontier.rating = rating;
+    rated_frontier.weighted_frontier = *it;
+    rated_frontiers.push_back(rated_frontier);
+  }
+
+  std::sort(rated_frontiers.begin(), rated_frontiers.end());
+
+  rated_frontiers_.clear();
+  for (uint i = 0; i < rated_frontiers.size(); i++) {
+    goals.push_back(rated_frontiers[i].weighted_frontier.frontier.pose);
+    rated_frontiers_.push_back(rated_frontiers[i]);
+  }
+  return goals.size() > 0;
+}
+
 /*
 	Goes through each existing frontier & assigns a cost to each
 	Then sorts by cost and returns these as goals
@@ -371,25 +521,34 @@ void ExploreFrontier::getVisualizationMarkers(std::vector<Marker>& markers)
   m.header.stamp = ros::Time::now();
   m.id = 0;
   m.ns = "frontiers";
-  m.type = Marker::ARROW;
+  //m.type = Marker::ARROW;
+  m.type = Marker::CUBE;
   m.pose.position.x = 0.0;
   m.pose.position.y = 0.0;
   m.pose.position.z = 0.0;
+  /*
   m.scale.x = 1.0;
   m.scale.y = 1.0;
   m.scale.z = 1.0;
+  */
   m.color.r = 0;
   m.color.g = 0;
   m.color.b = 255;
-  m.color.a = 255;
+  //m.color.a = 255;
+  m.color.a = 1;
   m.lifetime = ros::Duration(0);
 
   m.action = Marker::ADD;
   uint id = 0;
-  for (uint i=0; i<frontiers_.size(); i++) {
-    Frontier frontier = frontiers_[i];
+  //for (uint i=0; i<frontiers_.size(); i++) {
+  for (uint i=0; i<rated_frontiers_.size(); i++) {
+    RatedFrontier rated_frontier = rated_frontiers_[i];
     m.id = id;
-    m.pose = frontier.pose;
+    m.pose = rated_frontier.weighted_frontier.frontier.pose;
+    m.scale.x = rated_frontier.weighted_frontier.frontier.size / 20.0;
+    m.scale.y = rated_frontier.weighted_frontier.frontier.size / 20.0;
+    m.scale.z = rated_frontier.weighted_frontier.frontier.size / 20.0;
+
     markers.push_back(Marker(m));
     id++;
   }
