@@ -1,6 +1,5 @@
 <!--
-  identical to stage_maze_noisy.launch, but kept as it is the 'original'
-  launch script for the explore package (but really it's altered too)
+  Do explore & slam in maze-noisy.world
 -->
 
 <launch>
