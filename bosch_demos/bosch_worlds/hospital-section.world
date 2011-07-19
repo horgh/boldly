@@ -47,7 +47,7 @@ floorplan
 
   bitmap "../bosch_maps/hospital_section.png"
   map_resolution 0.02
-  size [40.000 18.000 0.600]
+  size [40.000 18.000 2.600]
   name "hospital"
   color "gray50"
   gui_grid 1
