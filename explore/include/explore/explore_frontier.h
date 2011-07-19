@@ -102,8 +102,9 @@ struct RatedFrontier {
 struct FrontierStats{
     double frontierDelta;
     double lineDeltas;
+    double corrCoeff;
     
-    FrontierStats(double a, double b) : frontierDelta(a), lineDeltas(b) {};
+    FrontierStats(double a, double b, double c) : frontierDelta(a), lineDeltas(b), corrCoeff(c) {};
 };
 
 /**

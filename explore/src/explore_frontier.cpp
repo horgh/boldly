@@ -701,13 +701,35 @@ std::vector<FrontierStats*> *ExploreFrontier::frontierRatings(std::vector<Weight
         double frontierDelta = perpenDist(bestFit.m, bestFit.b, startingPoint.x, startingPoint.y);
                 
         double lineDeltas = 0.0;
+        double xsum = 0.0;
+        double ysum = 0.0;
+        double xsquares = 0.0;
+        double ysquares = 0.0;
+        int n = (waypoints.size() - 1);
         //do not include the home waypoint, or else we double count deltas
+        //also, calc the x and y averages while we iterate
         for(std::vector<Waypoint*>::iterator j = waypoints.begin() + 1; j != waypoints.end(); j++)
+        {
+            xsum += (*j)->x;
+            ysum += (*j)->y;
+            xsquares += (*j)->x*(*j)->x;
+            ysquares += (*j)->y*(*j)->y;
             lineDeltas += perpenDist(bestFit.m, bestFit.b, (*j)->x, (*j)->y);
-        lineDeltas /= (waypoints.size() - 1);
-            
-        //so atm, frontier delta is just as weighted as line deltas
-        rtn->push_back(new FrontierStats(frontierDelta, lineDeltas));
+        }
+        lineDeltas /= n;
+        
+        double mdiff = 0.0;
+        //get the differences from the average
+        for(std::vector<Waypoint*>::iterator j = waypoints.begin() + 1; j != waypoints.end(); j++)
+        {
+            mdiff += ((*j)->x - (xsum / n))*((*j)->y - (ysum / n));
+        }
+        
+        double denom = (n*xsquares - xsum*xsum)*(n*ysquares - ysum*ysum);
+        double corrCoeff = (n*mdiff - xsum*ysum) / denom;
+
+        //use frontierstats in your formula
+        rtn->push_back(new FrontierStats(frontierDelta, lineDeltas, corrCoeff));
         
     }
     
