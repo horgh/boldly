@@ -178,7 +178,11 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose>
   //std::sort(weightedFrontiers.begin(), weightedFrontiers.end());
 
   // Filter frontiers (require a min size)
-  for (std::vector<WeightedFrontier>::iterator it = weightedFrontiers.begin(); it != weightedFrontiers.end(); ) {
+  // XXX Can move this into next loop.
+  for (std::vector<WeightedFrontier>::iterator it = weightedFrontiers.begin();
+    it != weightedFrontiers.end()
+    ; )
+  {
     double size = gain_scale * getFrontierGain(it->frontier, costmapResolution_);
     if (size < average_frontier_size / 2.0) {
       it = weightedFrontiers.erase(it);
@@ -188,8 +192,14 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose>
   }
 
   // Group frontiers (crudely)
-  for (std::vector<WeightedFrontier>::iterator it = weightedFrontiers.begin(); it != weightedFrontiers.end(); ) {
-    for (std::vector<WeightedFrontier>::iterator it2 = it+1; it2 != weightedFrontiers.end(); ) {
+  for (std::vector<WeightedFrontier>::iterator it = weightedFrontiers.begin();
+    it != weightedFrontiers.end()
+    ; )
+  {
+    for (std::vector<WeightedFrontier>::iterator it2 = it+1;
+      it2 != weightedFrontiers.end()
+      ; )
+    {
       // Distance between the two frontiers
       double dx = it->frontier.pose.position.x - it2->frontier.pose.position.x;
       double dy = it->frontier.pose.position.y - it2->frontier.pose.position.y;
@@ -224,9 +234,13 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose>
   }
 
   // We need the max area and max cost of found frontiers for normalisation
+  // XXX We can probably move this to end of prior looping, but at end of its outer loop
   double max_area = 0.0;
   double max_cost = 0.0;
-  for (std::vector<WeightedFrontier>::const_iterator it = weightedFrontiers.begin(); it != weightedFrontiers.end(); ++it) {
+  for (std::vector<WeightedFrontier>::const_iterator it = weightedFrontiers.begin();
+    it != weightedFrontiers.end();
+    ++it)
+  {
     max_cost = std::max(it->cost, max_cost);
     max_area = std::max(gain_scale * getFrontierGain(it->frontier, costmapResolution_),
       max_area);
