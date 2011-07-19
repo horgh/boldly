@@ -125,21 +125,15 @@ void ExploreFrontier::computePotentialFromRobot(Costmap2DROS* costmap, navfn::Na
   computePotentialFromPoint(costmap, planner, & robot_pose_msg.pose.position );
 }
 
-//geometry_msgs::Pose ExploreFrontier::rateFrontiers(std::vector<geometry_msgs::Pose>& goals) {
+/*
+  Rate frontiers according to a new algorithm
+*/
 bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose> robot_pose, navfn::NavfnROS* planner, std::vector<geometry_msgs::Pose>& goals, double potential_scale, double orientation_scale, double gain_scale)
 {
   findFrontiers(costmap);
   if (frontiers_.size() == 0)
     return false;
 
-/*
-  geometry_msgs::Point start;
-  start.x = robot_pose.getOrigin().x();
-  start.y = robot_pose.getOrigin().y();
-  start.z = robot_pose.getOrigin().z();
-
-  planner->computePotential(start);
-*/
 
   planner_ = planner;
   costmapResolution_ = costmap.getResolution();
@@ -169,18 +163,10 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose>
       weightedFrontier.frontier.pose.position.y = check_point.y();
       weightedFrontier.frontier.pose.position.z = check_point.z();
 
+      // original explore cost calculation
       //weightedFrontier.cost = potential_scale * getFrontierCost(weightedFrontier.frontier) + orientation_scale * getOrientationChange(weightedFrontier.frontier, robot_pose) - gain_scale * getFrontierGain(weightedFrontier.frontier, costmapResolution_);
       weightedFrontier.cost = potential_scale * getFrontierCost(weightedFrontier.frontier) + orientation_scale
         * getOrientationChange(weightedFrontier.frontier, robot_pose);
-//      weightedFrontier.cost = getFrontierCost(weightedFrontier.frontier) - getFrontierGain(weightedFrontier.frontier, costmapResolution_);
-//      ROS_DEBUG("cost: %f (%f * %f + %f * %f - %f * %f)",
-//          weightedFrontier.cost,
-//          potential_scale,
-//          getFrontierCost(weightedFrontier.frontier),
-//          orientation_scale,
-//          getOrientationChange(weightedFrontier.frontier, robot_pose),
-//          gain_scale,
-//          getFrontierGain(weightedFrontier.frontier, costmapResolution_) );
       weightedFrontiers.push_back(weightedFrontier);
     }
     average_frontier_size += gain_scale * getFrontierGain(weightedFrontier.frontier, costmapResolution_);
@@ -188,11 +174,10 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose>
 
   average_frontier_size /= frontiers_.size();
 
-  goals.clear();
-  goals.reserve(weightedFrontiers.size());
-  std::sort(weightedFrontiers.begin(), weightedFrontiers.end());
+  // Original explore used to sort in order of min cost. No longer necessary.
+  //std::sort(weightedFrontiers.begin(), weightedFrontiers.end());
 
-  // Filter frontiers
+  // Filter frontiers (require a min size)
   for (std::vector<WeightedFrontier>::iterator it = weightedFrontiers.begin(); it != weightedFrontiers.end(); ) {
     double size = gain_scale * getFrontierGain(it->frontier, costmapResolution_);
     if (size < average_frontier_size / 2.0) {
@@ -202,27 +187,26 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose>
     ++it;
   }
 
-  // Group frontiers
+  // Group frontiers (crudely)
   for (std::vector<WeightedFrontier>::iterator it = weightedFrontiers.begin(); it != weightedFrontiers.end(); ) {
     for (std::vector<WeightedFrontier>::iterator it2 = it+1; it2 != weightedFrontiers.end(); ) {
+      // Distance between the two frontiers
       double dx = it->frontier.pose.position.x - it2->frontier.pose.position.x;
       double dy = it->frontier.pose.position.y - it2->frontier.pose.position.y;
       double dist = sqrt(dx*dx + dy*dy);
-      double size_in_coords_we_want1 = gain_scale * getFrontierGain(it->frontier, costmapResolution_);
-      double size_in_coords_we_want2 = gain_scale * getFrontierGain(it2->frontier, costmapResolution_);
-      //if (dist < std::max(it->frontier.size, it2->frontier.size) / 2.0) {
-      if (dist < std::max(size_in_coords_we_want1, size_in_coords_we_want2) / 2.0) {
+
+      // We need to convert size of frontier to map units
+      double size_in_map1 = gain_scale * getFrontierGain(it->frontier, costmapResolution_);
+      double size_in_map2 = gain_scale * getFrontierGain(it2->frontier, costmapResolution_);
+      if (dist < std::max(size_in_map1, size_in_map2) / 2.0) {
         WeightedFrontier weighted_frontier;
+        // What was this calculation again? Approximate midpoint?
         weighted_frontier.frontier.pose.position.x = ( it->frontier.pose.position.x + it2->frontier.pose.position.x ) / 2.0;
         weighted_frontier.frontier.pose.position.y = ( it->frontier.pose.position.y + it2->frontier.pose.position.y ) / 2.0;
         weighted_frontier.frontier.pose.position.z = 0.0;
 
-        /*
-        weighted_frontier.frontier.pose.orientation.x = 0.0;
-        weighted_frontier.frontier.pose.orientation.y = 0.0;
-        weighted_frontier.frontier.pose.orientation.z = 0.0;
-        weighted_frontier.frontier.pose.orientation.w = 0.0;
-        */
+        // XXX Not really correct, but works. Probably irrelevant.
+        // Note: setting all as 0 doesn't work (nav stack doesn't like it).
         weighted_frontier.frontier.pose.orientation.x = it->frontier.pose.orientation.x;
         weighted_frontier.frontier.pose.orientation.y = it->frontier.pose.orientation.y;
         weighted_frontier.frontier.pose.orientation.z = it->frontier.pose.orientation.z;
@@ -230,7 +214,7 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose>
 
         weighted_frontier.frontier.size = (it->frontier.size + it2->frontier.size)/2.0 + (dist * costmapResolution_);
         weighted_frontier.cost = (it->cost + it2->cost) / 2.0;
-        (*it) = weighted_frontier;
+        *it = weighted_frontier;
         it2 = weightedFrontiers.erase(it2);
         continue;
       }
@@ -239,22 +223,32 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose>
     ++it;
   }
 
+  // We need the max area and max cost of found frontiers for normalisation
   double max_area = 0.0;
   double max_cost = 0.0;
   for (std::vector<WeightedFrontier>::const_iterator it = weightedFrontiers.begin(); it != weightedFrontiers.end(); ++it) {
-    if (it->cost > max_cost) {
-      max_cost = it->cost;
-    }
-    max_area = std::max(gain_scale * getFrontierGain(it->frontier, costmapResolution_), max_area);
+    max_cost = std::max(it->cost, max_cost);
+    max_area = std::max(gain_scale * getFrontierGain(it->frontier, costmapResolution_),
+      max_area);
   }
 
+  /*
+    Rate frontiers by goodness & cost.
+    Store in rated_frontiers_.
+  */
+  rated_frontiers_.clear();
+  rated_frontiers_.reserve(weightedFrontiers.size());
   double lambda = 1.0/2000.0;
-  std::vector<RatedFrontier> rated_frontiers;
-  ROS_WARN("!@(*&@#@(*&#(@*#&@(*#&");
-  for (std::vector<WeightedFrontier>::const_iterator it = weightedFrontiers.begin(); it != weightedFrontiers.end(); ++it) {
+  for (std::vector<WeightedFrontier>::const_iterator it = weightedFrontiers.begin();
+    it != weightedFrontiers.end();
+    ++it)
+  {
     //double size = gain_scale * getFrontierGain(it->frontier, costmapResolution_);
+    // Normalise size (area)
     double size = (gain_scale * getFrontierGain(it->frontier, costmapResolution_)) / max_area;
+
     //double rating = size * exp(-1.0*lambda*it->cost);
+    // Normalise rating
     double rating = size / (it->cost / max_cost);
 
     ROS_WARN("A %f L %f rating %f lambda %f", size, (it->cost / max_cost), rating, lambda);
@@ -265,12 +259,14 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose>
     rated_frontiers.push_back(rated_frontier);
   }
 
+  // Sort rated frontiers: max to min
   std::sort(rated_frontiers.begin(), rated_frontiers.end());
 
-  rated_frontiers_.clear();
+  // We return our sorted frontiers as goal poses
+  goals.clear();
+  goals.reserve(rated_frontiers.size());
   for (uint i = 0; i < rated_frontiers.size(); i++) {
     goals.push_back(rated_frontiers[i].weighted_frontier.frontier.pose);
-    rated_frontiers_.push_back(rated_frontiers[i]);
   }
   return goals.size() > 0;
 }
@@ -278,6 +274,8 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose>
 /*
 	Goes through each existing frontier & assigns a cost to each
 	Then sorts by cost and returns these as goals
+
+  * This is the original method of rating frontiers in the explore package
 
   Must call ExploreFrontier::computePotential() first
   Note: This is always called by makePlan() in explore
@@ -540,7 +538,6 @@ void ExploreFrontier::getVisualizationMarkers(std::vector<Marker>& markers)
 
   m.action = Marker::ADD;
   uint id = 0;
-  //for (uint i=0; i<frontiers_.size(); i++) {
   for (uint i=0; i<rated_frontiers_.size(); i++) {
     RatedFrontier rated_frontier = rated_frontiers_[i];
     m.id = id;

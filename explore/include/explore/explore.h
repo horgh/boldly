@@ -221,6 +221,7 @@ private:
 
   SkelePlanner *skeleplanner_;
 
+  // Track last time we calculated and sent a new goal
   ros::Time last_goal_chosen;
 };
 

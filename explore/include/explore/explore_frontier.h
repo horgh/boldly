@@ -72,14 +72,23 @@ struct WeightedFrontier {
   WeightedFrontier(const WeightedFrontier& copy) { frontier = copy.frontier; cost = copy.cost; }
 };
 
+/*
+  Similar to WeightedFrontier (in fact a copy / built on top), but we use
+  this to rate according to our (boldly's) frontier rating method
+*/
 struct RatedFrontier {
   WeightedFrontier weighted_frontier;
   double rating;
+
+  /*
+    We want to rate in order from max to least
+  */
   bool operator<(const RatedFrontier& o) const {
-    //return rating < o.rating;
     return rating > o.rating;
   }
-  RatedFrontier():weighted_frontier(),rating(0.0) {}
+
+  RatedFrontier() : weighted_frontier(), rating(0.0) {}
+
   RatedFrontier(const RatedFrontier& copy) {
     weighted_frontier = copy.weighted_frontier;
     rating = copy.rating;
@@ -101,6 +110,8 @@ private:
 protected:
   std::vector<Frontier> frontiers_;
 
+  // Need to keep track of rated_frontiers between calls as controller
+  // may wish to publish them via getVisualizationMarkers()
   std::vector<RatedFrontier> rated_frontiers_;
 
   /**
