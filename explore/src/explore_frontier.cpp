@@ -241,7 +241,7 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose>
     it != weightedFrontiers.end();
     ++it)
   {
-    max_cost = std::max(it->cost, max_cost);
+    max_cost = std::max((double) it->cost, max_cost);
     max_area = std::max(gain_scale * getFrontierGain(it->frontier, costmapResolution_),
       max_area);
   }
@@ -270,17 +270,17 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose>
     RatedFrontier rated_frontier;
     rated_frontier.rating = rating;
     rated_frontier.weighted_frontier = *it;
-    rated_frontiers.push_back(rated_frontier);
+    rated_frontiers_.push_back(rated_frontier);
   }
 
   // Sort rated frontiers: max to min
-  std::sort(rated_frontiers.begin(), rated_frontiers.end());
+  std::sort(rated_frontiers_.begin(), rated_frontiers_.end());
 
   // We return our sorted frontiers as goal poses
   goals.clear();
-  goals.reserve(rated_frontiers.size());
-  for (uint i = 0; i < rated_frontiers.size(); i++) {
-    goals.push_back(rated_frontiers[i].weighted_frontier.frontier.pose);
+  goals.reserve(rated_frontiers_.size());
+  for (uint i = 0; i < rated_frontiers_.size(); i++) {
+    goals.push_back(rated_frontiers_[i].weighted_frontier.frontier.pose);
   }
   return goals.size() > 0;
 }
@@ -571,6 +571,147 @@ void ExploreFrontier::getVisualizationMarkers(std::vector<Marker>& markers)
   }
 
   lastMarkerCount_ = markers.size();
+}
+
+//workhorse function for frontierRatings
+Line leastSquares(std::vector<Waypoint*> points)
+{
+    int n = points.size();
+    double sum_x = 0;
+    double sum_y = 0;
+    double sum_xx = 0;
+    double sum_xy = 0;
+    
+    for(std::vector<Waypoint*>::iterator i = points.begin(); i != points.end(); i++)
+    {
+        sum_x = sum_x + (*i)->x;
+        sum_y = sum_y + (*i)->y;
+
+        sum_xx = sum_xx + ((*i)->x * (*i)->x);
+        sum_xy = sum_xy + ((*i)->x * (*i)->y);
+    }
+    
+    double m = (-sum_x*sum_y+n*sum_xy)/(n*sum_xx-sum_x*sum_x);
+    double b = (-sum_x*sum_xy+sum_xx*sum_y)/(n*sum_xx-sum_x*sum_x);
+
+    return Line(m, b);
+}
+
+//workhorse function for frontierRatings
+Point openPoint(WeightedFrontier frontier, const costmap_2d::Costmap2D &costmap)
+{
+    double x_world = frontier.frontier.pose.position.x;
+    double y_world = frontier.frontier.pose.position.y;
+
+    unsigned int x;
+    unsigned int y;
+
+    costmap.worldToMap(x_world, y_world, x, y);
+    
+    for(int rad = 0; rad <= frontier.frontier.size; rad++)
+    {
+        for(int i = x - rad; i <= x + rad; i++)
+        {
+            for(int j = y - rad; j <= y + rad; j += (i == x-rad || i == x+rad ? 1 : std::max(1, 2*rad)))
+            {
+                double tx, ty;
+                //costmap.worldToMap(i, j, tx, ty);
+                costmap.mapToWorld(i, j, tx, ty);
+                //if(calcSpace(i, j, image, NULL) > 1)
+                if(costmap.getCost(tx, ty) < PASSABLE_THRESH)
+                    return Point(i, j);
+            }
+        }
+    }
+    
+    //give up and return the center
+    return Point(x, y);
+}
+
+//workhorse function for frontierRatings
+inline double perpenDist(double m, double b, double x, double y)
+{
+    return abs(y - (m*x) - b) / sqrt((m*m) + 1);
+}
+
+inline double dist(double x1, double y1, double x2, double y2) {
+  return std::sqrt( (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
+}
+
+//this is the this least reliable, but the fastest. I have not copied to slower and more reliable version.
+std::vector<FrontierStats*> *ExploreFrontier::frontierRatings(std::vector<WeightedFrontier> frontiers, const costmap_2d::Costmap2D &costmap, std::vector<Waypoint*> topo, int showDebug)
+{
+    int counter = 1;
+    
+    std::vector<FrontierStats*> * rtn = new std::vector<FrontierStats*>();
+    
+    for(std::vector<WeightedFrontier>::iterator i = frontiers.begin(); i != frontiers.end(); i++)
+    {
+        if(showDebug >= 1)
+            std::cout << "Analyzing frontier " << counter++ << "/" << frontiers.size() << std::endl;
+    
+        WeightedFrontier frontier = (*i);
+        Point startingPoint = openPoint(frontier, costmap);
+        
+        double bestDist = DBL_MAX;
+        Waypoint * best = NULL;
+        //find the closest waypoint
+        for(std::vector<Waypoint*>::iterator j = topo.begin(); j != topo.end(); j++)
+        {
+            if((*j)->x == startingPoint.x && (*j)->y == startingPoint.y)
+                continue;
+        
+            if(dist((*j)->x, (*j)->y, startingPoint.x, startingPoint.y) < bestDist)
+            {
+                bestDist = dist((*j)->x, (*j)->y, startingPoint.x, startingPoint.y);
+                best = (*j);
+            }
+        }
+        
+        std::vector<Waypoint*> waypoints;
+        std::queue<Waypoint*> bfs;
+        bfs.push(best);
+        //bfs from that waypoint
+        for(int j = 1; j < FRONTIERDEPTH && !bfs.empty(); )
+        {
+            Waypoint * current = bfs.front();
+            bfs.pop();
+            
+            for(std::vector<Waypoint*>::iterator k = current->neighbors.begin(); k != current->neighbors.end(); k++)
+            {
+                bool alreadyVisited = false;
+                for(std::vector<Waypoint*>::iterator m = waypoints.begin(); m != waypoints.end(); m++)
+                    if((*m) == (*k))
+                    {
+                        alreadyVisited = true;
+                        break;
+                    }
+                
+                if(!alreadyVisited)
+                {
+                    j++;
+                    waypoints.push_back(*k);
+                    bfs.push(*k);
+                }
+            }
+        }
+        
+        Line bestFit = leastSquares(waypoints);
+
+        double frontierDelta = perpenDist(bestFit.m, bestFit.b, startingPoint.x, startingPoint.y);
+                
+        double lineDeltas = 0.0;
+        //do not include the home waypoint, or else we double count deltas
+        for(std::vector<Waypoint*>::iterator j = waypoints.begin() + 1; j != waypoints.end(); j++)
+            lineDeltas += perpenDist(bestFit.m, bestFit.b, (*j)->x, (*j)->y);
+        lineDeltas /= (waypoints.size() - 1);
+            
+        //so atm, frontier delta is just as weighted as line deltas
+        rtn->push_back(new FrontierStats(frontierDelta, lineDeltas));
+        
+    }
+    
+    return rtn;
 }
 
 }

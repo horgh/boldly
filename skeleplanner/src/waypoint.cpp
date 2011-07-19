@@ -7,13 +7,6 @@
 
 using namespace std;
 
-#define WAYPOINTRAD 3
-//#define WAYPOINTSPACE 40
-#define WAYPOINTSPACE 20
-
-#define IMPASSABLE_THRESH 127
-#define PASSABLE_THRESH 127
-
 inline float dist(int x1, int y1, int x2, int y2)
 {
   return std::sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
@@ -319,6 +312,7 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
 }
 
 //workhorse function for frontierRatings
+/*
 Line leastSquares(vector<Waypoint*> points)
 {
     int n = points.size();
@@ -448,6 +442,6 @@ vector<FrontierStats*> *frontierRatings(vector<WeightedFrontier> frontiers, cons
     
     return rtn;
 }
-
+*/
 
 

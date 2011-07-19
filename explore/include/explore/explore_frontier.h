@@ -48,6 +48,10 @@
 #include <navfn/navfn_ros.h>
 #include <tf/transform_listener.h>
 
+#include <skeleplanner/skeleplanner.h>
+
+#define FRONTIERDEPTH 15
+
 namespace explore {
 
 struct FrontierPoint{
@@ -93,6 +97,13 @@ struct RatedFrontier {
     weighted_frontier = copy.weighted_frontier;
     rating = copy.rating;
   }
+};
+
+struct FrontierStats{
+    double frontierDelta;
+    double lineDeltas;
+    
+    FrontierStats(double a, double b) : frontierDelta(a), lineDeltas(b) {};
 };
 
 /**
@@ -174,6 +185,9 @@ public:
   virtual bool getExplorationGoals(costmap_2d::Costmap2DROS& costmap, tf::Stamped<tf::Pose> robot_pose, navfn::NavfnROS* planner, std::vector<geometry_msgs::Pose>& goals, double cost_scale, double orientation_scale, double gain_scale);
 
   bool rateFrontiers(costmap_2d::Costmap2DROS& costmap, tf::Stamped<tf::Pose> robot_pose, navfn::NavfnROS* planner, std::vector<geometry_msgs::Pose>& goals, double potential_scale, double orientation_scale, double gain_scale);
+
+  std::vector<FrontierStats*> *frontierRatings(std::vector<WeightedFrontier> frontiers, const costmap_2d::Costmap2D &costmap, std::vector<Waypoint*> topo, int showDebug=0);
+
 
   /**
    * @brief  Returns markers representing all frontiers
