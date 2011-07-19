@@ -36,3 +36,5 @@ struct Topostore{
 
 //std::vector<Waypoint*> *topoFromPoint(double x, double y, const costmap_2d::Costmap2D &costmap, bool showDebug=false);
 std::vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d::Costmap2D &costmap, bool showDebug=false, Topostore * memory=NULL);
+
+std::vector<FrontierStats*> *frontierRatings(std::vector<WeightedFrontier> frontiers, const costmap_2d::Costmap2D &costmap, std::vector<Waypoint*> topo, int showDebug=0);

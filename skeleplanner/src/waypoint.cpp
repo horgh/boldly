@@ -317,27 +317,85 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
 
   return worldRtn;
 }
-/*
+
+//workhorse function for frontierRatings
+Line leastSquares(vector<Waypoint*> points)
+{
+    int n = points.size();
+    double sum_x = 0;
+    double sum_y = 0;
+    double sum_xx = 0;
+    double sum_xy = 0;
+    
+    for(vector<Waypoint*>::iterator i = points.begin(); i != points.end(); i++)
+    {
+        sum_x = sum_x + (*i)->x;
+        sum_y = sum_y + (*i)->y;
+
+        sum_xx = sum_xx + ((*i)->x * (*i)->x);
+        sum_xy = sum_xy + ((*i)->x * (*i)->y);
+    }
+    
+    double m = (-sum_x*sum_y+n*sum_xy)/(n*sum_xx-sum_x*sum_x);
+    double b = (-sum_x*sum_xy+sum_xx*sum_y)/(n*sum_xx-sum_x*sum_x);
+
+    return Line(m, b);
+}
+
+//workhorse function for frontierRatings
+Point openPoint(WeightedFrontier frontier, const costmap_2d::Costmap2D &costmap)
+{
+    int x = frontier.frontier.pose.position.x;
+    int y = frontier.frontier.pose.position.y;
+    
+    for(int rad = 0; rad <= frontier.frontier.size; rad++)
+    {
+        for(int i = x - rad; i <= x + rad; i++)
+        {
+            for(int j = y - rad; j <= y + rad; j += (i == x-rad || i == x+rad ? 1 : max(1, 2*rad)))
+            {
+                int tx, ty;
+                costmap.worldToMap(i, j, tx, ty);
+                //if(calcSpace(i, j, image, NULL) > 1)
+                if(costmap.getCost(tx, ty) < PASSABLE_THRESH)
+                    return Point(i, j);
+            }
+        }
+    }
+    
+    //give up and return the center
+    return Point(x, y);
+}
+
+//workhorse function for frontierRatings
+inline double perpenDist(double m, double b, double x, double y)
+{
+    return abs(y - (m*x) - b) / sqrt((m*m) + 1);
+}
+
 //this is the this least reliable, but the fastest. I have not copied to slower and more reliable version.
-vector<FrontierStats*> *frontierRatings(vector<Rectangle*> frontiers, CImg<unsigned char> *image, Topomap * topo, int showDebug=0)
+vector<FrontierStats*> *frontierRatings(vector<WeightedFrontier> frontiers, const costmap_2d::Costmap2D &costmap, vector<Waypoint*> topo, int showDebug)
 {
     int counter = 1;
     
     vector<FrontierStats*> * rtn = new vector<FrontierStats*>();
     
-    for(vector<Rectangle*>::iterator i = frontiers.begin(); i != frontiers.end(); i++)
+    for(vector<WeightedFrontier*>::iterator i = frontiers.begin(); i != frontiers.end(); i++)
     {
         if(showDebug >= 1)
             cout << "Analyzing frontier " << counter++ << "/" << frontiers.size() << endl;
     
-        Rectangle * frontier = (*i);
-        Point startingPoint = openPoint(frontier, image);
+        WeightedFrontier frontier = (*i);
+        Point startingPoint = openPoint(frontier, costmap);
         
         double bestDist = INF;
         Waypoint * best = NULL;
         //find the closest waypoint
-        for(vector<Waypoint*>::iterator j = topo->waypoints.begin() + 1; j != topo->waypoints.end(); j++)
+        for(vector<Waypoint*>::iterator j = topo.begin(); j != topo.end(); j++)
         {
+            if((*j)->x == startingPoint.x && (*j)->y == startingPoint.y)
+                continue;
+        
             if(dist((*j)->x, (*j)->y, startingPoint.x, startingPoint.y) < bestDist)
             {
                 bestDist = dist((*j)->x, (*j)->y, startingPoint.x, startingPoint.y);
@@ -389,7 +447,7 @@ vector<FrontierStats*> *frontierRatings(vector<Rectangle*> frontiers, CImg<unsig
     }
     
     return rtn;
-}*/
+}
 
 
 
