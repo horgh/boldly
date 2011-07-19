@@ -128,8 +128,12 @@ void ExploreFrontier::computePotentialFromRobot(Costmap2DROS* costmap, navfn::Na
 /*
   Rate frontiers according to a new algorithm
 */
-bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose> robot_pose, navfn::NavfnROS* planner, std::vector<geometry_msgs::Pose>& goals, double potential_scale, double orientation_scale, double gain_scale)
+bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose> robot_pose, navfn::NavfnROS* planner, std::vector<geometry_msgs::Pose>& goals, double potential_scale, double orientation_scale, double gain_scale, std::vector<Waypoint*>* topo_map)
 {
+  // May not have created topomap yet
+  if (topo_map == NULL)
+    return false;
+
   findFrontiers(costmap);
   if (frontiers_.size() == 0)
     return false;
@@ -250,9 +254,14 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose>
     Rate frontiers by goodness & cost.
     Store in rated_frontiers_.
   */
+  costmap_2d::Costmap2D costmap2;
+  costmap.getCostmapCopy(costmap2);
+  std::vector<FrontierStats*>* frontier_stats = frontierRatings(weightedFrontiers, costmap2, topo_map, 0);
+
   rated_frontiers_.clear();
   rated_frontiers_.reserve(weightedFrontiers.size());
   double lambda = 1.0/2000.0;
+  std::vector<FrontierStats*>::const_iterator it2 = frontier_stats->begin();
   for (std::vector<WeightedFrontier>::const_iterator it = weightedFrontiers.begin();
     it != weightedFrontiers.end();
     ++it)
@@ -263,7 +272,8 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose>
 
     //double rating = size * exp(-1.0*lambda*it->cost);
     // Normalise rating
-    double rating = size / (it->cost / max_cost);
+    //double rating = size / (it->cost / max_cost);
+    double rating = size * std::abs((*it2)->corrCoeff);
 
     ROS_WARN("A %f L %f rating %f lambda %f", size, (it->cost / max_cost), rating, lambda);
 
@@ -271,6 +281,8 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose>
     rated_frontier.rating = rating;
     rated_frontier.weighted_frontier = *it;
     rated_frontiers_.push_back(rated_frontier);
+
+    ++it2;
   }
 
   // Sort rated frontiers: max to min
@@ -639,7 +651,7 @@ inline double dist(double x1, double y1, double x2, double y2) {
 }
 
 //this is the this least reliable, but the fastest. I have not copied to slower and more reliable version.
-std::vector<FrontierStats*> *ExploreFrontier::frontierRatings(std::vector<WeightedFrontier> frontiers, const costmap_2d::Costmap2D &costmap, std::vector<Waypoint*> topo, int showDebug)
+std::vector<FrontierStats*> *ExploreFrontier::frontierRatings(std::vector<WeightedFrontier>& frontiers, const costmap_2d::Costmap2D &costmap, std::vector<Waypoint*>* topo, int showDebug)
 {
     int counter = 1;
     
@@ -656,7 +668,7 @@ std::vector<FrontierStats*> *ExploreFrontier::frontierRatings(std::vector<Weight
         double bestDist = DBL_MAX;
         Waypoint * best = NULL;
         //find the closest waypoint
-        for(std::vector<Waypoint*>::iterator j = topo.begin(); j != topo.end(); j++)
+        for(std::vector<Waypoint*>::iterator j = topo->begin(); j != topo->end(); j++)
         {
             if((*j)->x == startingPoint.x && (*j)->y == startingPoint.y)
                 continue;

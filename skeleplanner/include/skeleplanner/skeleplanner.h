@@ -12,7 +12,6 @@ protected:
   costmap_2d::Costmap2D costmap;
   costmap_2d::Costmap2DROS *costmapros;
   geometry_msgs::PoseStamped lastOrigin, safeOrigin;
-  std::vector<Waypoint*> *topomap;
   bool gotSafeOrigin;
   // used for publishing visualisation
   int marker_id;
@@ -24,6 +23,8 @@ protected:
   void wipeTopo();
 
 public:
+  std::vector<Waypoint*> *topomap;
+
   SkelePlanner();
   ~SkelePlanner();
 
