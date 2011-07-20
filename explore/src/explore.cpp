@@ -35,8 +35,7 @@
  *********************************************************************/
 
 // When we're in simulation we want some things to be faster, such as
-// PROGRESS_TIMEOUT and INITIAL_EXPLORE_TIME
-// so uncomment this to do so
+// PROGRESS_TIMEOUT so uncomment this to do so
 #define SIMULATION
 
 // Compile with some debugging
@@ -44,6 +43,7 @@
 
 // If uncommented, use frontier comparison algorithm where we don't try to go to those
 // frontiers which we deem unsafe due to battery life, but may go to others intead
+// Probably not working correctly now.
 //#define FRONTIER_COMPARE
 
 // Time until we decide we are stuck in seconds
@@ -57,39 +57,24 @@
 // be the same as robot starts sounding alarums
 #define VOLTAGE_WARNING 11.5
 
-// Our battery is a timer. Makes us go home when its up
-// With CONSTANT_BATTERY_TIME, always use INITIAL_EXPLORE_TIME as our battery life
-// otherwise we use time until we hear warning voltage
-//#define BATTERY_TIMER
+// Our battery is a timer. Makes us go home when we judge we need to.
+// With CONSTANT_BATTERY_TIME, always use BATTERY_TIME as our battery life.
+// Otherwise we change battery time to duration until heard warning voltage.
+#define BATTERY_TIMER
 
-// Always periodically return (uses INITIAL_EXPLORE_TIME) rather than
-// operate with our voltage logic. Requires BATTERY_TIMER as well.
+// Always use BATTERY_TIME as battery duration rather than voltage logic.
+// Requires BATTERY_TIMER as well.
 //#define CONSTANT_BATTERY_TIME
 
 // Life of battery in seconds
-#define BATTERY_TIME 120
+#define BATTERY_TIME 30
 // Start heading back with at least this margin of safety (wrt battery time remaining)
 #define MIN_BATTERY_SAFETY_MARGIN 10
 // Starting safety margin
 #define START_SAFETY_MARGIN 0
 
-// Initial explore time before we return home (initial behaviour)
-#ifdef SIMULATION
-#define INITIAL_EXPLORE_TIME 30
-#else
-#define INITIAL_EXPLORE_TIME 300
-#endif
-
 /*
-  Possible global states
-*/
-// We're in initial state: return to home frequently, but don't charge
-#define GLOBAL_STATE_INITIAL 0
-// Explore, return home only to charge
-#define GLOBAL_STATE_EXPLORE 1
-
-/*
-  Possible local states
+  Possible states
 */
 // Heading home
 #define STATE_HEADING_HOME 0
@@ -122,11 +107,7 @@ double sign(double x) {
 void Explore::charge_complete_callback(const std_msgs::Empty::ConstPtr & msg) {
   if ( state == STATE_CHARGING ) {
     ROS_WARN("Got signal we are charged.");
-    setLocalState(STATE_WAITING_FOR_GOAL);
-    last_time_at_home = ros::Time::now();
-
-    time_to_home = 0;
-    last_time_update_time_to_home = ros::Time::now();
+    setState(STATE_WAITING_FOR_GOAL);
 
     last_time_charged = ros::Time::now();
   }
@@ -173,7 +154,6 @@ Explore::Explore() :
   explore_costmap_ros_(NULL),
   move_base_client_("move_base"),
   planner_(NULL),
-  done_exploring_(false),
   explorer_(NULL),
   prev_plan_size_(0)
 {
@@ -185,7 +165,6 @@ Explore::Explore() :
   map_publisher_ = private_nh.advertise<nav_msgs::OccupancyGrid>("map", 1, true);
   voltage_subscriber_ = node_.subscribe<p2os_driver::BatteryState>("battery_state", 1, &Explore::battery_state_callback, this);
   charged_subscriber_ = node_.subscribe<std_msgs::Empty>("charge_complete", 1, &Explore::charge_complete_callback, this);
-  battery_voltage = -1.0;
 
   private_nh.param("navfn/robot_base_frame", robot_base_frame_, std::string("base_link"));
   private_nh.param("planner_frequency", planner_frequency_, 1.0);
@@ -232,14 +211,17 @@ Explore::Explore() :
     home_pose_msg.pose.position.y,
     home_pose_msg.pose.position.z);
 
-  // Last time we were at home is right now
-  last_time_at_home = ros::Time::now();
+  // Assume we start already charged
+  last_time_charged = ros::Time::now();
 
-  time_to_home = 0;
-  last_time_update_time_to_home = ros::Time::now();
-
+  // Start with a specified battery time
   battery_duration = ros::Duration(BATTERY_TIME);
-  initial_time_away_from_home = ros::Duration(INITIAL_EXPLORE_TIME);
+
+  battery_safety_margin = START_SAFETY_MARGIN;
+
+  last_pose = currentPoseStamped();
+
+  battery_voltage = 100.0;
 
   // Find robot's max speed
   max_vel_x = 0.0;
@@ -253,20 +235,10 @@ Explore::Explore() :
   ROS_WARN("Robot has max turn speed %f", max_vel_th);
   assert(max_vel_th != 0.0);
 
-  battery_safety_margin = START_SAFETY_MARGIN;
-
-  last_pose = currentPoseStamped();
-
-#ifdef BATTERY_TIMER
-  global_state = GLOBAL_STATE_INITIAL;
-#else
-  global_state = GLOBAL_STATE_EXPLORE;
-#endif
-
-  state = STATE_WAITING_FOR_GOAL;
-
   skeleplanner_ = new SkelePlanner();
   skeleplanner_->initialize(std::string("skeleplanner"), explore_costmap_ros_);
+
+  setState(STATE_WAITING_FOR_GOAL);
 }
 
 Explore::~Explore() {
@@ -436,7 +408,8 @@ void Explore::makePlan() {
 
   // Since we are updating cost to points on map anyway, also update
   // our time to go home.
-  updateTimeToHome();
+  // (Only needed for shouldGoHome_fast()
+  //updateTimeToHome();
 
   tf::Stamped<tf::Pose> robot_pose;
   explore_costmap_ros_->getRobotPose(robot_pose);
@@ -452,8 +425,10 @@ void Explore::makePlan() {
 
   // Before filtering goals, we check if exploration is done
   if (goals.size() == 0) {
-    done_exploring_ = true;
-    goHome();
+    // XXX With this we may goHome() prematurely (such as at the very first
+    // call, for example in case where rateFrontiers() wants a topomap but
+    // we haven't yet generated one.)
+    //goHome();
     return;
   }
 
@@ -496,7 +471,9 @@ void Explore::makePlan() {
     move_base_client_.sendGoal(goal, boost::bind(&Explore::reachedGoal, this, _1, _2, goal_pose));
     ROS_WARN("Sent new goal to move_base.");
 
-    setLocalState(STATE_EXPLORING);
+    last_goal_chosen = ros::Time::now();
+
+    setState(STATE_EXPLORING);
     time_since_progress_ = 0.0;
 
     if (visualize_) {
@@ -505,7 +482,6 @@ void Explore::makePlan() {
   } else {
     ROS_WARN("Done exploring with %d goals left that could not be reached. There are %d goals on our blacklist, and %d of the frontier goals are too close to them to pursue. The rest had global planning fail to them. \n", (int)goals.size(), (int)frontier_blacklist_.size(), blacklist_count);
     ROS_INFO("Exploration finished. Hooray.");
-    done_exploring_ = true;
     goHome();
   }
 }
@@ -536,7 +512,7 @@ void Explore::reachedGoal(const actionlib::SimpleClientGoalState& status,
     geometry_msgs::PoseStamped frontier_goal)
 {
   ROS_WARN("Reached goal.");
-  setLocalState(STATE_WAITING_FOR_GOAL);
+  setState(STATE_WAITING_FOR_GOAL);
 
   if (status == actionlib::SimpleClientGoalState::ABORTED) {
     frontier_blacklist_.push_back(frontier_goal);
@@ -547,20 +523,24 @@ void Explore::reachedGoal(const actionlib::SimpleClientGoalState& status,
 /*
   Only accurate if computePotential() recently called.
 */
-int Explore::timeToHome() {
+int Explore::secsToHome() {
   PoseStamped current_pose = currentPoseStamped();
-  int time_to_home = timeToTravel(&current_pose, &home_pose_msg.pose);
-  return time_to_home;
+  int secs_to_home = timeToTravel(&current_pose, &home_pose_msg.pose);
+  return secs_to_home;
 }
 
 /*
   Assume computePotential() has been recently/just called.
-  Update our time_to_home, and update when this was last calculated.
+  Update our secs_to_go_home, and update when this was last calculated.
 */
+/*
+ * Used with shouldGoHome_fast()
+
 void Explore::updateTimeToHome() {
-  time_to_home = timeToHome();
-  last_time_update_time_to_home = ros::Time::now();
+  secs_to_go_home = secsToHome();
+  last_time_update_secs_to_go_home = ros::Time::now();
 }
+*/
 
 /*
   Get the robot's current pose
@@ -668,8 +648,7 @@ void Explore::checkIfStuck() {
   } else {
     time_since_progress_ = 0.0;
   }
-  ROS_WARN("Time since progress: %f (in global state %d, local state %d)", time_since_progress_,
-    global_state, state);
+  ROS_WARN("Time since progress: %f (in state %d)", time_since_progress_, state);
 
   if (time_since_progress_ > progress_timeout_) {
     ROS_WARN("Decided we're stuck.");
@@ -677,7 +656,7 @@ void Explore::checkIfStuck() {
     if (state == STATE_EXPLORING) {
       frontier_blacklist_.push_back(current_goal_pose_stamped_);
       ROS_WARN("Adding current goal to black list.");
-      setLocalState(STATE_WAITING_FOR_GOAL);
+      setState(STATE_WAITING_FOR_GOAL);
     } else if (state == STATE_HEADING_HOME) {
       // Try to move in a random direction to get unstuck
       moveRandomDirection();
@@ -753,24 +732,33 @@ int Explore::timeToTravel(geometry_msgs::PoseStamped* source_pose_stamped, geome
   that, we must have called computePotential() first, making this expensive
   to be calling frequently.
 
-  Note: Must have called computePotentialFromRobot() prior to calling this
+  Note: Must have called computePotentialFromRobot() prior to calling this if
+  we want accurate time to go home.
 */
 bool Explore::shouldGoHome_dynamic() {
-  ROS_WARN("Cost to go home: %f", planner_->getPointPotential( home_pose_msg.pose.position ) );
-
-  int time_to_home = timeToHome();
-  if (time_to_home == -1) {
-    ROS_WARN("No plan to get home.");
-    assert(1 == 0);
+// If we're not in using CONSTANT_BATTERY_TIME, listen to voltage as
+// an indicator of whether to go home & update battery duration based on this
+#ifndef CONSTANT_BATTERY_TIME
+  if (atCriticalVoltage()) {
+    updateBatteryDuration();
+    return true;
   }
-  ROS_WARN("Estimated time to reach home: %d seconds", time_to_home);
+#endif
 
-  ROS_WARN("Battery safety margin: %d seconds", battery_safety_margin);
+  //ROS_WARN("Cost to go home: %f", planner_->getPointPotential( home_pose_msg.pose.position ) );
+
+  int secs_to_home = secsToHome();
+  if (secs_to_home == -1) {
+    ROS_WARN("??? No plan to get home.");
+    return false;
+  }
 
   int battery_time_remaining = batteryTimeRemaining();
-  ROS_WARN("Battery time remaining: %d seconds", battery_time_remaining);
+  ROS_WARN("Estimated time to reach home: %d seconds", secs_to_home);
+  ROS_WARN("Battery time remaining: %d seconds (with battery safety margin %d)",
+    battery_time_remaining, battery_safety_margin);
 
-  if (time_to_home + battery_safety_margin > battery_time_remaining) {
+  if (secs_to_home + battery_safety_margin > battery_time_remaining) {
     ROS_WARN("Decided to return home.");
     return true;
   }
@@ -785,6 +773,7 @@ bool Explore::shouldGoHome_dynamic() {
   We then need this same amount of time remaining on battery to return
   home.
 */
+/*
 bool Explore::shouldGoHome_fast() {
   int time_since_charge = timeSinceCharge();
   int battery_time_remaining = batteryTimeRemaining();
@@ -795,12 +784,12 @@ bool Explore::shouldGoHome_fast() {
   ros::Duration time_since_time_to_home_updated = ros::Time::now() - last_time_update_time_to_home;
 
   ROS_WARN("Time to home: %d Time since updated time to home: %d",
-    time_to_home, time_since_time_to_home_updated.sec);
+    secs_to_go_home, time_since_time_to_home_updated.sec);
 
   ROS_WARN("Current max battery duration: %d", battery_duration.sec);
 
   // If our battery time estimate says to go home, do so
-  if (time_to_home + time_since_time_to_home_updated.sec
+  if (secs_to_go_home + time_since_time_to_home_updated.sec
     + battery_safety_margin > battery_time_remaining)
   {
     ROS_WARN("Decided to return home. (timer)");
@@ -831,30 +820,15 @@ bool Explore::shouldGoHome_fast() {
 
   return false;
 }
-
-/*
-  In global state Initial we want to return home periodically.
-  Check if we've been away from home for our set period.
 */
-bool Explore::shouldGoHome_initial() {
-  ros::Duration elapsed = ros::Time::now() - last_time_at_home;
-  return elapsed > initial_time_away_from_home;
-}
-
-/*
-  Return the time since charge in seconds
-*/
-int Explore::timeSinceCharge() {
-  ros::Duration elapsed = ros::Time::now() - last_time_at_home;
-  return elapsed.sec;
-}
 
 /*
   Estimation of amount of battery time we have left in seconds
 */
 int Explore::batteryTimeRemaining() {
-  int remaining = battery_duration.sec - timeSinceCharge();
-  return remaining;
+  ros::Duration duration_since_charge = ros::Time::now() - last_time_charged;
+  ros::Duration duration_remaining = battery_duration - duration_since_charge;
+  return duration_remaining.sec;
 }
 
 /*
@@ -862,13 +836,7 @@ int Explore::batteryTimeRemaining() {
 */
 void Explore::goHome() {
   ROS_WARN("Going home...");
-
-  // XXX Maybe we should call computePotential() and make a plan to go home
-  // rather than just sending a goal.
-  // Also, maybe we should be doing that periodically as we go home to ensure
-  // we actually have a valid plan. Or is this necessary?
-
-  setLocalState(STATE_HEADING_HOME);
+  setState(STATE_HEADING_HOME);
 
   home_pose_msg.header.stamp = ros::Time::now();
 
@@ -887,6 +855,10 @@ void Explore::reachedHome() {
     ROS_WARN("I died!");
   }
 
+#ifdef BATTERY_TIMER
+  setState(STATE_CHARGING);
+#endif
+
   // Change next margin depending on time remaining on our battery
   /*
   if ( battery_time_remaining > MIN_BATTERY_SAFETY_MARGIN ) {
@@ -896,8 +868,6 @@ void Explore::reachedHome() {
     battery_safety_margin += MIN_BATTERY_SAFETY_MARGIN;
   }
   */
-
-  last_time_at_home = ros::Time::now();
 }
 
 /*
@@ -910,74 +880,26 @@ void Explore::reachedHomeCallback(const actionlib::SimpleClientGoalState& status
 }
 
 /*
-  Wait until we read an initial voltage
-*/
-void Explore::waitForInitialVoltage() {
-  ros::Rate r(10.0);
-  while ( node_.ok() && battery_voltage == -1.0 ) {
-    ROS_WARN("Waiting for initial voltage before starting... (use voltage_simulate if simulating)");
-    r.sleep();
-  }
-  voltage_initial = battery_voltage;
-  assert(voltage_initial != -1.0);
-  ROS_INFO("Recorded initial voltage %f", voltage_initial);
-  last_time_charged = ros::Time::now();
-}
-
-/*
   If we hear a voltage at a predefined level, this is our warning
   of low/empty battery.
 */
 bool Explore::atCriticalVoltage() {
-#ifdef DEBUG
   if (battery_voltage <= VOLTAGE_WARNING) {
     ROS_WARN("** At critical voltage. **");
   }
-#endif
   return battery_voltage <= VOLTAGE_WARNING;
 }
 
 /*
-  We leave the initial global state once we have heard the battery
-  warning
+  We just hit critical voltage. We may want to alter our battery
+  duration here if time since charge compared with time now is different
+  from our current battery duration
 */
-void Explore::updateGlobalState() {
-#ifdef CONSTANT_BATTERY_TIME
-  // We wish to remain in initial state forever if we are using a
-  // constant periodic return to home. So never change state.
-  return;
-#endif
-
-  if ( atCriticalVoltage() ) {
-    setGlobalState(GLOBAL_STATE_EXPLORE);
-    goHome();
-    // Initially battery duration is the time between wake up ("last charged")
-    // and run out of battery, which just occurred.
-    battery_duration = ros::Time::now() - last_time_charged;
-  }
+void Explore::updateBatteryDuration() {
+//  TODO/XXX
 }
 
-void Explore::setGlobalState(int new_state) {
-#ifdef DEBUG
-  std::string s;
-  switch (new_state) {
-    case GLOBAL_STATE_INITIAL:
-      s = "INITIAL";
-      break;
-    case GLOBAL_STATE_EXPLORE:
-      s = "EXPLORE";
-      break;
-    default:
-      s = "UNKNOWN";
-  }
-
-  ROS_WARN("Setting global state to: %s", s.c_str());
-#endif
-
-  global_state = new_state;
-}
-
-void Explore::setLocalState(int new_state) {
+void Explore::setState(int new_state) {
 #ifdef DEBUG
   std::string s;
   switch (new_state) {
@@ -999,7 +921,7 @@ void Explore::setLocalState(int new_state) {
     default:
       s = "UNKNOWN";
   }
-  ROS_WARN("Setting local state to: %s", s.c_str());
+  ROS_WARN("Setting state to: %s", s.c_str());
 #endif
 
   state = new_state;
@@ -1015,12 +937,10 @@ void Explore::execute() {
     ROS_WARN("Explore: Waiting to connect to move_base server");
   ROS_INFO("Explore: Connected to move_base server.");
 
-#ifdef BATTERY_TIMER
-  // Wait until we get an initial voltage reading
-  waitForInitialVoltage();
-#endif
-
   ros::Rate r(planner_frequency_);
+
+  // We need this initially or may think we should go home already!
+  explorer_->computePotentialFromRobot(explore_costmap_ros_, planner_);
 
   while (node_.ok()) {
 
@@ -1030,60 +950,33 @@ void Explore::execute() {
       loop_closure_->updateGraph(robot_pose);
     }
 
+    if (state != STATE_CHARGING) {
 #ifdef BATTERY_TIMER
-    // Initial behaviour
-    if (global_state == GLOBAL_STATE_INITIAL) {
       // If we're heading home, we may be there now
       if ( state == STATE_HEADING_HOME && atHome() ) {
         reachedHome();
-        setLocalState(STATE_WAITING_FOR_GOAL);
 
       // Should we go home?
-      } else if ( state != STATE_HEADING_HOME && shouldGoHome_initial() ) {
+      } else if ( state != STATE_HEADING_HOME && state != STATE_CHARGING && shouldGoHome_dynamic() ) {
         goHome();
 
-      // We need a new exploration goal
-      } else if ( state == STATE_WAITING_FOR_GOAL || atGoal() ) {
-        makePlan();
-
-      } else {
-        checkIfStuck();
-      }
-
-      // We may leave the initial state
-      updateGlobalState();
-
-    // Exploring
-    } else if (global_state == GLOBAL_STATE_EXPLORE) {
-      // If we're heading home, we may be there now
-      if ( state == STATE_HEADING_HOME && atHome() ) {
-        reachedHome();
-        setLocalState(STATE_CHARGING);
-
-      // Should we go home?
-      } else if ( state != STATE_HEADING_HOME && state != STATE_CHARGING && shouldGoHome_fast() ) {
-        goHome();
-
-      // an else if (continued below)
+      // an else if which is continued below out of our hashdef
       } else
-#endif
+  #endif
 
       // We need a new exploration goal
-      if ( state == STATE_WAITING_FOR_GOAL || atGoal() || (ros::Time::now() - last_goal_chosen).sec > 10) {
+      if (state != STATE_HEADING_HOME
+          && (state == STATE_WAITING_FOR_GOAL
+              || atGoal()
+              || (ros::Time::now() - last_goal_chosen).sec > 10) )
+      {
         makePlan();
-        last_goal_chosen = ros::Time::now();
+
+      }
 
       // We can get stuck (if we're not charging), so handle it.
-      } else if ( state != STATE_CHARGING ) {
-        checkIfStuck();
-      }
-
-#ifdef BATTERY_TIMER
-    } else {
-      ROS_WARN("Unknown global state.");
-      assert(2 == 3);
+      checkIfStuck();
     }
-#endif
 
     if (visualize_) {
       // publish visualization markers

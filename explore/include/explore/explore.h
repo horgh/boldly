@@ -121,8 +121,8 @@ private:
 
   void removeUnsafeFrontiers(std::vector<geometry_msgs::Pose> * goals);
 
-  int timeToHome();
-  void updateTimeToHome();
+  int secsToHome();
+  //void updateTimeToHome();
   geometry_msgs::PoseStamped currentPoseStamped();
   double distanceForPlan(geometry_msgs::PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan);
   double angleChangeForPlan(geometry_msgs::PoseStamped * pose, std::vector<geometry_msgs::PoseStamped> * plan);
@@ -134,9 +134,7 @@ private:
   void moveRandomDirection();
   int timeToTravel(geometry_msgs::PoseStamped* source_pose_stamped, geometry_msgs::Pose* target_pose);
   bool shouldGoHome_dynamic();
-  bool shouldGoHome_fast();
-  bool shouldGoHome_initial();
-  int timeSinceCharge();
+  //bool shouldGoHome_fast();
   int batteryTimeRemaining();
   void goHome();
   void reachedHome();
@@ -144,11 +142,9 @@ private:
     const move_base_msgs::MoveBaseResultConstPtr& result,
     geometry_msgs::PoseStamped goal
   );
-  void waitForInitialVoltage();
   bool atCriticalVoltage();
-  void updateGlobalState();
-  void setGlobalState(int new_state);
-  void setLocalState(int new_state);
+  void updateBatteryDuration();
+  void setState(int new_state);
 
 
   ros::NodeHandle node_;
@@ -159,7 +155,6 @@ private:
 
   navfn::NavfnROS* planner_;
   std::string robot_base_frame_;
-  bool done_exploring_;
 
   ros::Publisher marker_publisher_;
   ros::Publisher marker_array_publisher_;
@@ -196,30 +191,23 @@ private:
 
   // Last read voltage
   double battery_voltage;
-  // Initial voltage
-  double voltage_initial;
   // Cutoff voltage
   double voltage_cutoff;
 
-  // global state
-  int global_state;
-  // robot local state
+  // robot state
   int state;
 
   // Time in seconds for margin of battery life to return to charge
   int battery_safety_margin;
 
-  ros::Time last_time_at_home;
   ros::Time last_time_charged;
   ros::Duration battery_duration;
-  // In global initial state, after this much time we want to go home
-  ros::Duration initial_time_away_from_home;
 
   // Current time to go home. Periodically updated.
-  int time_to_home;
-  ros::Time last_time_update_time_to_home;
+  int secs_to_go_home;
+  ros::Time last_time_update_secs_to_go_home;
 
-  SkelePlanner *skeleplanner_;
+  SkelePlanner* skeleplanner_;
 
   // Track last time we calculated and sent a new goal
   ros::Time last_goal_chosen;
