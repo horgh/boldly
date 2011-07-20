@@ -122,8 +122,8 @@ MapWaypoint waypointBest(int x, int y, int ** memo, const costmap_2d::Costmap2D 
           continue;
 
         //make sure a straight line clear
-        if(!straightClear(i, j, x, y, costmap, memo))
-          continue;
+        //if(!straightClear(i, j, x, y, costmap, memo))
+        //  continue;
 
         //straightline clear on orig image
         int tmps = calcSpace(i, j, costmap, memo);
@@ -141,7 +141,7 @@ MapWaypoint waypointBest(int x, int y, int ** memo, const costmap_2d::Costmap2D 
         }
                   
         //don't use new waypoints that are clustered around current ones
-        if(innerWaypoints >= 2 && innerDistances/innerWaypoints < WAYPOINTSPACE/2.0)
+        if(innerWaypoints >= 2 || tmps <= 1)
           continue;
                       
         if(tmps > newm)
