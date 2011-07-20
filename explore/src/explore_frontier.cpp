@@ -541,6 +541,9 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
 
 void ExploreFrontier::getVisualizationMarkers(std::vector<Marker>& markers)
 {
+  /*
+    Frontier as a cube
+  */
   Marker m;
   m.header.frame_id = "map";
   m.header.stamp = ros::Time::now();
@@ -560,20 +563,52 @@ void ExploreFrontier::getVisualizationMarkers(std::vector<Marker>& markers)
   m.color.g = 0;
   m.color.b = 255;
   //m.color.a = 255;
-  m.color.a = 1;
+  m.color.a = 0.5;
   m.lifetime = ros::Duration(0);
-
   m.action = Marker::ADD;
+
+  /*
+    Frontier's text
+  */
+  Marker m_text;
+  m_text.header.frame_id = "map";
+  m_text.header.stamp = ros::Time::now();
+  m_text.id = 0;
+  m_text.ns = "frontiers";
+  m_text.type = Marker::TEXT_VIEW_FACING;
+  m_text.scale.z = 0.7;
+/*
+  m_text.color.r = 191.0;
+  m_text.color.g = 84.0;
+  m_text.color.b = 46.0;
+  m_text.color.a = 255.0;
+  */
+  m_text.color.r = 0.0;
+  m_text.color.g = 245.0;
+  m_text.color.b = 255.0;
+  m_text.color.a = 1.0;
+
   uint id = 0;
-  for (uint i=0; i<rated_frontiers_.size(); i++) {
+  for (uint i = 0; i < rated_frontiers_.size(); ++i) {
     RatedFrontier rated_frontier = rated_frontiers_[i];
+
+    // Cube
     m.id = id;
     m.pose = rated_frontier.weighted_frontier.frontier.pose;
     m.scale.x = rated_frontier.weighted_frontier.frontier.size / 20.0;
     m.scale.y = rated_frontier.weighted_frontier.frontier.size / 20.0;
     m.scale.z = rated_frontier.weighted_frontier.frontier.size / 20.0;
-
     markers.push_back(Marker(m));
+    id++;
+
+    // Text
+    m_text.id = id;
+    m_text.pose = rated_frontier.weighted_frontier.frontier.pose;
+    // the rating as text
+    std::stringstream ss;
+    ss << rated_frontier.rating;
+    m_text.text = ss.str();
+    markers.push_back(Marker(m_text));
     id++;
   }
 

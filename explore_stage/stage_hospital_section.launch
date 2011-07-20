@@ -7,8 +7,10 @@
   <param name="/use_sim_time" value="true"/>
 
   <node pkg="stage" type="stageros" name="stage" args="$(find bosch_worlds)/hospital-section.world" respawn="false" output="screen"/>
+
+  <include file="$(find explore_stage)/gmapping.xml" />
+
   <!-- These being world specific may be unnecessary... -->
   <include file="$(find explore_stage)/world_configs/stage_hospital_section/move.xml" />
   <include file="$(find explore_stage)/world_configs/stage_hospital_section/explore_slam.xml" />
-  <include file="$(find explore_stage)/world_configs/stage_hospital_section/gmapping.xml" />
 </launch>

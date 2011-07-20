@@ -36,7 +36,8 @@ window
   #scale 30
 
   size [811.000 642.000]
-  center [-7.205 1.437]
+  #center [-7.205 1.437]
+  center [0 0]
   scale 71.472
 )
 
