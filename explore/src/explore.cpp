@@ -60,7 +60,7 @@
 // Our battery is a timer. Makes us go home when we judge we need to.
 // With CONSTANT_BATTERY_TIME, always use BATTERY_TIME as our battery life.
 // Otherwise we change battery time to duration until heard warning voltage.
-#define BATTERY_TIMER
+//#define BATTERY_TIMER
 
 // Always use BATTERY_TIME as battery duration rather than voltage logic.
 // Requires BATTERY_TIMER as well.

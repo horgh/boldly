@@ -576,6 +576,7 @@ void ExploreFrontier::getVisualizationMarkers(std::vector<Marker>& markers)
   m_text.id = 0;
   m_text.ns = "frontiers";
   m_text.type = Marker::TEXT_VIEW_FACING;
+  // only scale.z used
   m_text.scale.z = 0.7;
 /*
   m_text.color.r = 191.0;

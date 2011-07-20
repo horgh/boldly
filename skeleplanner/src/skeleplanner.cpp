@@ -485,9 +485,8 @@ void SkelePlanner::visualize_edge(double x1, double y1, double x2, double y2,
   marker.points.push_back(p);
 
   // thick line like in loop closure is 0.25
+  // only scale.x used
   marker.scale.x = scale;
-  marker.scale.y = scale;
-  marker.scale.z = scale;
   // red is 1, 0, 0, 1
   // blue 0, 1, 0, 1?
   marker.color.r = r;
@@ -513,7 +512,8 @@ void SkelePlanner::publish_topomap(ros::Publisher* marker_pub) {
     ++it)
   {
     // 0.5 scale, red colour: 1.0, 0.0, 0.0, 1.0
-    visualize_node( (*it)->x, (*it)->y, 0.5, r_, g_, b_, a_, &markers);
+    //visualize_node( (*it)->x, (*it)->y, 0.5, r_, g_, b_, a_, &markers);
+    visualize_node( (*it)->x, (*it)->y, 0.3, r_, g_, b_, a_, &markers);
   }
 
   // Markers for the links between each node
@@ -527,7 +527,8 @@ void SkelePlanner::publish_topomap(ros::Publisher* marker_pub) {
       ++it2)
     {
       // 0.25 scale
-      visualize_edge((*it)->x, (*it)->y, (*it2)->x, (*it2)->y, 0.25, r_, g_, b_, a_, &markers);
+      //visualize_edge((*it)->x, (*it)->y, (*it2)->x, (*it2)->y, 0.25, r_, g_, b_, a_, &markers);
+      visualize_edge((*it)->x, (*it)->y, (*it2)->x, (*it2)->y, 0.2, r_, g_, b_, a_, &markers);
     }
   }
 

@@ -503,9 +503,16 @@ void LoopClosure::visualizeNode(const tf::Pose& pose, visualization_msgs::Marker
   marker.type = visualization_msgs::Marker::SPHERE;
   marker.pose.position.x = pose.getOrigin().x();
   marker.pose.position.y = pose.getOrigin().y();
+
+  /* Original scaling
   marker.scale.x = 0.5;
   marker.scale.y = 0.5;
   marker.scale.z = 0.5;
+  */
+  marker.scale.x = 0.1;
+  marker.scale.y = 0.1;
+  marker.scale.z = 0.1;
+
   marker.color.a = 1.0;
   marker.color.r = 1.0;
   marker.color.g = 0.0;
@@ -531,9 +538,16 @@ void LoopClosure::visualizeEdge(const tf::Pose& pose1, const tf::Pose& pose2, vi
   p.x = pose2.getOrigin().x();
   p.y = pose2.getOrigin().y();
   marker.points.push_back(p);
+
+  /* Original scaling
   marker.scale.x = 0.25;
   marker.scale.y = 0.25;
   marker.scale.z = 0.25;
+  */
+  marker.scale.x = 0.1;
+  marker.scale.y = 0.1;
+  marker.scale.z = 0.1;
+
   marker.color.a = 1.0;
   marker.color.r = 1.0;
   marker.color.g = 0.0;
