@@ -129,15 +129,19 @@ MapWaypoint waypointBest(int x, int y, int ** memo, const costmap_2d::Costmap2D 
         int tmps = calcSpace(i, j, costmap, memo);
         int otmps = tmps;
         int innerWaypoints = 0;
+        double innerDistances = 0.0;
         for(vector<MapWaypoint*>::const_iterator w = waypoints.begin(); w != waypoints.end(); w++)
         {
           tmps = min(tmps, (int)(dist(i, j, (*w)->x, (*w)->y)));
           if(dist(i, j, (*w)->x, (*w)->y) <= WAYPOINTSPACE)
+          {
             innerWaypoints++;
+            innerDistances += dist(i, j, (*w)->x, (*w)->y);
+          }
         }
                   
         //don't use new waypoints that are clustered around current ones
-        if(innerWaypoints >= 2)
+        if(innerWaypoints >= 2 && innerDistances/innerWaypoints < WAYPOINTSPACE/2.0)
           continue;
                       
         if(tmps > newm)
@@ -213,7 +217,8 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
     home = memory->home;
     rtn = memory->rtn;
     worldRtn = memory->worldRtn;
-    ignore = memory->ignore;
+    //reset the ignore array each time in case the map has changed enough
+    //ignore = memory->ignore;
     memo = memory->memo;
   }
 
