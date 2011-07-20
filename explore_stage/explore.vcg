@@ -55,7 +55,7 @@ Grid.Cell\ Size=1
 Grid.ColorR=0.968627
 Grid.ColorG=0.941176
 Grid.ColorB=0.941176
-Grid.Enabled=1
+Grid.Enabled=0
 Grid.Line\ Style=0
 Grid.Line\ Width=0.03
 Grid.Normal\ Cell\ Count=0
@@ -65,6 +65,10 @@ Grid.OffsetZ=0
 Grid.Plane=0
 Grid.Plane\ Cell\ Count=20
 Grid.Reference\ Frame=<Fixed Frame>
+Map.Alpha=0.7
+Map.Draw\ Behind=0
+Map.Enabled=0
+Map.Topic=/map
 Planner\ Path.Alpha=1
 Planner\ Path.ColorR=0.1
 Planner\ Path.ColorG=1
@@ -80,13 +84,12 @@ TF.Show\ Names=1
 TF.Update\ Interval=0
 Topomap\ Markers.Enabled=1
 Topomap\ Markers.Marker\ Topic=topomap_marker
-Topomap\ Markers.frontiers=1
-Topomap\ Markers.loop_closure=1
+Topomap\ Markers.skeletester=1
 Tool\ 2D\ Nav\ GoalTopic=goal
 Tool\ 2D\ Pose\ EstimateTopic=initialpose
 Camera\ Type=rviz::OrbitViewController
-Camera\ Config=0.011 6.26581 31.8418 0.54687 -2.37155 -0.78385
-Property\ Grid\ State=selection=Planner Path.Enabled;expanded=TF./base_footprint/base_footprint,TF./base_laser_link/base_laser_link,TF./base_link/base_link,TF./map/map,TF./odom/odom,TF.Enabled.TF.Tree,TF./mapTree/map,TF./odomTree/odom,TF./base_footprintTree/base_footprint,TF./base_linkTree/base_link,TF./base_laser_linkTree/base_laser_link,Frontiers.Enabled.Frontiers.Namespaces,Topomap Markers.Enabled.Topomap Markers.Namespaces;scrollpos=0,0;splitterpos=210,436;ispageselected=1
+Camera\ Config=0.011 6.26581 57.3003 0.505912 -2.37155 -3.14088
+Property\ Grid\ State=selection=Map.Enabled;expanded=TF./base_footprint/base_footprint,TF./base_laser_link/base_laser_link,TF./base_link/base_link,TF./odom/odom,TF./map/map,TF.Enabled.TF.Tree,TF./mapTree/map,TF./odomTree/odom,TF./base_footprintTree/base_footprint,TF./base_linkTree/base_link,TF./base_laser_linkTree/base_laser_link,Frontiers.Enabled.Frontiers.Namespaces,Topomap Markers.Enabled.Topomap Markers.Namespaces;scrollpos=0,0;splitterpos=210,436;ispageselected=1
 [Display0]
 Name=Grid
 Package=rviz
@@ -123,6 +126,10 @@ ClassName=rviz::MapDisplay
 Name=Topomap Markers
 Package=rviz
 ClassName=rviz::MarkerDisplay
+[Display9]
+Name=Map
+Package=rviz
+ClassName=rviz::MapDisplay
 [TF.]
 base_footprintEnabled=1
 base_laser_linkEnabled=1
