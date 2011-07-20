@@ -203,6 +203,7 @@ Explore::Explore() :
   PoseStamped robot_pose_msg;
   tf::poseStampedTFToMsg(robot_pose, robot_pose_msg);
 
+  // Setup robot's home posestamped which doesn't change (other than header)
   home_pose_msg.header.frame_id = explore_costmap_ros_->getGlobalFrameID();
   home_pose_msg.pose.position = robot_pose_msg.pose.position;
   home_pose_msg.pose.orientation = robot_pose_msg.pose.orientation;
@@ -237,6 +238,7 @@ Explore::Explore() :
 
   skeleplanner_ = new SkelePlanner();
   skeleplanner_->initialize(std::string("skeleplanner"), explore_costmap_ros_);
+  skeleplanner_->set_topomap_origin(home_pose_msg.pose.position.x, home_pose_msg.pose.position.y);
 
   setState(STATE_WAITING_FOR_GOAL);
 }

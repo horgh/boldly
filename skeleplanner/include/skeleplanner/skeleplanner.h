@@ -13,12 +13,21 @@ protected:
   costmap_2d::Costmap2DROS *costmapros;
   geometry_msgs::PoseStamped lastOrigin, safeOrigin;
   bool gotSafeOrigin;
+  double topomap_origin_x,
+    topomap_origin_y;
+  
+  Topostore* topo_memory;
+
+  /*
+    Visualisation variables
+  */
   // used for publishing visualisation
   int marker_id;
   // track how many markers published last time
   int marker_id_last;
+  // colours of markers
   double r_, g_, b_, a_;
-  Topostore* topo_memory;
+
 
   void wipeTopo();
 
@@ -29,6 +38,7 @@ public:
   ~SkelePlanner();
 
   void initialize(std::string name, costmap_2d::Costmap2DROS *costmap);
+  void set_topomap_origin(double origin_x, double origin_y);
   void update();
   bool makePlan(const geometry_msgs::PoseStamped &start, const geometry_msgs::PoseStamped &goal, std::vector< geometry_msgs::PoseStamped > &plan);
 

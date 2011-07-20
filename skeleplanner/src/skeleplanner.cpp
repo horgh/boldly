@@ -38,13 +38,24 @@ void SkelePlanner::initialize(std::string name, costmap_2d::Costmap2DROS *costma
   this->costmapros = costmapros;
 }
 
+/*
+  Need  to set this before running makePlan() or update()
+  (This is here rather than in a constructor or initialize as pluginlib
+  wants those functions to be of specific definition)
+*/
+void SkelePlanner::set_topomap_origin(double origin_x, double origin_y) {
+  topomap_origin_x = origin_x;
+  topomap_origin_y = origin_y;
+}
+
 void SkelePlanner::update() {
   costmapros->getCostmapCopy(costmap);
   if(topomap) {
     wipeTopo();
   }
   //std::vector<Waypoint*> *result = topoFromPoint(lastOrigin.pose.position.x, lastOrigin.pose.position.y, costmap);
-  std::vector<Waypoint*> *result = topoFromPoint(0.0, 0.0, costmap);
+  ROS_WARN("topo from %f, %f", topomap_origin_x, topomap_origin_y);
+  std::vector<Waypoint*> *result = topoFromPoint(topomap_origin_x, topomap_origin_y, costmap);
   gotSafeOrigin = result->size() > 1;
 
   if(gotSafeOrigin) {
@@ -57,7 +68,8 @@ void SkelePlanner::update() {
     delete result;
     
     //result = topoFromPoint(safeOrigin.pose.position.x, safeOrigin.pose.position.y, costmap);
-    result = topoFromPoint(0.0, 0.0, costmap);
+    ROS_WARN("topo from %f, %f", topomap_origin_x, topomap_origin_y);
+    result = topoFromPoint(topomap_origin_x, topomap_origin_y, costmap);
     gotSafeOrigin = result->size() > 1;
   }
   topomap = result;
@@ -76,6 +88,8 @@ bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geome
   */
   update();
   
+/*
+ * This is needed if we want to use as path planner (ie, begin & end to aStar())
   std::vector<float> dists(topomap->size());
   for(size_t i = 0; i < topomap->size(); ++i) {
     dists[i] = sqrt(((*topomap)[i]->x - start.pose.position.x)*((*topomap)[i]->x - start.pose.position.x) +
@@ -90,6 +104,7 @@ bool SkelePlanner::makePlan(const geometry_msgs::PoseStamped &start, const geome
   }
 
   Waypoint *end = topomap->at(std::min_element(dists.begin(), dists.end()) - dists.begin());
+*/
   // TODO: Verify that goal is reachable from end
 
   // A*

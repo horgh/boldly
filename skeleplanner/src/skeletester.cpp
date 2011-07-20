@@ -83,6 +83,7 @@ int main(int argc, char** argv) {
   ROS_WARN("Initialising SkelePlanner object...");
   SkelePlanner skele_planner;
   skele_planner.initialize("skeletester", costmap_);
+  skele_planner.set_topomap_origin(0.0, 0.0);
 
   // Make a plan from robot's location to its location
   tf::Stamped<tf::Pose> robot_pose;
