@@ -761,7 +761,7 @@ std::vector<FrontierStats*> *ExploreFrontier::frontierRatings(std::vector<Weight
         int n = (waypoints.size() - 1);
         //do not include the home waypoint, or else we double count deltas
         //also, calc the x and y averages while we iterate
-        for(std::vector<Waypoint*>::iterator j = waypoints.begin() + 1; j != waypoints.end(); j++)
+        for(std::vector<Waypoint*>::iterator j = waypoints.begin() + 1; j < waypoints.end(); ++j)
         {
             xsum += (*j)->x;
             ysum += (*j)->y;
@@ -773,7 +773,7 @@ std::vector<FrontierStats*> *ExploreFrontier::frontierRatings(std::vector<Weight
         
         double mdiff = 0.0;
         //get the differences from the average
-        for(std::vector<Waypoint*>::iterator j = waypoints.begin() + 1; j != waypoints.end(); j++)
+        for(std::vector<Waypoint*>::iterator j = waypoints.begin() + 1; j < waypoints.end(); ++j)
         {
             mdiff += ((*j)->x - (xsum / n))*((*j)->y - (ysum / n));
         }
