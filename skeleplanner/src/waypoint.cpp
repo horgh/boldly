@@ -219,6 +219,9 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
     worldRtn = memory->worldRtn;
     //reset the ignore array each time in case the map has changed enough
     //ignore = memory->ignore;
+    ignore = new vector<bool>();
+    for(int i = 0; i < rtn->size(); i++)
+        ignore->push_back(false);
     memo = memory->memo;
   }
 
