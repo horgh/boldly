@@ -12,6 +12,7 @@
     <param name="gain_scale" value="1.0"/>
     <param name="close_loops" value="true"/>
     <remap from="slam_entropy" to="gmapping/entropy"/>
+    <param name="explore_planner/allow_unknown" value="false" />
 
     <!-- world specific -->
     <rosparam file="$(find explore_stage)/world_configs/stage_hospital_section/explore_costmap.yaml" command="load" />

@@ -71,6 +71,7 @@ public:
   void visualize_arrow(int id, double x, double y, double scale, double r,
     double g, double b, double a, std::vector<visualization_msgs::Marker>* markers);
   void visualize_blacklisted();
+  void find_furthest_point();
 
   /**
    * @brief  Constructor
@@ -212,6 +213,9 @@ private:
 
   // Track last time we calculated and sent a new goal
   ros::Time last_goal_chosen;
+
+  // Track how many exploration runs we have done
+  int exploration_runs_;
 };
 
 }

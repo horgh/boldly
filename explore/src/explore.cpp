@@ -53,6 +53,9 @@
 #define PROGRESS_TIMEOUT 30.0
 #endif
 
+// Number of times to go out exploring before we decide to go far
+#define EXPLORATION_RUNS 2
+
 // Voltage that we consider too low and must charge. This should
 // be the same as robot starts sounding alarums
 #define VOLTAGE_WARNING 11.5
@@ -184,6 +187,19 @@ void Explore::visualize_blacklisted() {
   }
 }
 
+/*
+  Look at our current costmap. Find the longest straight line point from home
+  that we can reach. Mark the point, and draw the plan.
+*/
+void Explore::find_furthest_point() {
+/*
+  costmap_2d::Costmap2D costmap;
+  explore_costmap_ros_.getCostmapCopy(costmap);
+
+  double longest_distance = 0.0;
+  */
+}
+
 Explore::Explore() :
   node_(),
   tf_(ros::Duration(10.0)),
@@ -275,6 +291,9 @@ Explore::Explore() :
   skeleplanner_ = new SkelePlanner();
   skeleplanner_->initialize(std::string("skeleplanner"), explore_costmap_ros_);
   skeleplanner_->set_topomap_origin(home_pose_msg.pose.position.x, home_pose_msg.pose.position.y);
+
+  // Haven't yet done any exploration runs
+  exploration_runs_ = 0;
 
   setState(STATE_WAITING_FOR_GOAL);
 }
