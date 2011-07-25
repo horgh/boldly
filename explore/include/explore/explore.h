@@ -69,8 +69,10 @@ public:
   void charge_complete_callback(const std_msgs::Empty::ConstPtr & msg);
   void battery_state_callback(const p2os_driver::BatteryState::ConstPtr & msg);
   void visualize_arrow(int id, double x, double y, double scale, double r,
-    double g, double b, double a, std::vector<visualization_msgs::Marker>* markers);
+    double g, double b, double a, std::vector<visualization_msgs::Marker>* markers,
+    std::string ns);
   void visualize_blacklisted();
+  double distance_between_coords(double x1, double y1, double x2, double y2);
   void find_furthest_point();
 
   /**

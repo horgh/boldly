@@ -125,12 +125,13 @@ void Explore::battery_state_callback(const p2os_driver::BatteryState::ConstPtr &
   Add an arrow marker to the given markers vector
 */
 void Explore::visualize_arrow(int id, double x, double y, double scale, double r,
-  double g, double b, double a, std::vector<visualization_msgs::Marker>* markers)
+  double g, double b, double a, std::vector<visualization_msgs::Marker>* markers,
+  std::string ns)
 {
   visualization_msgs::Marker m;
   m.header.frame_id = "map";
   m.header.stamp = ros::Time::now();
-  m.ns = "skeletester2";
+  m.ns = ns;
   m.id = id;
   //m.type = visualization_msgs::Marker::ARROW;
   m.type = visualization_msgs::Marker::SPHERE;
@@ -187,17 +188,97 @@ void Explore::visualize_blacklisted() {
   }
 }
 
+double Explore::distance_between_coords(double x1, double y1, double x2, double y2) {
+  return std::sqrt( (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) );
+}
+
 /*
   Look at our current costmap. Find the longest straight line point from home
   that we can reach. Mark the point, and draw the plan.
 */
 void Explore::find_furthest_point() {
-/*
   costmap_2d::Costmap2D costmap;
-  explore_costmap_ros_.getCostmapCopy(costmap);
+  explore_costmap_ros_->getCostmapCopy(costmap);
 
-  double longest_distance = 0.0;
-  */
+  unsigned int w = costmap.getSizeInCellsX();
+  unsigned int h = costmap.getSizeInCellsY();
+  unsigned int size = w * h;
+
+  const unsigned char* map = costmap.getCharMap();
+
+  geometry_msgs::PoseStamped goal_pose_stamped;
+  goal_pose_stamped.header.frame_id = explore_costmap_ros_->getGlobalFrameID();
+  goal_pose_stamped.header.stamp = ros::Time::now();
+  goal_pose_stamped.pose.position.z = 0.0;
+  goal_pose_stamped.pose.orientation.x = 0.0;
+  goal_pose_stamped.pose.orientation.y = 0.0;
+  goal_pose_stamped.pose.orientation.z = 0.0;
+  goal_pose_stamped.pose.orientation.w = 0.0;
+
+  std::vector<geometry_msgs::PoseStamped> plan;
+
+  double furthest_distance = 0.0;
+  double furthest_x, furthest_y;
+
+  // Want to be able to find plans from home
+  explorer_->computePotentialFromPoint(explore_costmap_ros_, planner_, &home_pose_msg.pose.position);
+
+  for (unsigned int i = 0; i < size; ++i) {
+    // Point must be in free space
+    if (map[i] != costmap_2d::FREE_SPACE)
+      continue;
+
+    // From index to cell coords
+    unsigned int cell_x, cell_y;
+    costmap.indexToCells(i, cell_x, cell_y);
+
+    // From cell coords to map coords
+    double x, y;
+    costmap.mapToWorld(cell_x, cell_y, x, y);
+
+    // We want furthest distance
+    double distance = distance_between_coords(home_pose_msg.pose.position.x, home_pose_msg.pose.position.y,
+      x, y);
+    if (distance <= furthest_distance)
+      continue;
+
+    // See if we can make a plan to the new furthest point
+    plan.clear();
+    goal_pose_stamped.pose.position.x = x;
+    goal_pose_stamped.pose.position.y = y;
+    // Seem to have a valid plan
+    if ( planner_->getPlanFromPotential(goal_pose_stamped, plan) && !plan.empty() ) {
+      // XXX May need to ensure that the plan does not go through unknown cells
+
+      furthest_distance = distance;
+      furthest_x = x;
+      furthest_y = y;
+    }
+  }
+
+  // Visualise the plan & furthest pt
+  int id = 0;
+  std::vector<visualization_msgs::Marker> markers;
+  for (std::vector<geometry_msgs::PoseStamped>::const_iterator it = plan.begin();
+    it < plan.end();
+    ++it, ++id)
+  {
+    visualize_arrow(id, it->pose.position.x, it->pose.position.y,
+      0.2, // scale
+      0.0, 245.0, 255.0, 0.5, // turquoise
+      &markers, "furthest");
+  }
+
+  // Publish the markers
+  for (std::vector<visualization_msgs::Marker>::const_iterator it = markers.begin();
+    it < markers.end();
+    ++it)
+  {
+    topomap_marker_publisher_.publish( *it );
+  }
+
+  // Leave planner in expected state
+  explorer_->computePotentialFromRobot(explore_costmap_ros_, planner_);
 }
 
 Explore::Explore() :
@@ -1056,6 +1137,10 @@ void Explore::execute() {
       // and blacklisted frontiers
       visualize_blacklisted();
     }
+
+#ifdef SIMULATION
+    find_furthest_point();
+#endif
 
     last_pose = currentPoseStamped();
     r.sleep();
