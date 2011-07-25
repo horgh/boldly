@@ -148,6 +148,42 @@ void Explore::visualize_arrow(int id, double x, double y, double scale, double r
   markers->push_back( m );
 }
 
+/*
+  Publish markers for each frontier_blacklist_ on topomap_marker publisher
+*/
+void Explore::visualize_blacklisted() {
+  visualization_msgs::Marker m;
+  m.header.frame_id = "map";
+  m.header.stamp = ros::Time::now();
+  m.ns = "blacklisted";
+  m.lifetime = ros::Duration(5.0);
+
+  // Pink?
+  m.color.r = 255.0;
+  m.color.g = 0.0;
+  m.color.b = 169.0;
+  m.color.a = 0.5;
+
+  // frontiers are 0.7 cubes
+  double scale = 0.6;
+  m.scale.x = scale;
+  m.scale.y = scale;
+  m.scale.z = scale;
+
+  int id = 0;
+  m.id = id;
+
+  m.type = visualization_msgs::Marker::SPHERE;
+  
+  for (std::vector<geometry_msgs::PoseStamped>::const_iterator it = frontier_blacklist_.begin();
+    it < frontier_blacklist_.end();
+    ++it)
+  {
+    m.pose = it->pose;
+    topomap_marker_publisher_.publish( m );
+  }
+}
+
 Explore::Explore() :
   node_(),
   tf_(ros::Duration(10.0)),
@@ -997,6 +1033,9 @@ void Explore::execute() {
       skeleplanner_->makePlan( current_pose_stamped, current_pose_stamped, plan_empty );
       // then publish it
       skeleplanner_->publish_topomap(&topomap_marker_publisher_);
+
+      // and blacklisted frontiers
+      visualize_blacklisted();
     }
 
     last_pose = currentPoseStamped();

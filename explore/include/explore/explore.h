@@ -70,6 +70,7 @@ public:
   void battery_state_callback(const p2os_driver::BatteryState::ConstPtr & msg);
   void visualize_arrow(int id, double x, double y, double scale, double r,
     double g, double b, double a, std::vector<visualization_msgs::Marker>* markers);
+  void visualize_blacklisted();
 
   /**
    * @brief  Constructor
