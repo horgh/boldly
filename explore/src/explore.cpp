@@ -416,6 +416,9 @@ Explore::~Explore() {
 
   if(explore_costmap_ros_ != NULL)
     delete explore_costmap_ros_;
+
+  if (skeleplanner_ != NULL)
+    delete skeleplanner_;
 }
 
 /*
@@ -640,6 +643,7 @@ void Explore::makePlan() {
 
     setState(STATE_EXPLORING);
     //time_since_progress_ = 0.0;
+    time_following_plan_ = 0.0;
 
     if (visualize_) {
       publishGoal(goal_pose.pose);
@@ -822,6 +826,7 @@ void Explore::checkIfStuck() {
       frontier_blacklist_.push_back(current_goal_pose_stamped_);
       ROS_WARN("Adding current goal to black list.");
       setState(STATE_WAITING_FOR_GOAL);
+      time_since_progress_ = 0.0;
     } else if (state == STATE_HEADING_HOME) {
       // Try to move in a random direction to get unstuck
       moveRandomDirection();
@@ -1138,7 +1143,8 @@ void Explore::execute() {
       if (state != STATE_HEADING_HOME
           && (state == STATE_WAITING_FOR_GOAL
               || atGoal()
-              || (ros::Time::now() - last_goal_chosen).sec > 10) )
+//              || (ros::Time::now() - last_goal_chosen).sec > 10) )
+              || time_following_plan_ > 10.0) )
       {
         makePlan();
 
@@ -1146,6 +1152,10 @@ void Explore::execute() {
 
       // We can get stuck (if we're not charging), so handle it.
       checkIfStuck();
+
+      // Track how long we've been following a plan
+      if (state == STATE_EXPLORING)
+        time_following_plan_ += 1.0f / planner_frequency_;
     }
 
     if (exploration_runs_ >= EXPLORATION_RUNS) {

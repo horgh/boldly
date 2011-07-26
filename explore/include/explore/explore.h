@@ -179,6 +179,7 @@ private:
   geometry_msgs::PoseStamped current_goal_pose_stamped_;
   unsigned int prev_plan_size_;
   double time_since_progress_, progress_timeout_;
+  double time_following_plan_;
   double potential_scale_, orientation_scale_, gain_scale_;
   boost::mutex client_mutex_;
   bool   close_loops_;

@@ -271,12 +271,14 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose>
     Store in rated_frontiers_.
   */
   // This gets each frontier's topological rating
-  std::vector<FrontierStats*>* frontier_stats = frontierRatings(weightedFrontiers, costmap2, topo_map, 0);
+  std::vector<FrontierStats> frontier_stats;
+  frontierRatings(frontier_stats, weightedFrontiers, costmap2, topo_map, 0);
+  //std::vector<FrontierStats*>* frontier_stats = frontierRatings(weightedFrontiers, costmap2, topo_map, 0);
 
   rated_frontiers_.clear();
   rated_frontiers_.reserve(weightedFrontiers.size());
   double lambda = 1.0/2000.0;
-  std::vector<FrontierStats*>::const_iterator it2 = frontier_stats->begin();
+  std::vector<FrontierStats>::const_iterator it2 = frontier_stats.begin();
   for (std::vector<WeightedFrontier>::const_iterator it = weightedFrontiers.begin();
     it != weightedFrontiers.end();
     ++it)
@@ -288,7 +290,7 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose>
     //double rating = size * exp(-1.0*lambda*it->cost);
     // Normalise rating
     //double rating = size / (it->cost / max_cost);
-    double rating = size * std::abs((*it2)->corrCoeff);
+    double rating = size * std::abs(it2->corrCoeff);
 
     ROS_WARN("A %f L %f rating %f lambda %f", size, (it->cost / max_cost), rating, lambda);
 
@@ -710,11 +712,9 @@ inline double dist(double x1, double y1, double x2, double y2) {
 }
 
 //this is the this least reliable, but the fastest. I have not copied to slower and more reliable version.
-std::vector<FrontierStats*> *ExploreFrontier::frontierRatings(std::vector<WeightedFrontier>& frontiers, const costmap_2d::Costmap2D &costmap, std::vector<Waypoint*>* topo, int showDebug)
+void ExploreFrontier::frontierRatings(std::vector<FrontierStats>& frontier_stats, std::vector<WeightedFrontier>& frontiers, const costmap_2d::Costmap2D& costmap, std::vector<Waypoint*>* topo, int showDebug)
 {
     int counter = 1;
-    
-    std::vector<FrontierStats*> * rtn = new std::vector<FrontierStats*>();
     
     for(std::vector<WeightedFrontier>::iterator i = frontiers.begin(); i != frontiers.end(); i++)
     {
@@ -800,11 +800,8 @@ std::vector<FrontierStats*> *ExploreFrontier::frontierRatings(std::vector<Weight
         double corrCoeff = (n*mdiff - xsum*ysum) / denom;
 
         //use frontierstats in your formula
-        rtn->push_back(new FrontierStats(frontierDelta, lineDeltas, corrCoeff));
-        
+        frontier_stats.push_back(FrontierStats(frontierDelta, lineDeltas, corrCoeff));
     }
-    
-    return rtn;
 }
 
 }
