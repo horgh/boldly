@@ -138,9 +138,11 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose>
   if (frontiers_.size() == 0)
     return false;
 
-
   planner_ = planner;
   costmapResolution_ = costmap.getResolution();
+
+  costmap_2d::Costmap2D costmap2;
+  costmap.getCostmapCopy(costmap2);
 
   //we'll make sure that we set goals for the frontier at least the circumscribed
   //radius away from unknown space
@@ -219,6 +221,20 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose>
         weighted_frontier.frontier.pose.position.y = ( it->frontier.pose.position.y + it2->frontier.pose.position.y ) / 2.0;
         weighted_frontier.frontier.pose.position.z = 0.0;
 
+        unsigned int map_x, map_y;
+        costmap2.worldToMap(weighted_frontier.frontier.pose.position.x, weighted_frontier.frontier.pose.position.y,
+          map_x, map_y);
+        if(costmap2.getCost(map_x, map_y) >= costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
+          ROS_WARN("*******************&@#(&@#(@&#(*&@#(*@#&fuck fuck fuck");
+          Point p = openPoint(weighted_frontier, costmap2);
+          // openPoint() returns map coords
+          double world_x, world_y;
+          costmap2.mapToWorld(p.x, p.y, world_x, world_y);
+          weighted_frontier.frontier.pose.position.x = world_x;
+          weighted_frontier.frontier.pose.position.y = world_y;
+          ROS_WARN("x %d y %d map x %d map y %d world x %f world y %f", p.x, p.y, map_x, map_y, world_x, world_y);
+        }
+
         // XXX Not really correct, but works. Probably irrelevant.
         // Note: setting all as 0 doesn't work (nav stack doesn't like it).
         weighted_frontier.frontier.pose.orientation.x = it->frontier.pose.orientation.x;
@@ -254,8 +270,6 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose>
     Rate frontiers by goodness & cost.
     Store in rated_frontiers_.
   */
-  costmap_2d::Costmap2D costmap2;
-  costmap.getCostmapCopy(costmap2);
   // This gets each frontier's topological rating
   std::vector<FrontierStats*>* frontier_stats = frontierRatings(weightedFrontiers, costmap2, topo_map, 0);
 
@@ -647,7 +661,7 @@ Line leastSquares(std::vector<Waypoint*> points)
 }
 
 //workhorse function for frontierRatings
-Point openPoint(WeightedFrontier frontier, const costmap_2d::Costmap2D &costmap)
+Point ExploreFrontier::openPoint(WeightedFrontier frontier, const costmap_2d::Costmap2D &costmap)
 {
     double x_world = frontier.frontier.pose.position.x;
     double y_world = frontier.frontier.pose.position.y;
@@ -656,8 +670,11 @@ Point openPoint(WeightedFrontier frontier, const costmap_2d::Costmap2D &costmap)
     unsigned int y;
 
     costmap.worldToMap(x_world, y_world, x, y);
+
+    ROS_WARN("frontier size %d", frontier.frontier.size);
     
-    for(int rad = 0; rad <= frontier.frontier.size; rad++)
+    //for(int rad = 0; rad <= frontier.frontier.size; rad++)
+    for(int rad = 0; 1; rad++)
     {
         for(int i = x - rad; i <= x + rad; i++)
         {

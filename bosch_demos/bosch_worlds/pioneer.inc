@@ -362,7 +362,7 @@ define pioneer3dx pioneer_base
   size [0.511 0.4 0.22 ]
 
   # The pioneer's center of rotation is offset from its center of area
-  origin [-0.04465 0.0 0.0]
+  #origin [-0.04465 0.0 0.0 0.0]
 
   # Estimated mass in KG
   mass 23.0 
@@ -382,7 +382,7 @@ define pioneer3dx pioneer_base
   )
 
   # Use the sonar array defined above
-  p3dx_sonar( pose [ 0 0 -0.03 0 ] )  
+  #p3dx_sonar( pose [ 0 0 -0.03 0 ] )  
 ) 
 
 # The Pioneer3AT standard configuration

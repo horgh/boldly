@@ -14,6 +14,8 @@ explore_costmap:
   #resolution: 0.1
   track_unknown_space: true
 
+  #unknown_cost_value: 255
+
   # The below are world specific
   width: 60.0
   height: 60.0

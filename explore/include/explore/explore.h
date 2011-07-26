@@ -218,6 +218,9 @@ private:
 
   // Track how many exploration runs we have done
   int exploration_runs_;
+
+  // Each marker needs unique id
+  int topomap_publisher_marker_id;
 };
 
 }
