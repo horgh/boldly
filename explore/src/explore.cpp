@@ -63,7 +63,7 @@
 // Our battery is a timer. Makes us go home when we judge we need to.
 // With CONSTANT_BATTERY_TIME, always use BATTERY_TIME as our battery life.
 // Otherwise we change battery time to duration until heard warning voltage.
-#define BATTERY_TIMER
+//#define BATTERY_TIMER
 
 // Always use BATTERY_TIME as battery duration rather than voltage logic.
 // Requires BATTERY_TIMER as well.
@@ -198,7 +198,7 @@ void Explore::visualize_plan(std::vector<geometry_msgs::PoseStamped>& plan) {
     ++it)
   {
     visualize_arrow(topomap_publisher_marker_id, it->pose.position.x, it->pose.position.y,
-      0.1, // scale
+      0.4, // scale
       205.0, 173.0, 0.0, 0.5, // goldish
       &markers, "plan");
     topomap_publisher_marker_id++;
@@ -1177,7 +1177,21 @@ void Explore::execute() {
       visualize_blacklisted();
 
       // and the current plan
-      visualize_plan(current_plan_);
+      //visualize_plan(current_plan_);
+      // current goal
+      std::vector<visualization_msgs::Marker> markers2;
+      visualize_arrow(topomap_publisher_marker_id,
+        current_goal_pose_stamped_.pose.position.x, current_goal_pose_stamped_.pose.position.y,
+        3.0, // scale
+        0.0, 238.0, 0.0, 0.3, // green
+        &markers2, "curgoal");
+      topomap_publisher_marker_id++;
+      for (std::vector<visualization_msgs::Marker>::const_iterator it = markers2.begin();
+        it < markers2.end();
+        ++it)
+      {
+        topomap_marker_publisher_.publish( *it );
+      }
     }
 
 #ifdef SIMULATION
