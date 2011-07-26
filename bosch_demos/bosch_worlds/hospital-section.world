@@ -58,6 +58,7 @@ floorplan
   gui_grid 1
   gui_outline 1
 
+  # This should match our costmap sizes.
   size [140.000 60.000 2.500]
   #size [170.000 80.000 2.500]
   #size [300.000 150.000 2.500]
