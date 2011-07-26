@@ -54,7 +54,6 @@ void SkelePlanner::update() {
     wipeTopo();
   }
   //std::vector<Waypoint*> *result = topoFromPoint(lastOrigin.pose.position.x, lastOrigin.pose.position.y, costmap);
-  ROS_WARN("topo from %f, %f", topomap_origin_x, topomap_origin_y);
   std::vector<Waypoint*> *result = topoFromPoint(topomap_origin_x, topomap_origin_y, costmap);
   gotSafeOrigin = result->size() > 1;
 
@@ -68,7 +67,6 @@ void SkelePlanner::update() {
     delete result;
     
     //result = topoFromPoint(safeOrigin.pose.position.x, safeOrigin.pose.position.y, costmap);
-    ROS_WARN("topo from %f, %f", topomap_origin_x, topomap_origin_y);
     result = topoFromPoint(topomap_origin_x, topomap_origin_y, costmap);
     gotSafeOrigin = result->size() > 1;
   }

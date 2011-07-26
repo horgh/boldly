@@ -43,7 +43,7 @@
 
 // If uncommented, use frontier comparison algorithm where we don't try to go to those
 // frontiers which we deem unsafe due to battery life, but may go to others intead
-// Probably not working correctly now.
+// XXX Probably not working correctly now.
 //#define FRONTIER_COMPARE
 
 // Time until we decide we are stuck in seconds
@@ -63,7 +63,7 @@
 // Our battery is a timer. Makes us go home when we judge we need to.
 // With CONSTANT_BATTERY_TIME, always use BATTERY_TIME as our battery life.
 // Otherwise we change battery time to duration until heard warning voltage.
-//#define BATTERY_TIMER
+#define BATTERY_TIMER
 
 // Always use BATTERY_TIME as battery duration rather than voltage logic.
 // Requires BATTERY_TIMER as well.
@@ -1020,6 +1020,8 @@ void Explore::reachedHome() {
     ROS_WARN("I died!");
   }
 
+  exploration_runs_++;
+
 #ifdef BATTERY_TIMER
   setState(STATE_CHARGING);
 #endif
@@ -1040,8 +1042,11 @@ void Explore::reachedHome() {
 */
 void Explore::reachedHomeCallback(const actionlib::SimpleClientGoalState& status,
   const move_base_msgs::MoveBaseResultConstPtr& result,
-  geometry_msgs::PoseStamped goal) {
-  reachedHome();
+  geometry_msgs::PoseStamped goal)
+{
+  if (state == STATE_HEADING_HOME) {
+    reachedHome();
+  }
 }
 
 /*
@@ -1115,7 +1120,7 @@ void Explore::execute() {
       loop_closure_->updateGraph(robot_pose);
     }
 
-    if (state != STATE_CHARGING) {
+    if (state != STATE_CHARGING && exploration_runs_ < EXPLORATION_RUNS) {
 #ifdef BATTERY_TIMER
       // If we're heading home, we may be there now
       if ( state == STATE_HEADING_HOME && atHome() ) {
@@ -1141,6 +1146,11 @@ void Explore::execute() {
 
       // We can get stuck (if we're not charging), so handle it.
       checkIfStuck();
+    }
+
+    if (exploration_runs_ >= EXPLORATION_RUNS) {
+      ROS_WARN("* I've done all my exploration runs. Not going anywhere, but still visualising. (%d/%d runs)",
+        exploration_runs_, EXPLORATION_RUNS);
     }
 
     if (visualize_) {
