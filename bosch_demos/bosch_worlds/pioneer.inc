@@ -359,13 +359,13 @@ define fancypioneer2dx pioneer2dx_base
 define pioneer3dx pioneer_base
 (
   # Actual size
-  size [0.511 0.4 0.22 ]
+  #size [0.511 0.4 0.22 ]
 
   # The pioneer's center of rotation is offset from its center of area
   #origin [-0.04465 0.0 0.0 0.0]
 
   # Estimated mass in KG
-  mass 23.0 
+  #mass 23.0 
 
   # Body shape:
   block( 

@@ -5,8 +5,13 @@ max_obstacle_height: 2.0
 #raytrace_range: 3.0
 obstacle_range: 80.0
 raytrace_range: 80.0
-inscribed_radius: 0.385
-circumscribed_radius: 0.685
+
+#inscribed_radius: 0.385
+inscribed_radius: 0.2555
+
+#circumscribed_radius: 0.685
+circumscribed_radius: 0.2555
+
 inflation_radius: 0.6
 cost_scaling_factor: 15.0
 lethal_cost_threshold: 100
