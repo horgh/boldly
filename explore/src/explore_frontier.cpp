@@ -273,7 +273,6 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose>
   // This gets each frontier's topological rating
   std::vector<FrontierStats> frontier_stats;
   frontierRatings(frontier_stats, weightedFrontiers, costmap2, topo_map, 0);
-  //std::vector<FrontierStats*>* frontier_stats = frontierRatings(weightedFrontiers, costmap2, topo_map, 0);
 
   rated_frontiers_.clear();
   rated_frontiers_.reserve(weightedFrontiers.size());
