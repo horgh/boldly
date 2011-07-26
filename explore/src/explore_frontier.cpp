@@ -598,6 +598,7 @@ void ExploreFrontier::getVisualizationMarkers(std::vector<Marker>& markers)
   m_text.color.b = 46.0;
   m_text.color.a = 255.0;
   */
+  m_text.lifetime = ros::Duration(0);
   m_text.color.r = 0.0;
   m_text.color.g = 245.0;
   m_text.color.b = 255.0;
@@ -676,14 +677,14 @@ Point ExploreFrontier::openPoint(WeightedFrontier frontier, const costmap_2d::Co
     //for(int rad = 0; rad <= frontier.frontier.size; rad++)
     for(int rad = 0; 1; rad++)
     {
-        for(int i = x - rad; i <= x + rad; i++)
+        for(unsigned int i = x - rad; i <= x + rad; i++)
         {
-            for(int j = y - rad; j <= y + rad; j += (i == x-rad || i == x+rad ? 1 : std::max(1, 2*rad)))
+            for(unsigned int j = y - rad; j <= y + rad; j += (i == x-rad || i == x+rad ? 1 : std::max(1, 2*rad)))
             {
                 if (!inBounds(i, j, costmap)) {
                   continue;
                 }
-                double tx, ty;
+                //double tx, ty;
                 //costmap.worldToMap(i, j, tx, ty);
                 //costmap.mapToWorld(i, j, tx, ty);
                 //if(calcSpace(i, j, image, NULL) > 1)

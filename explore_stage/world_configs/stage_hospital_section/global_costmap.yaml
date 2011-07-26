@@ -22,7 +22,9 @@ global_costmap:
   # The below are world specific
   #width: 60.0
   #height: 60.0
-  width: 140.0
-  height: 60.0
-  origin_x: -30.0
-  origin_y: -30.0
+  width: 170.0
+  height: 80.0
+  #origin_x: -30.0
+  #origin_y: -30.0
+  origin_x: -80.0
+  origin_y: -40.0

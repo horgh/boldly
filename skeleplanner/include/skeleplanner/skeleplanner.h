@@ -12,6 +12,9 @@ protected:
   costmap_2d::Costmap2D costmap;
   costmap_2d::Costmap2DROS *costmapros;
   geometry_msgs::PoseStamped lastOrigin, safeOrigin;
+
+  std::vector<Waypoint*> *topomap;
+
   bool gotSafeOrigin;
   double topomap_origin_x,
     topomap_origin_y;
@@ -28,17 +31,16 @@ protected:
   // colours of markers
   double r_, g_, b_, a_;
 
-
   void wipeTopo();
 
 public:
-  std::vector<Waypoint*> *topomap;
 
   SkelePlanner();
   ~SkelePlanner();
 
   void initialize(std::string name, costmap_2d::Costmap2DROS *costmap);
   void set_topomap_origin(double origin_x, double origin_y);
+  std::vector<Waypoint*>* get_topomap();
   void update();
   bool makePlan(const geometry_msgs::PoseStamped &start, const geometry_msgs::PoseStamped &goal, std::vector< geometry_msgs::PoseStamped > &plan);
 

@@ -48,6 +48,10 @@ void SkelePlanner::set_topomap_origin(double origin_x, double origin_y) {
   topomap_origin_y = origin_y;
 }
 
+std::vector<Waypoint*>* SkelePlanner::get_topomap() {
+  return topomap;
+}
+
 void SkelePlanner::update() {
   costmapros->getCostmapCopy(costmap);
   if(topomap) {

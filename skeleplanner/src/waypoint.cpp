@@ -127,7 +127,7 @@ MapWaypoint waypointBest(int x, int y, int ** memo, const costmap_2d::Costmap2D 
 
         //straightline clear on orig image
         int tmps = calcSpace(i, j, costmap, memo);
-        int otmps = tmps;
+        //int otmps = tmps;
         int innerWaypoints = 0;
         double innerDistances = 0.0;
         for(vector<MapWaypoint*>::const_iterator w = waypoints.begin(); w != waypoints.end(); w++)
@@ -198,10 +198,10 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
 
     //for the DP
     memo = new int*[costmap.getSizeInCellsX()];
-    for(int i = 0; i < costmap.getSizeInCellsX(); i++)
+    for(unsigned int i = 0; i < costmap.getSizeInCellsX(); i++)
     {
       memo[i] = new int[costmap.getSizeInCellsY()];
-      for(int j = 0; j < costmap.getSizeInCellsY(); j++)
+      for(unsigned int j = 0; j < costmap.getSizeInCellsY(); j++)
         memo[i][j] = -1;
     }
     
@@ -220,7 +220,7 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
     //reset the ignore array each time in case the map has changed enough
     //ignore = memory->ignore;
     ignore = new vector<bool>();
-    for(int i = 0; i < rtn->size(); i++)
+    for(unsigned int i = 0; i < rtn->size(); i++)
         ignore->push_back(false);
     memo = memory->memo;
   }
@@ -237,9 +237,10 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
     Waypoint *newworld = new Waypoint(0, 0, 0);
     while(maxWaypoint == NULL)
     {
-      int bestx, besty, besti;
+      //int bestx, besty;
+      int besti;
       //always find new max, as new waypoints can change the max. Assume [0]==home
-      for(int j = 0; j < rtn->size(); j++)
+      for(unsigned int j = 0; j < rtn->size(); j++)
       {
         MapWaypoint * tmp = (*rtn)[j];
         Waypoint *worldtmp = (*worldRtn)[j];
@@ -257,6 +258,7 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
         break;
                   
       *newway = waypointBest(maxWaypoint->x, maxWaypoint->y, memo, costmap, *rtn);
+
       if(newway->x == -1)
       {
         (*ignore)[besti] = true;
@@ -276,7 +278,7 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
     ignore->push_back(false);
 
     //only recalc waypointBest for nearby waypoints
-    for(int j = 1; j < rtn->size()-1; j++)
+    for(unsigned int j = 1; j < rtn->size()-1; j++)
     {
       MapWaypoint * tmp = (*rtn)[j];
 
@@ -304,7 +306,7 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
   }
 
 /*
-  XXX Do we now have a memory leak with this corrupted?
+  XXX Do we now have a memory leak with this commented?
 
   for(std::vector<MapWaypoint*>::iterator i = rtn->begin(); i != rtn->end(); ++i) {
     delete *i;
@@ -314,138 +316,3 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
 
   return worldRtn;
 }
-
-//workhorse function for frontierRatings
-/*
-Line leastSquares(vector<Waypoint*> points)
-{
-    int n = points.size();
-    double sum_x = 0;
-    double sum_y = 0;
-    double sum_xx = 0;
-    double sum_xy = 0;
-    
-    for(vector<Waypoint*>::iterator i = points.begin(); i != points.end(); i++)
-    {
-        sum_x = sum_x + (*i)->x;
-        sum_y = sum_y + (*i)->y;
-
-        sum_xx = sum_xx + ((*i)->x * (*i)->x);
-        sum_xy = sum_xy + ((*i)->x * (*i)->y);
-    }
-    
-    double m = (-sum_x*sum_y+n*sum_xy)/(n*sum_xx-sum_x*sum_x);
-    double b = (-sum_x*sum_xy+sum_xx*sum_y)/(n*sum_xx-sum_x*sum_x);
-
-    return Line(m, b);
-}
-
-//workhorse function for frontierRatings
-Point openPoint(WeightedFrontier frontier, const costmap_2d::Costmap2D &costmap)
-{
-    int x = frontier.frontier.pose.position.x;
-    int y = frontier.frontier.pose.position.y;
-    
-    for(int rad = 0; rad <= frontier.frontier.size; rad++)
-    {
-        for(int i = x - rad; i <= x + rad; i++)
-        {
-            for(int j = y - rad; j <= y + rad; j += (i == x-rad || i == x+rad ? 1 : max(1, 2*rad)))
-            {
-                int tx, ty;
-                costmap.worldToMap(i, j, tx, ty);
-                //if(calcSpace(i, j, image, NULL) > 1)
-                if(costmap.getCost(tx, ty) < PASSABLE_THRESH)
-                    return Point(i, j);
-            }
-        }
-    }
-    
-    //give up and return the center
-    return Point(x, y);
-}
-
-//workhorse function for frontierRatings
-inline double perpenDist(double m, double b, double x, double y)
-{
-    return abs(y - (m*x) - b) / sqrt((m*m) + 1);
-}
-
-//this is the this least reliable, but the fastest. I have not copied to slower and more reliable version.
-vector<FrontierStats*> *frontierRatings(vector<WeightedFrontier> frontiers, const costmap_2d::Costmap2D &costmap, vector<Waypoint*> topo, int showDebug)
-{
-    int counter = 1;
-    
-    vector<FrontierStats*> * rtn = new vector<FrontierStats*>();
-    
-    for(vector<WeightedFrontier*>::iterator i = frontiers.begin(); i != frontiers.end(); i++)
-    {
-        if(showDebug >= 1)
-            cout << "Analyzing frontier " << counter++ << "/" << frontiers.size() << endl;
-    
-        WeightedFrontier frontier = (*i);
-        Point startingPoint = openPoint(frontier, costmap);
-        
-        double bestDist = INF;
-        Waypoint * best = NULL;
-        //find the closest waypoint
-        for(vector<Waypoint*>::iterator j = topo.begin(); j != topo.end(); j++)
-        {
-            if((*j)->x == startingPoint.x && (*j)->y == startingPoint.y)
-                continue;
-        
-            if(dist((*j)->x, (*j)->y, startingPoint.x, startingPoint.y) < bestDist)
-            {
-                bestDist = dist((*j)->x, (*j)->y, startingPoint.x, startingPoint.y);
-                best = (*j);
-            }
-        }
-        
-        vector<Waypoint*> waypoints;
-        queue<Waypoint*> bfs;
-        bfs.push(best);
-        //bfs from that waypoint
-        for(int j = 1; j < FRONTIERDEPTH && !bfs.empty(); )
-        {
-            Waypoint * current = bfs.front();
-            bfs.pop();
-            
-            for(vector<Waypoint*>::iterator k = current->neighbours.begin(); k != current->neighbours.end(); k++)
-            {
-                bool alreadyVisited = false;
-                for(vector<Waypoint*>::iterator m = waypoints.begin(); m != waypoints.end(); m++)
-                    if((*m) == (*k))
-                    {
-                        alreadyVisited = true;
-                        break;
-                    }
-                
-                if(!alreadyVisited)
-                {
-                    j++;
-                    waypoints.push_back(*k);
-                    bfs.push(*k);
-                }
-            }
-        }
-        
-        Line bestFit = leastSquares(waypoints);
-
-        double frontierDelta = perpenDist(bestFit.m, bestFit.b, startingPoint.x, startingPoint.y);
-                
-        double lineDeltas = 0.0;
-        //do not include the home waypoint, or else we double count deltas
-        for(vector<Waypoint*>::iterator j = waypoints.begin() + 1; j != waypoints.end(); j++)
-            lineDeltas += perpenDist(bestFit.m, bestFit.b, (*j)->x, (*j)->y);
-        lineDeltas /= (waypoints.size() - 1);
-            
-        //so atm, frontier delta is just as weighted as line deltas
-        rtn->push_back(new FrontierStats(frontierDelta, lineDeltas));
-        
-    }
-    
-    return rtn;
-}
-*/
-
-

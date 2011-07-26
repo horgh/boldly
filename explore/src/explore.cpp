@@ -582,7 +582,7 @@ void Explore::makePlan() {
   // Find frontier goals
   // getExplorationGoals() is old frontier rating system
   //if (! explorer_->getExplorationGoals(*explore_costmap_ros_, robot_pose, planner_, goals, potential_scale_, orientation_scale_, gain_scale_) ) {
-  if (! explorer_->rateFrontiers(*explore_costmap_ros_, robot_pose, planner_, goals, potential_scale_, orientation_scale_, gain_scale_, skeleplanner_->topomap) ) {
+  if (! explorer_->rateFrontiers(*explore_costmap_ros_, robot_pose, planner_, goals, potential_scale_, orientation_scale_, gain_scale_, skeleplanner_->get_topomap()) ) {
     ROS_WARN("No frontiers found?");
   }
 
@@ -639,7 +639,7 @@ void Explore::makePlan() {
     last_goal_chosen = ros::Time::now();
 
     setState(STATE_EXPLORING);
-    time_since_progress_ = 0.0;
+    //time_since_progress_ = 0.0;
 
     if (visualize_) {
       publishGoal(goal_pose.pose);
