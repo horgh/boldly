@@ -101,14 +101,17 @@ int main(int argc, char** argv) {
   // 1hz
   ros::Rate loop_rate(1);
 
+
   while ( ros::ok() ) {
     ROS_WARN("Skeletester publishing...");
 
     // First publish the current occupancy grid
     publish_map(costmap_, &map_pub);
+  
+    int marker_id = 0;
 
     // Publish the topomap
-    skele_planner.publish_topomap(&marker_pub);
+    marker_id = skele_planner.publish_topomap(&marker_pub, marker_id);
 
     // Additionally we can publish chosen path along topomap
     // Take the plan from makePlan() and then add nodes & edges with

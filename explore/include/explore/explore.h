@@ -73,6 +73,7 @@ public:
     std::string ns);
   void visualize_blacklisted();
   double distance_between_coords(double x1, double y1, double x2, double y2);
+  void visualize_plan(std::vector<geometry_msgs::PoseStamped>& plan);
   void find_furthest_point();
 
   /**
@@ -221,6 +222,9 @@ private:
 
   // Each marker needs unique id
   int topomap_publisher_marker_id;
+
+  // Plan we're trying to carry out. Made in makePlan()
+  std::vector<geometry_msgs::PoseStamped> current_plan_;
 };
 
 }

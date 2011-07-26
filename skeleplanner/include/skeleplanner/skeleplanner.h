@@ -60,13 +60,14 @@ public:
 
   // Drawing functions
   void visualize_node(double x, double y, double scale, double r, double g,
-    double b, double a, std::vector<visualization_msgs::Marker>* markers);
+    double b, double a, std::vector<visualization_msgs::Marker>* markers,
+    int marker_id);
 
   void visualize_edge(double x1, double y1, double x2, double y2,
     double scale, double r, double g, double b, double a,
-    std::vector<visualization_msgs::Marker>* markers);
+    std::vector<visualization_msgs::Marker>* markers, int marker_id);
 
-  void publish_topomap(ros::Publisher* marker_pub);
+  int publish_topomap(ros::Publisher* marker_pub, int marker_id);
 };
 
 #endif

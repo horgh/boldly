@@ -174,9 +174,6 @@ void Explore::visualize_blacklisted() {
   m.scale.y = scale;
   m.scale.z = scale;
 
-  int id = 0;
-  m.id = id;
-
   m.type = visualization_msgs::Marker::SPHERE;
   
   for (std::vector<geometry_msgs::PoseStamped>::const_iterator it = frontier_blacklist_.begin();
@@ -184,7 +181,34 @@ void Explore::visualize_blacklisted() {
     ++it)
   {
     m.pose = it->pose;
+    m.id = topomap_publisher_marker_id;
+    topomap_publisher_marker_id++;
     topomap_marker_publisher_.publish( m );
+  }
+}
+
+/*
+  Visualize a plan using the topomap_marker_publisher
+*/
+void Explore::visualize_plan(std::vector<geometry_msgs::PoseStamped>& plan) {
+  std::vector<visualization_msgs::Marker> markers;
+
+  for (std::vector<geometry_msgs::PoseStamped>::const_iterator it = plan.begin();
+    it < plan.end();
+    ++it)
+  {
+    visualize_arrow(topomap_publisher_marker_id, it->pose.position.x, it->pose.position.y,
+      0.1, // scale
+      205.0, 173.0, 0.0, 0.5, // goldish
+      &markers, "plan");
+    topomap_publisher_marker_id++;
+  }
+
+  for (std::vector<visualization_msgs::Marker>::const_iterator it = markers.begin();
+    it < markers.end();
+    ++it)
+  {
+    topomap_marker_publisher_.publish( *it );
   }
 }
 
@@ -263,10 +287,11 @@ void Explore::find_furthest_point() {
     it < plan.end();
     ++it, ++id)
   {
-    visualize_arrow(id, it->pose.position.x, it->pose.position.y,
+    visualize_arrow(topomap_publisher_marker_id, it->pose.position.x, it->pose.position.y,
       0.2, // scale
       0.0, 245.0, 255.0, 0.5, // turquoise
       &markers, "furthest");
+    topomap_publisher_marker_id++;
   }
 
   // Publish the markers
@@ -608,6 +633,8 @@ void Explore::makePlan() {
     current_goal_pose_stamped_ = goal_pose;
     move_base_client_.sendGoal(goal, boost::bind(&Explore::reachedGoal, this, _1, _2, goal_pose));
     ROS_WARN("Sent new goal to move_base.");
+
+    current_plan_ = plan;
 
     last_goal_chosen = ros::Time::now();
 
@@ -1126,16 +1153,21 @@ void Explore::execute() {
       // and occupancy map
       publishMap();
 
+      topomap_publisher_marker_id = 0;
+
       // and topomap
       // first generate a topomap (this happens with makePlan, though we don't want a plan...)
       geometry_msgs::PoseStamped current_pose_stamped = currentPoseStamped();
       std::vector<geometry_msgs::PoseStamped> plan_empty;
       skeleplanner_->makePlan( current_pose_stamped, current_pose_stamped, plan_empty );
       // then publish it
-      skeleplanner_->publish_topomap(&topomap_marker_publisher_);
+      topomap_publisher_marker_id = skeleplanner_->publish_topomap(&topomap_marker_publisher_, topomap_publisher_marker_id);
 
       // and blacklisted frontiers
       visualize_blacklisted();
+
+      // and the current plan
+      visualize_plan(current_plan_);
     }
 
 #ifdef SIMULATION

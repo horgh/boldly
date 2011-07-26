@@ -13,7 +13,7 @@ PLUGINLIB_DECLARE_CLASS(skeleplanner, SkelePlanner, SkelePlanner, nav_core::Base
 #endif
 
 SkelePlanner::SkelePlanner() :
-  topomap(NULL), gotSafeOrigin(false), marker_id(0), marker_id_last(0),
+  topomap(NULL), gotSafeOrigin(false), marker_id_last(0),
   // red like loop closure
   //r_(1.0), g_(0.0), b_(0.0), a_(1.0)
   // yellow
@@ -453,13 +453,13 @@ std::vector<Waypoint*> SkelePlanner::aStar(Waypoint* start, Waypoint* goal) {
   (Based on visualizeNode() in explore/loop_closure)
 */
 void SkelePlanner::visualize_node(double x, double y, double scale, double r, double g,
-  double b, double a, std::vector<visualization_msgs::Marker>* markers)
+  double b, double a, std::vector<visualization_msgs::Marker>* markers, int marker_id)
 {
   visualization_msgs::Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = ros::Time::now();
   marker.ns = "skeletester";
-  marker.id = marker_id++;
+  marker.id = marker_id;
   marker.type = visualization_msgs::Marker::SPHERE;
   marker.pose.position.x = x;
   marker.pose.position.y = y;
@@ -481,14 +481,14 @@ void SkelePlanner::visualize_node(double x, double y, double scale, double r, do
 */
 void SkelePlanner::visualize_edge(double x1, double y1, double x2, double y2,
   double scale, double r, double g, double b, double a,
-  std::vector<visualization_msgs::Marker>* markers)
+  std::vector<visualization_msgs::Marker>* markers, int marker_id)
 {
   visualization_msgs::Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = ros::Time::now();
   marker.action = visualization_msgs::Marker::ADD;
   marker.ns = "skeletester";
-  marker.id = marker_id++;
+  marker.id = marker_id;
   marker.type = visualization_msgs::Marker::LINE_STRIP;
   geometry_msgs::Point p;
   p.x = x1;
@@ -514,8 +514,7 @@ void SkelePlanner::visualize_edge(double x1, double y1, double x2, double y2,
 /*
   Uses the above 2 functions to publish the current topomap
 */
-void SkelePlanner::publish_topomap(ros::Publisher* marker_pub) {
-  marker_id = 0;
+int SkelePlanner::publish_topomap(ros::Publisher* marker_pub, int marker_id) {
   std::vector<visualization_msgs::Marker> markers;
 
 #ifdef DEBUG
@@ -528,7 +527,8 @@ void SkelePlanner::publish_topomap(ros::Publisher* marker_pub) {
   {
     // 0.5 scale, red colour: 1.0, 0.0, 0.0, 1.0
     //visualize_node( (*it)->x, (*it)->y, 0.5, r_, g_, b_, a_, &markers);
-    visualize_node( (*it)->x, (*it)->y, 0.3, r_, g_, b_, a_, &markers);
+    visualize_node( (*it)->x, (*it)->y, 0.3, r_, g_, b_, a_, &markers, marker_id);
+    marker_id++;
   }
 
   // Markers for the links between each node
@@ -543,7 +543,8 @@ void SkelePlanner::publish_topomap(ros::Publisher* marker_pub) {
     {
       // 0.25 scale
       //visualize_edge((*it)->x, (*it)->y, (*it2)->x, (*it2)->y, 0.25, r_, g_, b_, a_, &markers);
-      visualize_edge((*it)->x, (*it)->y, (*it2)->x, (*it2)->y, 0.2, r_, g_, b_, a_, &markers);
+      visualize_edge((*it)->x, (*it)->y, (*it2)->x, (*it2)->y, 0.2, r_, g_, b_, a_, &markers, marker_id);
+      marker_id++;
     }
   }
 
@@ -569,4 +570,6 @@ void SkelePlanner::publish_topomap(ros::Publisher* marker_pub) {
     it->lifetime = ros::Duration(1);
     marker_pub->publish( *it );
   }
+
+  return marker_id;
 }
