@@ -49,4 +49,22 @@ inline bool inBounds(unsigned int x, unsigned int y, const costmap_2d::Costmap2D
   return x < costmap.getSizeInCellsX() && y < costmap.getSizeInCellsY();
 }
 
-std::vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d::Costmap2D &costmap, bool showDebug=false, Topostore * memory=NULL);
+class Topomap {
+protected:
+  // Topomap in map coordinates
+  std::vector<MapWaypoint> map_topomap;
+
+  MapWayPoint home;
+
+  // Originating point for topomap
+  double start_world_x, start_world_y;
+  unsigned int start_map_x, start_map_y;
+
+public:
+  // Topomap in world coordinates
+  std::vector<Waypoint> topomap;
+
+  Topomap(const costmap_2d::Costmap2D& costmap, double world_x, double world_y);
+
+  void update(bool showDebug=false);
+};

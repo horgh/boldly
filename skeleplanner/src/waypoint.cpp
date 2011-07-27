@@ -168,31 +168,37 @@ MapWaypoint waypointBest(int x, int y, int ** memo, const costmap_2d::Costmap2D 
   MapWaypoint rtn(newx, newy, newm);
 
   return rtn;
-} 
+}
+
+Topomap::Topomap(const costmap_2d::Costmap2D& costmap,
+  double start_world_x, double start_world_y)
+  : costmap(costmap), start_world_x(world_x), start_world_y(world_y)
+{
+  costmap.worldToMap(world_x, world_y, start_map_x, start_map_y);
+  home = MapWaypoint(start_map_x, start_map_y, 0);
+
+  map_topomap.push_back(home);
+  topomap.push_back(Waypoint(start_world_x, start_world_y, 0));
+
+  memo[costmap.getSizeInCellsX()][costmap.getSizeInCellsY()];
+}
 
 //this function takes a starting point and creates a topological map of the image from that point.
 //the function stops when it cannot make a new waypoint without placing one in an area already covered by waypoints
 //however you can stop is short by specifying a maxPoints. Make maxPoints large (INT_MAX) if you want it to find
 //the complete topological map.
 //The other functions are workhorse functions, and are not meant for use outside of this function.
-vector<Waypoint*> * topoFromPoint(double worldx, double worldy,
-  const costmap_2d::Costmap2D &costmap, bool showDebug, Topostore * memory)
-{
-  unsigned x, y;
-  MapWaypoint * home;
-  vector<MapWaypoint*> *rtn;
-  vector<Waypoint*> *worldRtn;
-  vector<bool> * ignore;
-  int ** memo;
-  
+
+// This was topoFromPoint().
+void Topomap::update(bool showDebug) {
+  vector<MapWaypoint*>* rtn;
+  vector<Waypoint*>* worldRtn;
+  vector<bool>* ignore;
+  int** memo;
+
   //initially, give memory a NULL home (indeed, NULL everything) to have it initialized
   if(memory == NULL || memory->home == NULL)
   {
-    costmap.worldToMap(worldx, worldy, x, y);
-    home = new MapWaypoint(x, y, 0);
-    rtn = new vector<MapWaypoint*>();
-    worldRtn = new vector<Waypoint*>();
-    rtn->push_back(home);
     worldRtn->push_back(new Waypoint(worldx, worldy, 0));
     ignore = new vector<bool>();
     ignore->push_back(false);
@@ -317,20 +323,5 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy,
     newway->neighbors.push_back(maxWaypoint);
     worldMax->neighbors.push_back(newworld);
     newworld->neighbors.push_back(worldMax);
-
-    //if we've hit our frontier, stop finding waypoints.
-    //if(colorSum(newway->x, newway->y, &image) < GREYTHRESH && colorSum(newway->x, newway->y, &image) > BLACKTHRESH)
-
   }
-
-/*
-  XXX Do we now have a memory leak with this commented?
-
-  for(std::vector<MapWaypoint*>::iterator i = rtn->begin(); i != rtn->end(); ++i) {
-    delete *i;
-  }
-  //delete rtn;
-  */
-
-  return worldRtn;
 }
