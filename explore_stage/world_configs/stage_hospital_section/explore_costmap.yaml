@@ -13,6 +13,7 @@ explore_costmap:
   #resolution: 0.02
   #resolution: 0.1
 
+  # Explore controller requires this to be true
   track_unknown_space: true
 
   # The below are world specific

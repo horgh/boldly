@@ -34,7 +34,6 @@ protected:
   void wipeTopo();
 
 public:
-
   SkelePlanner();
   ~SkelePlanner();
 
