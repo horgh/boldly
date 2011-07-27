@@ -175,7 +175,8 @@ MapWaypoint waypointBest(int x, int y, int ** memo, const costmap_2d::Costmap2D 
 //however you can stop is short by specifying a maxPoints. Make maxPoints large (INT_MAX) if you want it to find
 //the complete topological map.
 //The other functions are workhorse functions, and are not meant for use outside of this function.
-vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d::Costmap2D &costmap, bool showDebug, Topostore * memory)
+vector<Waypoint*> * topoFromPoint(double worldx, double worldy,
+  const costmap_2d::Costmap2D &costmap, bool showDebug, Topostore * memory)
 {
   unsigned x, y;
   MapWaypoint * home;

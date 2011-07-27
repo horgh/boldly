@@ -16,8 +16,10 @@ global_costmap:
   #obstacle_range: 5.0
   raytrace_range: 80.0
   obstacle_range: 80.0
-  # default is false,
-  #rolling_window: false
+  rolling_window: false
+
+  # Need this if we want to use allow_unknown false
+  #track_unknown_space: false
 
   # ** probably must set these since no longer static_map
   #width: 60.0
