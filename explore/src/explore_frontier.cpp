@@ -128,26 +128,30 @@ void ExploreFrontier::computePotentialFromRobot(Costmap2DROS* costmap, navfn::Na
 /*
   Rate frontiers according to a new algorithm
 */
-bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose> robot_pose, navfn::NavfnROS* planner, std::vector<geometry_msgs::Pose>& goals, double potential_scale, double orientation_scale, double gain_scale, std::vector<Waypoint*>* topo_map)
+bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap_ros,
+  tf::Stamped<tf::Pose> robot_pose, navfn::NavfnROS* planner,
+  std::vector<geometry_msgs::Pose>& goals, double potential_scale,
+  double orientation_scale, double gain_scale, std::vector<Waypoint*>* topo_map)
 {
   // May not have created topomap yet
   if (topo_map == NULL)
     return false;
 
-  findFrontiers(costmap);
+  // Find the raw frontiers
+  findFrontiers(costmap_ros);
   if (frontiers_.size() == 0)
     return false;
 
   planner_ = planner;
-  costmapResolution_ = costmap.getResolution();
+  costmapResolution_ = costmap_ros.getResolution();
 
-  costmap_2d::Costmap2D costmap2;
-  costmap.getCostmapCopy(costmap2);
+  costmap_2d::Costmap2D costmap;
+  costmap_ros.getCostmapCopy(costmap);
 
   //we'll make sure that we set goals for the frontier at least the circumscribed
   //radius away from unknown space
   float step = -1.0 * costmapResolution_;
-  int c = ceil(costmap.getCircumscribedRadius() / costmapResolution_);
+  int c = ceil(costmap_ros.getCircumscribedRadius() / costmapResolution_);
   WeightedFrontier goal;
   std::vector<WeightedFrontier> weightedFrontiers;
   weightedFrontiers.reserve(frontiers_.size() * c);
@@ -221,15 +225,15 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose>
         weighted_frontier.frontier.pose.position.y = ( it->frontier.pose.position.y + it2->frontier.pose.position.y ) / 2.0;
         weighted_frontier.frontier.pose.position.z = 0.0;
 
+        // Frontier may be in an unknown cell. Move it to an open one nearby.
         unsigned int map_x, map_y;
-        costmap2.worldToMap(weighted_frontier.frontier.pose.position.x, weighted_frontier.frontier.pose.position.y,
+        costmap.worldToMap(weighted_frontier.frontier.pose.position.x, weighted_frontier.frontier.pose.position.y,
           map_x, map_y);
-        if(costmap2.getCost(map_x, map_y) >= costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
-          ROS_WARN("*******************&@#(&@#(@&#(*&@#(*@#&fuck fuck fuck");
-          Point p = openPoint(weighted_frontier, costmap2);
+        if(costmap.getCost(map_x, map_y) >= costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
+          Point p = openPoint(weighted_frontier, costmap);
           // openPoint() returns map coords
           double world_x, world_y;
-          costmap2.mapToWorld(p.x, p.y, world_x, world_y);
+          costmap.mapToWorld(p.x, p.y, world_x, world_y);
           weighted_frontier.frontier.pose.position.x = world_x;
           weighted_frontier.frontier.pose.position.y = world_y;
           ROS_WARN("x %d y %d map x %d map y %d world x %f world y %f", p.x, p.y, map_x, map_y, world_x, world_y);
@@ -272,7 +276,7 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose>
   */
   // This gets each frontier's topological rating
   std::vector<FrontierStats> frontier_stats;
-  frontierRatings(frontier_stats, weightedFrontiers, costmap2, topo_map, 0);
+  frontierRatings(frontier_stats, weightedFrontiers, costmap, topo_map, 0);
 
   rated_frontiers_.clear();
   rated_frontiers_.reserve(weightedFrontiers.size());

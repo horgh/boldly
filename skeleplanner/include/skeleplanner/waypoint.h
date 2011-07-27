@@ -14,7 +14,7 @@ struct Waypoint {
   int space;
   std::vector<Waypoint*> neighbors;
 
-Waypoint(double _x, double _y, int _space) : x(_x), y(_y), space(_space) {};
+  Waypoint(double _x, double _y, int _space) : x(_x), y(_y), space(_space) {};
 };
 
 struct MapWaypoint {
@@ -22,7 +22,7 @@ struct MapWaypoint {
   int space;
   std::vector<MapWaypoint*> neighbors;
 
-MapWaypoint(unsigned _x, unsigned _y, int _space) : x(_x), y(_y), space(_space) {};
+  MapWaypoint(unsigned _x, unsigned _y, int _space) : x(_x), y(_y), space(_space) {};
 };
 
 struct Line {
@@ -35,16 +35,7 @@ struct Point {
   Point(int x_, int y_) : x(x_), y(y_) {};
 };
 
-/*
-struct FrontierStats{
-    double frontierDelta;
-    double lineDeltas;
-    
-    FrontierStats(double a, double b) : frontierDelta(a), lineDeltas(b) {};
-};
-*/
-    
-struct Topostore{
+struct Topostore {
     MapWaypoint * home;
     std::vector<MapWaypoint*> *rtn;
     std::vector<Waypoint*> *worldRtn;
