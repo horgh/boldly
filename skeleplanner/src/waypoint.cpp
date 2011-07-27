@@ -222,7 +222,15 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
     ignore = new vector<bool>();
     for(unsigned int i = 0; i < rtn->size(); i++)
         ignore->push_back(false);
-    memo = memory->memo;
+    //memo = memory->memo;
+    //reset the memo too
+    memo = new int*[costmap.getSizeInCellsX()];
+    for(unsigned int i = 0; i < costmap.getSizeInCellsX(); i++)
+    {
+      memo[i] = new int[costmap.getSizeInCellsY()];
+      for(unsigned int j = 0; j < costmap.getSizeInCellsY(); j++)
+        memo[i][j] = -1;
+    }
   }
 
   //add waypoints
@@ -233,8 +241,8 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
 
     MapWaypoint *maxWaypoint = NULL;
     Waypoint *worldMax = NULL;
-    MapWaypoint *newway = new MapWaypoint(0, 0, 0);
-    Waypoint *newworld = new Waypoint(0, 0, 0);
+    MapWaypoint *newway;
+    Waypoint *newworld;
     while(maxWaypoint == NULL)
     {
       //int bestx, besty;
@@ -256,7 +264,14 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
       //no more space?
       if(maxWaypoint == NULL)
         break;
-                  
+                memo = new int*[costmap.getSizeInCellsX()];
+    for(unsigned int i = 0; i < costmap.getSizeInCellsX(); i++)
+    {
+      memo[i] = new int[costmap.getSizeInCellsY()];
+      for(unsigned int j = 0; j < costmap.getSizeInCellsY(); j++)
+        memo[i][j] = -1;
+    }
+      newway = new MapWaypoint(0, 0, 0);
       *newway = waypointBest(maxWaypoint->x, maxWaypoint->y, memo, costmap, *rtn);
 
       if(newway->x == -1)
@@ -264,6 +279,7 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
         (*ignore)[besti] = true;
         maxWaypoint = NULL;
         worldMax = NULL;
+        delete newway;
         continue;
       }
     }
@@ -272,13 +288,14 @@ vector<Waypoint*> * topoFromPoint(double worldx, double worldy, const costmap_2d
       break;
                 
     rtn->push_back(newway);
+    newworld = new Waypoint(0, 0, 0);
     newworld->space = newway->space;
     costmap.mapToWorld(newway->x, newway->y, newworld->x, newworld->y);
     worldRtn->push_back(newworld);
     ignore->push_back(false);
 
     //only recalc waypointBest for nearby waypoints
-    for(unsigned int j = 1; j < rtn->size()-1; j++)
+    for(unsigned int j = 0; j < rtn->size()-1; j++)
     {
       MapWaypoint * tmp = (*rtn)[j];
 

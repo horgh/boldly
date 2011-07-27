@@ -273,6 +273,16 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose>
   // This gets each frontier's topological rating
   std::vector<FrontierStats> frontier_stats;
   frontierRatings(frontier_stats, weightedFrontiers, costmap2, topo_map, 0);
+  
+  //get the max endness for normalization
+  double max_end = 0.0;
+  for (std::vector<FrontierStats>::const_iterator it = frontier_stats.begin();
+    it != frontier_stats.end();
+    ++it)
+  {
+    double endness = sqrt(it->vectorx*it->vectorx + it->vectory*it->vectory);
+    max_end = std::max(endness, max_end);
+  }
 
   rated_frontiers_.clear();
   rated_frontiers_.reserve(weightedFrontiers.size());
@@ -289,7 +299,8 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap, tf::Stamped<tf::Pose>
     //double rating = size * exp(-1.0*lambda*it->cost);
     // Normalise rating
     //double rating = size / (it->cost / max_cost);
-    double rating = size * std::abs(it2->corrCoeff);
+    double endness = sqrt(it2->vectorx*it2->vectorx + it2->vectory*it2->vectory) / max_end;
+    double rating = size * std::abs(it2->corrCoeff) * endness;
 
     ROS_WARN("A %f L %f rating %f lambda %f", size, (it->cost / max_cost), rating, lambda);
 
@@ -789,17 +800,21 @@ void ExploreFrontier::frontierRatings(std::vector<FrontierStats>& frontier_stats
         lineDeltas /= n;
         
         double mdiff = 0.0;
+        double vectorsum [2];
         //get the differences from the average
+        //and get the vector sum to all waypoints from the frontier
         for(std::vector<Waypoint*>::iterator j = waypoints.begin() + 1; j < waypoints.end(); ++j)
         {
             mdiff += ((*j)->x - (xsum / n))*((*j)->y - (ysum / n));
+            vectorsum[0] += (*j)->x - startingPoint.x;
+            vectorsum[1] += (*j)->y - startingPoint.y;
         }
         
         double denom = (n*xsquares - xsum*xsum)*(n*ysquares - ysum*ysum);
         double corrCoeff = (n*mdiff - xsum*ysum) / denom;
 
         //use frontierstats in your formula
-        frontier_stats.push_back(FrontierStats(frontierDelta, lineDeltas, corrCoeff));
+        frontier_stats.push_back(FrontierStats(frontierDelta, lineDeltas, corrCoeff, vectorsum[0], vectorsum[1]));
     }
 }
 

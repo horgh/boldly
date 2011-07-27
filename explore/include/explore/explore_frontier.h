@@ -103,8 +103,10 @@ struct FrontierStats{
     double frontierDelta;
     double lineDeltas;
     double corrCoeff;
+    double vectorx;
+    double vectory;
     
-    FrontierStats(double a, double b, double c) : frontierDelta(a), lineDeltas(b), corrCoeff(c) {};
+    FrontierStats(double a, double b, double c, double d, double e) : frontierDelta(a), lineDeltas(b), corrCoeff(c), vectorx(d), vectory(e) {};
 };
 
 /**

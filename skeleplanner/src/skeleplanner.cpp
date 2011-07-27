@@ -17,7 +17,7 @@ SkelePlanner::SkelePlanner() :
   // red like loop closure
   //r_(1.0), g_(0.0), b_(0.0), a_(1.0)
   // yellow
-  r_(255.0), g_(255.0), b_(0.0), a_(1.0)
+  r_(255.0), g_(255.0), b_(0.0), a_(1.0), topo_memory(new Topostore(NULL, NULL, NULL, NULL, NULL))
   { }
 
 SkelePlanner::~SkelePlanner() {
@@ -27,11 +27,14 @@ SkelePlanner::~SkelePlanner() {
 }
 
 void SkelePlanner::wipeTopo() {
+  //dont delete
+  /*
   for(std::vector<Waypoint*>::iterator i = topomap->begin(); i != topomap->end(); ++i) {
     delete *i;
   }
   delete topomap;
   topomap = NULL;
+  */
 }
 
 void SkelePlanner::initialize(std::string name, costmap_2d::Costmap2DROS *costmapros) {
@@ -58,22 +61,23 @@ void SkelePlanner::update() {
     wipeTopo();
   }
   //std::vector<Waypoint*> *result = topoFromPoint(lastOrigin.pose.position.x, lastOrigin.pose.position.y, costmap);
-  std::vector<Waypoint*> *result = topoFromPoint(topomap_origin_x, topomap_origin_y, costmap);
-  gotSafeOrigin = result->size() > 1;
+  std::vector<Waypoint*> *result = topoFromPoint(topomap_origin_x, topomap_origin_y, costmap, true, topo_memory);
+  //gotSafeOrigin = result->size() > 1;
 
-  if(gotSafeOrigin) {
+  /*if(gotSafeOrigin) {
     // Not trapped!
     safeOrigin = lastOrigin;
   } else {
-    for(std::vector<Waypoint*>::iterator i = result->begin(); i != result->end(); ++i) {
-      delete *i;
-    }
-    delete result;
+    //dont delete
+    //for(std::vector<Waypoint*>::iterator i = result->begin(); i != result->end(); ++i) {
+    //  delete *i;
+    //}
+    //delete result;
     
     //result = topoFromPoint(safeOrigin.pose.position.x, safeOrigin.pose.position.y, costmap);
-    result = topoFromPoint(topomap_origin_x, topomap_origin_y, costmap);
+    result = topoFromPoint(topomap_origin_x, topomap_origin_y, costmap, false, topo_memory);
     gotSafeOrigin = result->size() > 1;
-  }
+  }*/
   topomap = result;
 }
 
