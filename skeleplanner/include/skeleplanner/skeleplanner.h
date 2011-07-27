@@ -19,17 +19,14 @@ protected:
   double topomap_origin_x,
     topomap_origin_y;
   
-  Topostore* topo_memory;
-
-  /*
-    Visualisation variables
-  */
   // used for publishing visualisation
   int marker_id;
   // track how many markers published last time
   int marker_id_last;
   // colours of markers
   double r_, g_, b_, a_;
+
+  Topostore* topo_memory;
 
   void wipeTopo();
 
