@@ -11,13 +11,16 @@ global_costmap:
   static_map: false
   rolling_window: false
   # May want to reduce this to say 0.2 (like explore_costmap)
-  resolution: 0.05
+  #resolution: 0.05
+  resolution: 0.2
 
   # Need this if we are using SkelePlanner as global planner
   # However, with it true the planner is much less willing to go through unknown,
   # regardless if allow_unknown is true, and spends a lot of time not moving.
-  #track_unknown_space: true
-  track_unknown_space: false
+  track_unknown_space: true
+  #track_unknown_space: false
+
+  unknown_cost_value: 255
 
   # The below are world specific
   #width: 60.0
