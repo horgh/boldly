@@ -245,7 +245,11 @@ void Topomap::update(const costmap_2d::Costmap2DROS* costmap_ros, bool showDebug
 
       // no more space?
       if (maxWaypoint == NULL)
+      {
+        delete newway;
+        delete newworld;
         break;
+      }
       
       /*
         XXX There was a reset of all memo[i][j] to -1 here... on purpose?
