@@ -18,6 +18,7 @@ int Topomap::calcSpace(int x, int y, const costmap_2d::Costmap2D& costmap) {
   int startrad = 0;
 
   //DPify!
+  /* XXX Note: this was inside if (... && false) {
   //note: int/float dist trunc. errors mean be conservative by 3(more?)
   startrad = INT_MAX;
   for(int i = -1; i <= 1; i++) {
@@ -29,6 +30,7 @@ int Topomap::calcSpace(int x, int y, const costmap_2d::Costmap2D& costmap) {
       }
     }
   }
+  */
 
   if(startrad == INT_MAX)
     startrad = 0;
