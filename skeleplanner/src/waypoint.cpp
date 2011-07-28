@@ -101,7 +101,7 @@ bool Topomap::straightClear(int x1, int y1, int x2, int y2,
 }
 */
 
-MapWaypoint* Topomap::waypointBest(int x, int y, const costmap_2d::Costmap2D& costmap) {
+MapWaypoint Topomap::waypointBest(int x, int y, const costmap_2d::Costmap2D& costmap) {
   int newm = -1;
   int newx = -1;
   int newy = -1;
@@ -161,9 +161,9 @@ MapWaypoint* Topomap::waypointBest(int x, int y, const costmap_2d::Costmap2D& co
   }
     
   if(newm == -1)
-    return new MapWaypoint(-1, -1, -1);
+    return MapWaypoint(-1, -1, -1);
 
-  return new MapWaypoint(newx, newy, newm);
+  return MapWaypoint(newx, newy, newm);
 }
 
 Topomap::Topomap(costmap_2d::Costmap2DROS* costmap_ros, double start_world_x,
@@ -251,7 +251,7 @@ void Topomap::update(const costmap_2d::Costmap2DROS* costmap_ros, bool showDebug
         XXX There was a reset of all memo[i][j] to -1 here... on purpose?
       */
 
-      newway = waypointBest(maxWaypoint->x, maxWaypoint->y, costmap);
+      *newway = waypointBest(maxWaypoint->x, maxWaypoint->y, costmap);
 
       if (newway->x == -1) {
         ignore[besti] = true;
@@ -285,9 +285,8 @@ void Topomap::update(const costmap_2d::Costmap2DROS* costmap_ros, bool showDebug
       }
 
       if (dist(tmp->x, tmp->y, newway->x, newway->y) <= WAYPOINTSPACE) {
-        MapWaypoint* tmp_mapwaypoint = waypointBest(tmp->x, tmp->y, costmap);
-        tmp->space = tmp_mapwaypoint->space;
-        delete tmp_mapwaypoint;
+        MapWaypoint tmp_mapwaypoint = waypointBest(tmp->x, tmp->y, costmap);
+        tmp->space = tmp_mapwaypoint.space;
       }
     }
 
