@@ -222,8 +222,8 @@ void Topomap::update(const costmap_2d::Costmap2DROS* costmap_ros, bool showDebug
 
     MapWaypoint* maxWaypoint = NULL;
     Waypoint* worldMax = NULL;
-    MapWaypoint* newway;
-    Waypoint* newworld;
+    MapWaypoint* newway = new MapWaypoint(0, 0, 0);
+    Waypoint* newworld = new Waypoint(0, 0, 0);
 
     while (maxWaypoint == NULL)
     {
@@ -264,7 +264,6 @@ void Topomap::update(const costmap_2d::Costmap2DROS* costmap_ros, bool showDebug
     if (maxWaypoint == NULL)
       break;
 
-    newworld = new Waypoint(0, 0, 0);
     newworld->space = newway->space;
     costmap.mapToWorld(newway->x, newway->y, newworld->x, newworld->y);
 
