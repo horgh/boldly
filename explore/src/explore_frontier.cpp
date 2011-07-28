@@ -305,8 +305,9 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap_ros,
     // Normalise rating
     //double rating = size / (it->cost / max_cost);
     double endness = sqrt(it2->vectorx*it2->vectorx + it2->vectory*it2->vectory) / max_end;
-    double rating = size * std::abs(it2->corrCoeff) * endness;
-
+    //double rating = size * std::abs(it2->corrCoeff) * endness;
+    double rating = std::abs(it2->corrCoeff);
+    
     ROS_WARN("A %f L %f rating %f lambda %f", size, (it->cost / max_cost), rating, lambda);
 
     RatedFrontier rated_frontier;
@@ -789,6 +790,7 @@ void ExploreFrontier::frontierRatings(std::vector<FrontierStats>& frontier_stats
         double lineDeltas = 0.0;
         double xsum = 0.0;
         double ysum = 0.0;
+        double xysum = 0.0;
         double xsquares = 0.0;
         double ysquares = 0.0;
         int n = (waypoints.size() - 1);
@@ -798,25 +800,24 @@ void ExploreFrontier::frontierRatings(std::vector<FrontierStats>& frontier_stats
         {
             xsum += (*j)->x;
             ysum += (*j)->y;
+            xysum += (*j)->x * (*j)->y;
             xsquares += (*j)->x*(*j)->x;
             ysquares += (*j)->y*(*j)->y;
             lineDeltas += perpenDist(bestFit.m, bestFit.b, (*j)->x, (*j)->y);
         }
         lineDeltas /= n;
-        
-        double mdiff = 0.0;
+
         double vectorsum [2];
         //get the differences from the average
         //and get the vector sum to all waypoints from the frontier
         for(std::vector<Waypoint*>::iterator j = waypoints.begin() + 1; j < waypoints.end(); ++j)
         {
-            mdiff += ((*j)->x - (xsum / n))*((*j)->y - (ysum / n));
             vectorsum[0] += (*j)->x - startingPoint.x;
             vectorsum[1] += (*j)->y - startingPoint.y;
         }
         
-        double denom = (n*xsquares - xsum*xsum)*(n*ysquares - ysum*ysum);
-        double corrCoeff = (n*mdiff - xsum*ysum) / denom;
+        double denom = sqrt((n*xsquares - xsum*xsum)*(n*ysquares - ysum*ysum));
+        double corrCoeff = (n*xysum - xsum*ysum) / denom;
 
         //use frontierstats in your formula
         frontier_stats.push_back(FrontierStats(frontierDelta, lineDeltas, corrCoeff, vectorsum[0], vectorsum[1]));
