@@ -48,7 +48,7 @@
 #include <navfn/navfn_ros.h>
 #include <tf/transform_listener.h>
 
-#include <skeleplanner/skeleplanner.h>
+#include <skeleplanner/waypoint.h>
 
 #define FRONTIERDEPTH 15
 

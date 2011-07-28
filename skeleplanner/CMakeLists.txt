@@ -29,12 +29,9 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
-rosbuild_add_library(${PROJECT_NAME}
-  src/skeleplanner.cpp
-  src/waypoint.cpp
-  )
+rosbuild_add_library(topomap src/waypoint.cpp)
 
 
 # skeletester
-rosbuild_add_executable(skeletester src/skeletester.cpp)
-target_link_libraries(skeletester ${PROJECT_NAME})
+#rosbuild_add_executable(skeletester src/skeletester.cpp)
+#target_link_libraries(skeletester ${PROJECT_NAME})

@@ -13,16 +13,10 @@ protected:
   costmap_2d::Costmap2DROS *costmapros;
   geometry_msgs::PoseStamped lastOrigin, safeOrigin;
 
-  std::vector<Waypoint*> *topomap;
-
   bool gotSafeOrigin;
   double topomap_origin_x,
     topomap_origin_y;
   
-  // used for publishing visualisation
-  int marker_id;
-  // track how many markers published last time
-  int marker_id_last;
   // colours of markers
   double r_, g_, b_, a_;
 
@@ -55,17 +49,6 @@ public:
 
   int dist_between(Waypoint* x, Waypoint* y);
   std::vector<Waypoint*> aStar(Waypoint* start, Waypoint* goal);
-
-  // Drawing functions
-  void visualize_node(double x, double y, double scale, double r, double g,
-    double b, double a, std::vector<visualization_msgs::Marker>* markers,
-    int marker_id);
-
-  void visualize_edge(double x1, double y1, double x2, double y2,
-    double scale, double r, double g, double b, double a,
-    std::vector<visualization_msgs::Marker>* markers, int marker_id);
-
-  int publish_topomap(ros::Publisher* marker_pub, int marker_id);
 };
 
 #endif

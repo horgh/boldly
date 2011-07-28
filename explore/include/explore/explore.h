@@ -54,8 +54,7 @@
 #include <cmath>
 #include <p2os_driver/BatteryState.h>
 #include <std_msgs/Empty.h>
-#include <skeleplanner/skeleplanner.h>
-
+#include <skeleplanner/waypoint.h>
 
 namespace explore {
 
@@ -213,7 +212,7 @@ private:
   int secs_to_go_home;
   ros::Time last_time_update_secs_to_go_home;
 
-  SkelePlanner* skeleplanner_;
+  Topomap* topomap_;
 
   // Track last time we calculated and sent a new goal
   ros::Time last_goal_chosen;

@@ -17,8 +17,12 @@ SkelePlanner::SkelePlanner() :
   // red like loop closure
   //r_(1.0), g_(0.0), b_(0.0), a_(1.0)
   // yellow
-  r_(255.0), g_(255.0), b_(0.0), a_(1.0), topo_memory(new Topostore(NULL, NULL, NULL, NULL, NULL))
-  { }
+  r_(255.0), g_(255.0), b_(0.0), a_(1.0)
+{
+  topomap = Topomap(costmap)
+Topomap::Topomap(const costmap_2d::Costmap2D& costmap,
+  double start_world_x, double start_world_y)
+}
 
 SkelePlanner::~SkelePlanner() {
   if(topomap) {
@@ -448,134 +452,4 @@ std::vector<Waypoint*> SkelePlanner::aStar(Waypoint* start, Waypoint* goal) {
 
   std::vector<Waypoint*> empty;
   return empty;
-}
-
-/*
-  Drawing functions
-*/
-
-/*
-  Add a sphere marker at x, y to markers vector
-  (Based on visualizeNode() in explore/loop_closure)
-*/
-void SkelePlanner::visualize_node(double x, double y, double scale, double r, double g,
-  double b, double a, std::vector<visualization_msgs::Marker>* markers, int marker_id)
-{
-  visualization_msgs::Marker marker;
-  marker.header.frame_id = "map";
-  marker.header.stamp = ros::Time::now();
-  marker.ns = "skeletester";
-  marker.id = marker_id;
-  marker.type = visualization_msgs::Marker::SPHERE;
-  marker.pose.position.x = x;
-  marker.pose.position.y = y;
-
-  // thick point like in loop_closure is 0.5
-  marker.scale.x = scale;
-  marker.scale.y = scale;
-  marker.scale.z = scale;
-  marker.color.r = r;
-  marker.color.g = g;
-  marker.color.b = b;
-  marker.color.a = a;
-  markers->push_back(marker);
-}
-
-/*
-  Add a line marker between the two sets of points to markers vector
-  (Based on visualizeEdge() in explore/loop_closure)
-*/
-void SkelePlanner::visualize_edge(double x1, double y1, double x2, double y2,
-  double scale, double r, double g, double b, double a,
-  std::vector<visualization_msgs::Marker>* markers, int marker_id)
-{
-  visualization_msgs::Marker marker;
-  marker.header.frame_id = "map";
-  marker.header.stamp = ros::Time::now();
-  marker.action = visualization_msgs::Marker::ADD;
-  marker.ns = "skeletester";
-  marker.id = marker_id;
-  marker.type = visualization_msgs::Marker::LINE_STRIP;
-  geometry_msgs::Point p;
-  p.x = x1;
-  p.y = y1;
-  marker.points.push_back(p);
-
-  p.x = x2;
-  p.y = y2;
-  marker.points.push_back(p);
-
-  // thick line like in loop closure is 0.25
-  // only scale.x used
-  marker.scale.x = scale;
-  // red is 1, 0, 0, 1
-  // blue 0, 1, 0, 1?
-  marker.color.r = r;
-  marker.color.g = g;
-  marker.color.b = b;
-  marker.color.a = a;
-  markers->push_back(marker);
-}
-
-/*
-  Uses the above 2 functions to publish the current topomap
-*/
-int SkelePlanner::publish_topomap(ros::Publisher* marker_pub, int marker_id) {
-  std::vector<visualization_msgs::Marker> markers;
-
-#ifdef DEBUG
-  ROS_WARN("SkelePlanner publishing %d nodes in topomap", topomap->size());
-#endif
-  // Markers for each node in the topological map
-  for (std::vector<Waypoint*>::const_iterator it = topomap->begin();
-    it != topomap->end();
-    ++it)
-  {
-    // 0.5 scale, red colour: 1.0, 0.0, 0.0, 1.0
-    //visualize_node( (*it)->x, (*it)->y, 0.5, r_, g_, b_, a_, &markers);
-    visualize_node( (*it)->x, (*it)->y, 0.3, r_, g_, b_, a_, &markers, marker_id);
-    marker_id++;
-  }
-
-  // Markers for the links between each node
-  for (std::vector<Waypoint*>::const_iterator it = topomap->begin();
-    it != topomap->end();
-    ++it)
-  {
-    // For each neighbour of this node, add an edge to it
-    for (std::vector<Waypoint*>::const_iterator it2 = (*it)->neighbors.begin();
-      it2 != (*it)->neighbors.end();
-      ++it2)
-    {
-      // 0.25 scale
-      //visualize_edge((*it)->x, (*it)->y, (*it2)->x, (*it2)->y, 0.25, r_, g_, b_, a_, &markers);
-      visualize_edge((*it)->x, (*it)->y, (*it2)->x, (*it2)->y, 0.2, r_, g_, b_, a_, &markers, marker_id);
-      marker_id++;
-    }
-  }
-
-  // Delete any markers past that which we just published (stops strange
-  // visualisation behaviour in rviz)
-  // Taken from getVisualizationMarkers() in explore_frontier
-  // Doesn't seem to work.
-  /*
-  for ( ; marker_id < marker_id_last; ++marker_id) {
-    visualization_msgs::Marker m;
-    m.action = visualization_msgs::Marker::DELETE;
-    m.id = marker_id;
-    markers.push_back(visualization_msgs::Marker(m));
-  }
-  marker_id_last = markers.size();
-  */
-
-  // Now publish all of these markers
-  for (std::vector<visualization_msgs::Marker>::iterator it = markers.begin();
-    it != markers.end();
-    ++it)
-  {
-    it->lifetime = ros::Duration(1);
-    marker_pub->publish( *it );
-  }
-
-  return marker_id;
 }

@@ -394,9 +394,8 @@ Explore::Explore() :
   ROS_WARN("Robot has max turn speed %f", max_vel_th);
   assert(max_vel_th != 0.0);
 
-  skeleplanner_ = new SkelePlanner();
-  skeleplanner_->initialize(std::string("skeleplanner"), explore_costmap_ros_);
-  skeleplanner_->set_topomap_origin(home_pose_msg.pose.position.x, home_pose_msg.pose.position.y);
+  topomap_ = new Topomap(explore_costmap_ros_, home_pose_msg.pose.position.x,
+    home_pose_msg.pose.position.y);
 
   // Haven't yet done any exploration runs
   exploration_runs_ = 0;
@@ -417,8 +416,8 @@ Explore::~Explore() {
   if(explore_costmap_ros_ != NULL)
     delete explore_costmap_ros_;
 
-  if (skeleplanner_ != NULL)
-    delete skeleplanner_;
+  if (topomap_ != NULL)
+    delete topomap_;
 }
 
 /*
@@ -585,7 +584,7 @@ void Explore::makePlan() {
   // Find frontier goals
   // getExplorationGoals() is old frontier rating system
   //if (! explorer_->getExplorationGoals(*explore_costmap_ros_, robot_pose, planner_, goals, potential_scale_, orientation_scale_, gain_scale_) ) {
-  if (! explorer_->rateFrontiers(*explore_costmap_ros_, robot_pose, planner_, goals, potential_scale_, orientation_scale_, gain_scale_, skeleplanner_->get_topomap()) ) {
+  if (! explorer_->rateFrontiers(*explore_costmap_ros_, robot_pose, planner_, goals, potential_scale_, orientation_scale_, gain_scale_, topomap_->get_topomap() )) {
     ROS_WARN("No frontiers found?");
   }
 
@@ -1176,12 +1175,9 @@ void Explore::execute() {
       topomap_publisher_marker_id = 0;
 
       // and topomap
-      // first generate a topomap (this happens with makePlan, though we don't want a plan...)
-      geometry_msgs::PoseStamped current_pose_stamped = currentPoseStamped();
-      std::vector<geometry_msgs::PoseStamped> plan_empty;
-      skeleplanner_->makePlan( current_pose_stamped, current_pose_stamped, plan_empty );
+      topomap_->update(explore_costmap_ros_, false);
       // then publish it
-      topomap_publisher_marker_id = skeleplanner_->publish_topomap(&topomap_marker_publisher_, topomap_publisher_marker_id);
+      topomap_publisher_marker_id = topomap_->publish_topomap(&topomap_marker_publisher_, topomap_publisher_marker_id);
 
       // and blacklisted frontiers
       visualize_blacklisted();

@@ -1,5 +1,13 @@
+#ifndef WAYPOINT_H_
+#define WAYPOINT_H_
+
 #include <vector>
-#include "costmap_2d/costmap_2d.h"
+#include <cstring>
+
+#include <ros/ros.h>
+#include <visualization_msgs/Marker.h>
+#include <costmap_2d/costmap_2d.h>
+#include <costmap_2d/costmap_2d_ros.h>
 
 #define WAYPOINTRAD 3
 //#define WAYPOINTSPACE 40
@@ -22,6 +30,7 @@ struct MapWaypoint {
   int space;
   std::vector<MapWaypoint*> neighbors;
 
+  MapWaypoint() {};
   MapWaypoint(unsigned _x, unsigned _y, int _space) : x(_x), y(_y), space(_space) {};
 };
 
@@ -52,19 +61,44 @@ inline bool inBounds(unsigned int x, unsigned int y, const costmap_2d::Costmap2D
 class Topomap {
 protected:
   // Topomap in map coordinates
-  std::vector<MapWaypoint> map_topomap;
+  std::vector<MapWaypoint*> map_topomap;
 
-  MapWayPoint home;
+  MapWaypoint* home;
 
   // Originating point for topomap
   double start_world_x, start_world_y;
   unsigned int start_map_x, start_map_y;
 
-public:
+  std::vector<std::vector<int> > memo;
+
+  std::vector<bool> ignore;
+
+  int calcSpace(int x, int y, const costmap_2d::Costmap2D& costmap);
+// bool straightClear(int x1, int y1, int x2, int y2, const costmap_2d::Costmap2D& costmap);
+  MapWaypoint* waypointBest(int x, int y, const costmap_2d::Costmap2D& costmap);
+
   // Topomap in world coordinates
-  std::vector<Waypoint> topomap;
+  std::vector<Waypoint*> topomap;
 
-  Topomap(const costmap_2d::Costmap2D& costmap, double world_x, double world_y);
+  // colours of markers
+  double r_, g_, b_, a_;
 
-  void update(bool showDebug=false);
+public:
+ Topomap(costmap_2d::Costmap2DROS* costmap_ros, double world_x, double world_y);
+
+  void update(const costmap_2d::Costmap2DROS* costmap_ros, bool showDebug=false);
+  std::vector<Waypoint*>* get_topomap();
+
+  // Drawing functions
+  void visualize_node(double x, double y, double scale, double r, double g,
+    double b, double a, std::vector<visualization_msgs::Marker>* markers,
+    int marker_id);
+
+  void visualize_edge(double x1, double y1, double x2, double y2,
+    double scale, double r, double g, double b, double a,
+    std::vector<visualization_msgs::Marker>* markers, int marker_id);
+
+  int publish_topomap(ros::Publisher* marker_pub, int marker_id);
 };
+
+#endif
