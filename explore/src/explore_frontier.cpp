@@ -413,10 +413,10 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
   Costmap2D costmap;
   costmap_.getCostmapCopy(costmap);
 
-  int idx;
-  int w = costmap.getSizeInCellsX();
-  int h = costmap.getSizeInCellsY();
-  int size = (w * h);
+  unsigned int idx;
+  unsigned int w = costmap.getSizeInCellsX();
+  unsigned int h = costmap.getSizeInCellsY();
+  unsigned int size = w * h;
 
   map_.info.width = w;
   map_.info.height = h;
@@ -437,14 +437,14 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
 //
     //check if the point has valid potential and is next to unknown space
 //    bool valid_point = planner_->validPointPotential(p);
-    bool valid_point = (map[idx] < LETHAL_OBSTACLE);
+    bool valid_point = map[idx] < LETHAL_OBSTACLE;
 
 		// Check if there is a cell with no information around our cell
     if ((valid_point && map) &&
-        (((idx+1 < size) && (map[idx+1] == NO_INFORMATION)) ||
-         ((idx-1 >= 0) && (map[idx-1] == NO_INFORMATION)) ||
-         ((idx+w < size) && (map[idx+w] == NO_INFORMATION)) ||
-         ((idx-w >= 0) && (map[idx-w] == NO_INFORMATION))))
+        ( (idx+1 < size && map[idx+1] == NO_INFORMATION) ||
+          (idx-1 < size && map[idx-1] == NO_INFORMATION) ||
+          (idx+w < size && map[idx+w] == NO_INFORMATION) ||
+          (idx-w < size && map[idx-w] == NO_INFORMATION) ))
     {
       map_.data[idx] = -128;
     } else {
@@ -464,7 +464,7 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
   std::vector< std::vector<FrontierPoint> > segments;
 	// Track which cells are already part of frontier segments
 	std::set<int> cells_in_segments;
-  for (int i = 0; i < size; i++) {
+  for (unsigned int i = 0; i < size; i++) {
 		// If the cell is a frontier (open cell next to no info cell)
     if (map_.data[i] == -128) {
 			// Already part of a segment
@@ -477,7 +477,7 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
 
       // claim all neighbors
       while (neighbors.size() > 0) {
-        int idx = neighbors.back();
+        unsigned int idx = neighbors.back();
         neighbors.pop_back();
         map_.data[idx] = segment_id;
 
@@ -487,7 +487,7 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
           tot += btVector3(1,0,0);
           c++;
         }
-        if (idx-1 >= 0 && map[idx-1] == NO_INFORMATION) {
+        if (idx-1 < size && map[idx-1] == NO_INFORMATION) {
           tot += btVector3(-1,0,0);
           c++;
         }
@@ -495,7 +495,7 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
           tot += btVector3(0,1,0);
           c++;
         }
-        if (idx-w >= 0 && map[idx-w] == NO_INFORMATION) {
+        if (idx-w < size && map[idx-w] == NO_INFORMATION) {
           tot += btVector3(0,-1,0);
           c++;
         }
@@ -510,21 +510,21 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
 				}
 
         // consider 8 neighborhood
-        if (idx-1 > 0 && map_.data[idx-1] == -128)
+        if (idx-1 < size && map_.data[idx-1] == -128)
           neighbors.push_back(idx-1);
         if (idx+1 < size && map_.data[idx+1] == -128)
           neighbors.push_back(idx+1);
-        if (idx-map_.info.width > 0 && map_.data[idx-map_.info.width] == -128)
+        if (idx-map_.info.width < size && map_.data[idx-map_.info.width] == -128)
           neighbors.push_back(idx-map_.info.width);
-        if (idx-map_.info.width+1 > 0 && map_.data[idx-map_.info.width+1] == -128)
+        if (idx-map_.info.width+1 < size && map_.data[idx-map_.info.width+1] == -128)
           neighbors.push_back(idx-map_.info.width+1);
-        if (idx-map_.info.width-1 > 0 && map_.data[idx-map_.info.width-1] == -128)
+        if (idx-map_.info.width-1 < size && map_.data[idx-map_.info.width-1] == -128)
           neighbors.push_back(idx-map_.info.width-1);
-        if (idx+(int)map_.info.width < size && map_.data[idx+map_.info.width] == -128)
+        if (idx+map_.info.width < size && map_.data[idx+map_.info.width] == -128)
           neighbors.push_back(idx+map_.info.width);
-        if (idx+(int)map_.info.width+1 < size && map_.data[idx+map_.info.width+1] == -128)
+        if (idx+map_.info.width+1 < size && map_.data[idx+map_.info.width+1] == -128)
           neighbors.push_back(idx+map_.info.width+1);
-        if (idx+(int)map_.info.width-1 < size && map_.data[idx+map_.info.width-1] == -128)
+        if (idx+map_.info.width-1 < size && map_.data[idx+map_.info.width-1] == -128)
           neighbors.push_back(idx+map_.info.width-1);
       }
 			//ROS_WARN("Segment size %d", segment.size() );
@@ -568,7 +568,6 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
 
     frontiers_.push_back(frontier);
   }
-
 }
 
 void ExploreFrontier::getVisualizationMarkers(std::vector<Marker>& markers)
