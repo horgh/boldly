@@ -99,7 +99,7 @@ struct RatedFrontier {
   }
 };
 
-struct FrontierStats{
+struct FrontierStats {
     double frontierDelta;
     double lineDeltas;
     double corrCoeff;
