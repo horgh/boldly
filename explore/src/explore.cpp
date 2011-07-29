@@ -1145,6 +1145,7 @@ void Explore::execute() {
 //              || (ros::Time::now() - last_goal_chosen).sec > 10) )
               || time_following_plan_ > 10.0) )
       {
+        topomap_->update(explore_costmap_ros_);
         makePlan();
 
       }
@@ -1175,8 +1176,6 @@ void Explore::execute() {
       topomap_publisher_marker_id = 0;
 
       // and topomap
-      topomap_->update(explore_costmap_ros_, false);
-      // then publish it
       topomap_publisher_marker_id = topomap_->publish_topomap(&topomap_marker_publisher_, topomap_publisher_marker_id);
 
       // and blacklisted frontiers
