@@ -152,7 +152,6 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap_ros,
   //radius away from unknown space
   float step = -1.0 * costmapResolution_;
   int c = ceil(costmap_ros.getCircumscribedRadius() / costmapResolution_);
-  WeightedFrontier goal;
   std::vector<WeightedFrontier> weightedFrontiers;
   weightedFrontiers.reserve(frontiers_.size() * c);
 
@@ -184,31 +183,19 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap_ros,
 
   average_frontier_size /= frontiers_.size();
 
-  // Original explore used to sort in order of min cost. No longer necessary.
-  //std::sort(weightedFrontiers.begin(), weightedFrontiers.end());
-
-  // Filter frontiers (require a min size)
-  // XXX Can move this into next loop.
+  // Group frontiers (crudely)
   for (std::vector<WeightedFrontier>::iterator it = weightedFrontiers.begin();
-    it != weightedFrontiers.end()
-    ; )
+    it != weightedFrontiers.end() ; )
   {
+    // First we filter out frontiers that don't meet a minimum size
     double size = gain_scale * getFrontierGain(it->frontier, costmapResolution_);
     if (size < average_frontier_size / 2.0) {
       it = weightedFrontiers.erase(it);
       continue;
     }
-    ++it;
-  }
 
-  // Group frontiers (crudely)
-  for (std::vector<WeightedFrontier>::iterator it = weightedFrontiers.begin();
-    it != weightedFrontiers.end()
-    ; )
-  {
     for (std::vector<WeightedFrontier>::iterator it2 = it+1;
-      it2 != weightedFrontiers.end()
-      ; )
+      it2 != weightedFrontiers.end() ; )
     {
       // Distance between the two frontiers
       double dx = it->frontier.pose.position.x - it2->frontier.pose.position.x;
@@ -236,7 +223,7 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap_ros,
           costmap.mapToWorld(p.x, p.y, world_x, world_y);
           weighted_frontier.frontier.pose.position.x = world_x;
           weighted_frontier.frontier.pose.position.y = world_y;
-          ROS_WARN("x %d y %d map x %d map y %d world x %f world y %f", p.x, p.y, map_x, map_y, world_x, world_y);
+          //ROS_WARN("x %d y %d map x %d map y %d world x %f world y %f", p.x, p.y, map_x, map_y, world_x, world_y);
         }
 
         // XXX Not really correct, but works. Probably irrelevant.
@@ -262,12 +249,11 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap_ros,
   double max_area = 0.0;
   double max_cost = 0.0;
   for (std::vector<WeightedFrontier>::const_iterator it = weightedFrontiers.begin();
-    it != weightedFrontiers.end();
-    ++it)
+    it != weightedFrontiers.end(); ++it)
   {
     max_cost = std::max((double) it->cost, max_cost);
     max_area = std::max(gain_scale * getFrontierGain(it->frontier, costmapResolution_),
-      max_area);
+                        max_area);
   }
 
   /*
@@ -281,21 +267,18 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap_ros,
   //get the max endness for normalization
   double max_end = 0.0;
   for (std::vector<FrontierStats>::const_iterator it = frontier_stats.begin();
-    it != frontier_stats.end();
-    ++it)
+    it != frontier_stats.end(); ++it)
   {
     double endness = sqrt(it->vectorx*it->vectorx + it->vectory*it->vectory);
     max_end = std::max(endness, max_end);
   }
-  //frontierRatings(frontier_stats, weightedFrontiers, costmap, topo_map, 0);
 
   rated_frontiers_.clear();
   rated_frontiers_.reserve(weightedFrontiers.size());
   double lambda = 1.0/2000.0;
   std::vector<FrontierStats>::const_iterator it2 = frontier_stats.begin();
   for (std::vector<WeightedFrontier>::const_iterator it = weightedFrontiers.begin();
-    it != weightedFrontiers.end();
-    ++it)
+    it != weightedFrontiers.end(); ++it)
   {
     //double size = gain_scale * getFrontierGain(it->frontier, costmapResolution_);
     // Normalise size (area)
