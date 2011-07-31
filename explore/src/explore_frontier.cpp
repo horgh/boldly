@@ -202,7 +202,7 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap_ros,
   // - find max cost
   // - find max area
   for (std::vector<Frontier>::iterator it = frontiers_.begin();
-    it < frontiers_.end(); ++it)
+    it < frontiers_.end(); )
   {
     // First we filter out frontiers that don't meet a minimum size
     double size = gain_scale * getFrontierGain(*it, costmapResolution_);
@@ -238,6 +238,7 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap_ros,
       max_area);
 
     weightedFrontiers.push_back(weighted_frontier);
+    ++it;
   }
 
   // This gets each frontier's topological rating
