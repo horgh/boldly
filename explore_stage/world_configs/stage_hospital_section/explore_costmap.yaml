@@ -17,7 +17,7 @@ explore_costmap:
   track_unknown_space: true
 
   #unknown_cost_value: 255
-  unknown_cost_value: 253
+  unknown_cost_value: 254
 
   # The below are world specific
   #width: 60.0

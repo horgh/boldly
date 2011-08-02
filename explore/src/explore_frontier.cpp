@@ -215,13 +215,12 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap_ros,
     weighted_frontier.frontier = *it;
 
     // Frontier may be in an unknown cell. Move it to an open one nearby.
-    /*
     unsigned int map_x, map_y;
     costmap.worldToMap(weighted_frontier.frontier.pose.position.x, weighted_frontier.frontier.pose.position.y,
       map_x, map_y);
     if (costmap.getCost(map_x, map_y) >= costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
-      //Point p = openPoint(weighted_frontier, costmap);
-      Point p = openPointCircumscribed(map_x, map_y, costmap);
+      Point p = openPoint(weighted_frontier, costmap);
+      //Point p = openPointCircumscribed(map_x, map_y, costmap);
 
       // We got same invalid point from openPointCircumscribed() as we gave it
       // This means it couldn't find a valid one. Forget this frontier for
@@ -243,7 +242,6 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap_ros,
       weighted_frontier.frontier.pose.position.x = world_x;
       weighted_frontier.frontier.pose.position.y = world_y;
     }
-    */
 
     // original explore cost calculation
     //weighted_frontier.cost = potential_scale * getFrontierCost(weighted_frontier.frontier) + orientation_scale * getOrientationChange(weighted_frontier.frontier, robot_pose) - gain_scale * getFrontierGain(weighted_frontier.frontier, costmapResolution_);
