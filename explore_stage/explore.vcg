@@ -7,7 +7,7 @@ Base\ Laser.Alpha=1
 Base\ Laser.Billboard\ Size=0.05
 Base\ Laser.Color\ Transformer=Intensity
 Base\ Laser.Decay\ Time=0
-Base\ Laser.Enabled=1
+Base\ Laser.Enabled=0
 Base\ Laser.Position\ Transformer=XYZ
 Base\ Laser.Selectable=1
 Base\ Laser.Style=1
@@ -76,7 +76,7 @@ Planner\ Path.ColorB=0
 Planner\ Path.Enabled=1
 Planner\ Path.Topic=/move_base/NavfnROS/plan
 TF.All\ Enabled=1
-TF.Enabled=1
+TF.Enabled=0
 TF.Frame\ Timeout=15
 TF.Show\ Arrows=1
 TF.Show\ Axes=1
@@ -84,12 +84,15 @@ TF.Show\ Names=1
 TF.Update\ Interval=0
 Topomap\ Markers.Enabled=1
 Topomap\ Markers.Marker\ Topic=topomap_marker
+Topomap\ Markers.blacklisted=1
+Topomap\ Markers.curgoal=1
+Topomap\ Markers.furthest=1
 Topomap\ Markers.skeletester=1
 Tool\ 2D\ Nav\ GoalTopic=goal
 Tool\ 2D\ Pose\ EstimateTopic=initialpose
 Camera\ Type=rviz::OrbitViewController
-Camera\ Config=0.011 6.26581 57.3003 0.505912 -2.37155 -3.14088
-Property\ Grid\ State=selection=Map.Enabled;expanded=TF./base_footprint/base_footprint,TF./base_laser_link/base_laser_link,TF./base_link/base_link,TF./odom/odom,TF./map/map,TF.Enabled.TF.Tree,TF./mapTree/map,TF./odomTree/odom,TF./base_footprintTree/base_footprint,TF./base_linkTree/base_link,TF./base_laser_linkTree/base_laser_link,Frontiers.Enabled.Frontiers.Namespaces,Topomap Markers.Enabled.Topomap Markers.Namespaces;scrollpos=0,0;splitterpos=210,436;ispageselected=1
+Camera\ Config=0.011 0.0176255 72.8382 19.6123 -2.58106 -6.78794
+Property\ Grid\ State=selection=Base Laser.Enabled;expanded=Grid.Enabled.Grid.StatusTopStatus,TF.Enabled.TF.Tree,Frontiers.Enabled.Frontiers.Namespaces,Topomap Markers.Enabled.Topomap Markers.Namespaces;scrollpos=0,0;splitterpos=263,542;ispageselected=1
 [Display0]
 Name=Grid
 Package=rviz
@@ -130,9 +133,3 @@ ClassName=rviz::MarkerDisplay
 Name=Map
 Package=rviz
 ClassName=rviz::MapDisplay
-[TF.]
-base_footprintEnabled=1
-base_laser_linkEnabled=1
-base_linkEnabled=1
-mapEnabled=1
-odomEnabled=1
