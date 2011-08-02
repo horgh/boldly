@@ -53,12 +53,13 @@
 #define PROGRESS_TIMEOUT 30.0
 #endif
 
+// Enable this to periodically make a new plan even if we're following one
+//#define REEVALUATE_PLANS
+// Time until we make a new plan, even if we're currently following one
+#define REEVALUATE_PLANS_TIME 10.0
+
 // Number of times to go out exploring before we decide to go far
 #define EXPLORATION_RUNS 2
-
-// Voltage that we consider too low and must charge. This should
-// be the same as robot starts sounding alarums
-#define VOLTAGE_WARNING 11.5
 
 // Our battery is a timer. Makes us go home when we judge we need to.
 // With CONSTANT_BATTERY_TIME, always use BATTERY_TIME as our battery life.
@@ -75,6 +76,10 @@
 #define MIN_BATTERY_SAFETY_MARGIN 10
 // Starting safety margin
 #define START_SAFETY_MARGIN 0
+
+// Voltage that we consider too low and must charge. This should
+// be the same as robot starts sounding alarums
+#define VOLTAGE_WARNING 11.5
 
 /*
   Possible states
@@ -1142,8 +1147,11 @@ void Explore::execute() {
       if (state != STATE_HEADING_HOME
           && (state == STATE_WAITING_FOR_GOAL
               || atGoal()
-//              || (ros::Time::now() - last_goal_chosen).sec > 10) )
-              || time_following_plan_ > 10.0) )
+#ifdef REEVALUATE_PLANS
+              || time_following_plan_ > REEVALUATE_PLANS_TIME
+#endif
+             )
+         )
       {
         topomap_->update(explore_costmap_ros_);
         makePlan();
