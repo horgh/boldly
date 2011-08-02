@@ -48,7 +48,7 @@
 
 // Time until we decide we are stuck in seconds
 #ifdef SIMULATION
-#define PROGRESS_TIMEOUT 10.0
+#define PROGRESS_TIMEOUT 60.0
 #else
 #define PROGRESS_TIMEOUT 30.0
 #endif

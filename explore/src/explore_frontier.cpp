@@ -215,18 +215,35 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap_ros,
     weighted_frontier.frontier = *it;
 
     // Frontier may be in an unknown cell. Move it to an open one nearby.
+    /*
     unsigned int map_x, map_y;
     costmap.worldToMap(weighted_frontier.frontier.pose.position.x, weighted_frontier.frontier.pose.position.y,
       map_x, map_y);
     if (costmap.getCost(map_x, map_y) >= costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
-      Point p = openPoint(weighted_frontier, costmap);
+      //Point p = openPoint(weighted_frontier, costmap);
+      Point p = openPointCircumscribed(map_x, map_y, costmap);
+
+      // We got same invalid point from openPointCircumscribed() as we gave it
+      // This means it couldn't find a valid one. Forget this frontier for
+      // now.
+      if (p.x == map_x && p.y == map_y) {
+        ROS_WARN("!!! Lost a frontier since we couldn't find a valid open point for it.");
+        ++it;
+        continue;
+      }
+
       // openPoint() returns map coords
       double world_x, world_y;
       costmap.mapToWorld(p.x, p.y, world_x, world_y);
+
+      ROS_WARN("Moved frontier from (%f, %f) to (%f, %f)",
+        weighted_frontier.frontier.pose.position.x, weighted_frontier.frontier.pose.position.y,
+        world_x, world_y);
+
       weighted_frontier.frontier.pose.position.x = world_x;
       weighted_frontier.frontier.pose.position.y = world_y;
-      //ROS_WARN("x %d y %d map x %d map y %d world x %f world y %f", p.x, p.y, map_x, map_y, world_x, world_y);
     }
+    */
 
     // original explore cost calculation
     //weighted_frontier.cost = potential_scale * getFrontierCost(weighted_frontier.frontier) + orientation_scale * getOrientationChange(weighted_frontier.frontier, robot_pose) - gain_scale * getFrontierGain(weighted_frontier.frontier, costmapResolution_);
@@ -658,7 +675,7 @@ Point ExploreFrontier::openPoint(WeightedFrontier frontier, const costmap_2d::Co
 
     costmap.worldToMap(x_world, y_world, x, y);
 
-    ROS_WARN("frontier size %d", frontier.frontier.size);
+    //ROS_WARN("frontier size %d", frontier.frontier.size);
     
     //for(int rad = 0; rad <= frontier.frontier.size; rad++)
     for(int rad = 0; 1; rad++)
@@ -670,19 +687,108 @@ Point ExploreFrontier::openPoint(WeightedFrontier frontier, const costmap_2d::Co
                 if (!inBounds(i, j, costmap)) {
                   continue;
                 }
-                //double tx, ty;
-                //costmap.worldToMap(i, j, tx, ty);
-                //costmap.mapToWorld(i, j, tx, ty);
-                //if(calcSpace(i, j, image, NULL) > 1)
-                //if(costmap.getCost(tx, ty) < PASSABLE_THRESH)
-                if(costmap.getCost(i, j) < PASSABLE_THRESH)
+                if(costmap.getCost(i, j) < PASSABLE_THRESH) {
                     return Point(i, j);
+                }
             }
         }
     }
     
     //give up and return the center
     return Point(x, y);
+}
+
+/*
+  Find an open point which is at least the robot's circumscribed radius away
+  from the given point (which is in unknown space)
+*/
+Point ExploreFrontier::openPointCircumscribed(unsigned int map_x, unsigned int map_y,
+  const costmap_2d::Costmap2D& costmap)
+{
+    // XXX Arbitrary * 4 to ensure we have at least 4*circumscribed passable
+    // space around.
+    unsigned int cell_step_size = ceil(costmap.getCircumscribedRadius() / costmap.getResolution()) * 4;
+    
+    //for(int rad = 0; rad <= frontier.frontier.size; rad++)
+    //for(unsigned int rad = cell_step_size; true; rad += cell_step_size)
+
+    // Check radius of 3*circumscribed radius?
+    for(unsigned int rad = 0; rad < 3 * cell_step_size; rad++)
+    {
+        for(unsigned int i = map_x - rad; i <= map_x + rad; i++)
+        {
+            for(unsigned int j = map_y - rad;
+              j <= map_y + rad;
+              j += (i == map_x - rad || i == map_x + rad ? 1 : std::max( (unsigned int) 1, 2*rad)))
+            {
+                if (!inBounds(i, j, costmap)) {
+                  continue;
+                }
+                //if(costmap.getCost(i, j) < PASSABLE_THRESH) {
+                if (validOpenArea(i, j, cell_step_size, costmap)) {
+                    return Point(i, j);
+                }
+            }
+        }
+    }
+    
+    //give up and return the center
+    return Point(map_x, map_y);
+}
+
+/*
+  For a given point, ensure there are only passable cells in the
+  (needed_passable_cells by needed_passable_cells) grid centred on (map_x, map_y)
+*/
+bool ExploreFrontier::validOpenArea(unsigned int map_x, unsigned int map_y,
+  unsigned int needed_passable_cells, const costmap_2d::Costmap2D& costmap)
+{
+  // If top/bottom cells on edge can get invalid map indices. Fix them
+  unsigned int i = 0;
+
+  unsigned int top_left_x = map_x - needed_passable_cells;
+  if (top_left_x > costmap.getSizeInCellsX())
+    return false;
+  while (top_left_x > costmap.getSizeInCellsX()) {
+    top_left_x = map_x - needed_passable_cells - ++i;
+  }
+
+  unsigned int top_left_y = map_y - needed_passable_cells;
+  i = 0;
+  if (top_left_y > costmap.getSizeInCellsY())
+    return false;
+  while (top_left_y > costmap.getSizeInCellsY()) {
+    top_left_y = map_y - needed_passable_cells - ++i;
+  }
+
+  unsigned int bottom_right_x = map_x + needed_passable_cells;
+  i = 0;
+  if (bottom_right_x > costmap.getSizeInCellsX())
+    return false;
+  while (bottom_right_x > costmap.getSizeInCellsX()) {
+    bottom_right_x = map_x + needed_passable_cells - ++i;
+  }
+
+  unsigned int bottom_right_y = map_y + needed_passable_cells;
+  i = 0;
+  if (bottom_right_y > costmap.getSizeInCellsY())
+    return false;
+  while (bottom_right_y > costmap.getSizeInCellsY()) {
+    bottom_right_y = map_y + needed_passable_cells - ++i;
+  }
+
+  //ROS_WARN("Checking valid open area from top left: (%d, %d) to bottom right: (%d, %d)",
+  //  top_left_x, top_left_y, bottom_right_x, bottom_right_y);
+
+  for (i = top_left_x; i <= bottom_right_x && i < costmap.getSizeInCellsX(); ++i)
+  {
+    for (unsigned int j = top_left_y; j <= bottom_right_y && j < costmap.getSizeInCellsY(); ++j)
+    {
+      if ( costmap.getCost(i, j) > 0 )
+        return false;
+    }
+  }
+  return true;
 }
 
 //workhorse function for frontierRatings

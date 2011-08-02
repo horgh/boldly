@@ -1,8 +1,8 @@
 <launch>
-<!--
   <node pkg="explore" type="explore" respawn="false" name="explore" output="screen" >
+<!--
+  <node launch-prefix="gdb -ex run - -args " pkg="explore" type="explore" respawn="false" name="explore" output="screen" >
 -->
-  <node launch-prefix="gdb -ex run --args " pkg="explore" type="explore" respawn="false" name="explore" output="screen" >
     <rosparam file="$(find explore_stage)/config/footprint.yaml" command="load" />
 
     <rosparam file="$(find explore_stage)/config/costmap_common.yaml" command="load" ns="explore_costmap" />
@@ -13,10 +13,10 @@
     <param name="close_loops" value="true"/>
     <remap from="slam_entropy" to="gmapping/entropy"/>
 
-<!--
     <param name="explore_planner/allow_unknown" value="false" />
--->
+<!--
     <param name="explore_planner/allow_unknown" value="true" />
+-->
 
     <!-- world specific -->
     <rosparam file="$(find explore_stage)/world_configs/stage_hospital_section/explore_costmap.yaml" command="load" />

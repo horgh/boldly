@@ -20,7 +20,8 @@ global_costmap:
   track_unknown_space: true
   #track_unknown_space: false
 
-  unknown_cost_value: 255
+  #unknown_cost_value: 255
+  unknown_cost_value: 253
 
   # The below are world specific
   #width: 60.0

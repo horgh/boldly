@@ -191,6 +191,10 @@ public:
   bool rateFrontiers(costmap_2d::Costmap2DROS& costmap, tf::Stamped<tf::Pose> robot_pose, navfn::NavfnROS* planner, std::vector<geometry_msgs::Pose>& goals, double potential_scale, double orientation_scale, double gain_scale, std::vector<Waypoint*>* topo_map);
 
   Point openPoint(WeightedFrontier frontier, const costmap_2d::Costmap2D &costmap);
+  Point openPointCircumscribed(unsigned int map_x, unsigned int map_y,
+    const costmap_2d::Costmap2D& costmap);
+  bool validOpenArea(unsigned int map_x, unsigned int map_y,
+    unsigned int needed_passable_cells, const costmap_2d::Costmap2D& costmap);
 
   void frontierRatings(std::vector<FrontierStats>& frontier_stats,
     std::vector<WeightedFrontier>& frontiers, const costmap_2d::Costmap2D& costmap,
