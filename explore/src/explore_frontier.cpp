@@ -246,13 +246,13 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap_ros,
   frontierRatings(frontier_stats, weightedFrontiers, costmap, topo_map, 0);
   
   //get the max endness for normalization
-  double max_end = 0.0;
+  /*double max_end = 0.0;
   for (std::vector<FrontierStats>::const_iterator it = frontier_stats.begin();
     it != frontier_stats.end(); ++it)
   {
     double endness = sqrt(it->vectorx*it->vectorx + it->vectory*it->vectory);
     max_end = std::max(endness, max_end);
-  }
+  }*/
 
   rated_frontiers_.clear();
   rated_frontiers_.reserve(weightedFrontiers.size());
@@ -273,9 +273,8 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap_ros,
     //double rating = size * exp(-1.0*lambda*it->cost);
     // Normalise rating
     //double rating = size / (it->cost / max_cost);
-    double endness = sqrt(it2->vectorx*it2->vectorx + it2->vectory*it2->vectory) / max_end;
-    //double rating = size * std::abs(it2->corrCoeff) * endness;
-    double rating = std::abs(it2->corrCoeff);
+    //double endness = sqrt(it2->vectorx*it2->vectorx + it2->vectory*it2->vectory);
+    double rating = size * std::abs(it2->corrCoeff) * it2->endness;
     
     ROS_WARN("A %f L %f rating %f lambda %f", size, (it->cost / max_cost), rating, lambda);
 
@@ -692,6 +691,11 @@ inline double perpenDist(double m, double b, double x, double y)
     return abs(y - (m*x) - b) / sqrt((m*m) + 1);
 }
 
+inline double linePointPosition2D ( double x1, double y1, double x2, double y2, double x3, float y3 )
+{
+    return (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1);   
+}
+
 inline double dist(double x1, double y1, double x2, double y2) {
   return std::sqrt( (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
 }
@@ -708,25 +712,33 @@ void ExploreFrontier::frontierRatings(std::vector<FrontierStats>& frontier_stats
     
         WeightedFrontier frontier = (*i);
         Point startingPoint = openPoint(frontier, costmap);
+        //CONVERT THE MAP COORDS OF OPENPOINT TO WORLD
+        double tx, ty;
+        costmap.mapToWorld(startingPoint.x, startingPoint.y, tx, ty);
         
         double bestDist = DBL_MAX;
         Waypoint * best = NULL;
         //find the closest waypoint
         for(std::vector<Waypoint*>::iterator j = topo->begin(); j != topo->end(); j++)
         {
-            if((*j)->x == startingPoint.x && (*j)->y == startingPoint.y)
+            if((*j)->x == tx && (*j)->y == ty)
                 continue;
         
-            if(dist((*j)->x, (*j)->y, startingPoint.x, startingPoint.y) < bestDist)
+            if(dist((*j)->x, (*j)->y, tx, ty) < bestDist)
             {
-                bestDist = dist((*j)->x, (*j)->y, startingPoint.x, startingPoint.y);
+                bestDist = dist((*j)->x, (*j)->y, tx, ty);
                 best = (*j);
             }
         }
         
         std::vector<Waypoint*> waypoints;
         std::queue<Waypoint*> bfs;
-        bfs.push(best);
+        if(best != NULL)
+        {
+            bfs.push(best);
+            waypoints.push_back(best);
+        }
+            
         //bfs from that waypoint
         for(int j = 1; j < FRONTIERDEPTH && !bfs.empty(); )
         {
@@ -754,24 +766,38 @@ void ExploreFrontier::frontierRatings(std::vector<FrontierStats>& frontier_stats
         
         Line bestFit = leastSquares(waypoints);
 
-        double frontierDelta = perpenDist(bestFit.m, bestFit.b, startingPoint.x, startingPoint.y);
-                
+        double frontierDelta = perpenDist(bestFit.m, bestFit.b, tx, ty);
+
         double lineDeltas = 0.0;
-        double xsum = 0.0;
+        /*double xsum = 0.0;
         double ysum = 0.0;
         double xysum = 0.0;
         double xsquares = 0.0;
-        double ysquares = 0.0;
+        double ysquares = 0.0;*/
         int n = (waypoints.size() - 1);
+        int sidea = 0; // 'right'
+        int sideb = 0; // 'left'
+        int sidec = 0; // on line
+        double recipc = ty - ((1/bestFit.m)*tx);
         //do not include the home waypoint, or else we double count deltas
         //also, calc the x and y averages while we iterate
         for(std::vector<Waypoint*>::iterator j = waypoints.begin() + 1; j < waypoints.end(); ++j)
         {
-            xsum += (*j)->x;
+            /*xsum += (*j)->x;
             ysum += (*j)->y;
             xysum += (*j)->x * (*j)->y;
             xsquares += (*j)->x*(*j)->x;
-            ysquares += (*j)->y*(*j)->y;
+            ysquares += (*j)->y*(*j)->y;*/
+            
+            //we're going to count the number of waypoints on either side of the line perpendicular to the best fit line at the frontier
+            int side = linePointPosition2D(0, recipc, 1, (1/bestFit.m) + recipc, (*j)->x, (*j)->y);
+            if(side < 0)
+                sidea++;
+            else if(side > 0)
+                sideb++;
+            else
+                sidec++;
+            
             lineDeltas += perpenDist(bestFit.m, bestFit.b, (*j)->x, (*j)->y);
         }
         lineDeltas /= n;
@@ -781,15 +807,27 @@ void ExploreFrontier::frontierRatings(std::vector<FrontierStats>& frontier_stats
         //and get the vector sum to all waypoints from the frontier
         for(std::vector<Waypoint*>::iterator j = waypoints.begin() + 1; j < waypoints.end(); ++j)
         {
-            vectorsum[0] += (*j)->x - startingPoint.x;
-            vectorsum[1] += (*j)->y - startingPoint.y;
+            vectorsum[0] += (*j)->x - tx;
+            vectorsum[1] += (*j)->y - ty;
         }
         
-        double denom = sqrt((n*xsquares - xsum*xsum)*(n*ysquares - ysum*ysum));
-        double corrCoeff = (n*xysum - xsum*ysum) / denom;
+        //double denom = sqrt((n*xsquares - xsum*xsum)*(n*ysquares - ysum*ysum));
+        //prevent divide by zero
+        //if(denom == 0.0)
+        //    denom = 1.0;
+        
+        //note, corrCoeff is now decieving. It is not actually the correlation coefficient, as that does not work for all linearity.
+        //It is actually 1 / (s + 1) where s is the sum of the perpendistances.
+        //I am temporarily satisfied with this as the current measure of linearity. Needs endness to qualify.
+        double corrCoeff = 1 / (lineDeltas + 1);
+        
+        //for now? one minus the percentage of nearby waypoints NOT on the correct side. So, 1 is good.
+        //Since this value by itself cannot be less than 0.5, we subtract 0.5 and multiply by two.
+        double smallSide = std::min(sidea, sideb);
+        double endness = 2*((1 - (smallSide / waypoints.size())) - 0.5);
 
         //use frontierstats in your formula
-        frontier_stats.push_back(FrontierStats(frontierDelta, lineDeltas, corrCoeff, vectorsum[0], vectorsum[1]));
+        frontier_stats.push_back(FrontierStats(frontierDelta, lineDeltas, corrCoeff, vectorsum[0], vectorsum[1], endness));
     }
 }
 

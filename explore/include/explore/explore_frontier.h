@@ -50,7 +50,7 @@
 
 #include <skeleplanner/waypoint.h>
 
-#define FRONTIERDEPTH 15
+#define FRONTIERDEPTH 10
 
 namespace explore {
 
@@ -105,8 +105,9 @@ struct FrontierStats {
     double corrCoeff;
     double vectorx;
     double vectory;
+    double endness;
     
-    FrontierStats(double a, double b, double c, double d, double e) : frontierDelta(a), lineDeltas(b), corrCoeff(c), vectorx(d), vectory(e) {};
+    FrontierStats(double a, double b, double c, double d, double e, double f) : frontierDelta(a), lineDeltas(b), corrCoeff(c), vectorx(d), vectory(e), endness(f) {};
 };
 
 /**
