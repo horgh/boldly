@@ -703,13 +703,15 @@ bool ExploreFrontier::openPointArea(unsigned int map_x, unsigned int map_y,
 {
   // Number of cells free we want in every direction from centre
   // point.
-  unsigned int meters = 5;
-  unsigned int cell_step_size = ceil( meters / costmap.getResolution() );
+  //unsigned int meters = 5;
+  //unsigned int cell_step_size = ceil( meters / costmap.getResolution() );
+
+  unsigned int cell_step_size = ceil( costmap.getCircumscribedRadius() / costmap.getResolution() );
   
   //for(int rad = 0; rad <= frontier.frontier.size; rad++)
   //for(unsigned int rad = cell_step_size; true; rad += cell_step_size)
 
-  for(unsigned int rad = 0; rad < 3 * cell_step_size; rad++)
+  for(unsigned int rad = 0; rad < 10 * cell_step_size; rad++)
   {
       for(unsigned int i = map_x - rad; i <= map_x + rad; i++)
       {
@@ -781,12 +783,14 @@ bool ExploreFrontier::validOpenArea(unsigned int map_x, unsigned int map_y,
   }
 */
 
-  //ROS_WARN("Checking valid open area from top left: (%d, %d) to bottom right: (%d, %d)",
-  //  top_left_x, top_left_y, bottom_right_x, bottom_right_y);
+/*
+  ROS_WARN("Checking valid open area from top left: (%d, %d) to bottom right: (%d, %d)",
+    top_left_x, top_left_y, bottom_right_x, bottom_right_y);
+*/
 
   for (i = top_left_x; i <= bottom_right_x; ++i)
   {
-    for (unsigned int j = top_left_y; j <= bottom_right_y; ++j)
+    for (unsigned int j = bottom_right_y; j <= top_left_y; ++j)
     {
       if ( costmap.getCost(i, j) > 0 )
         return false;
