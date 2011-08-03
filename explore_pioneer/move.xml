@@ -1,7 +1,6 @@
 <launch>
 <!--
-  for gdb, in node tag add
-  launch-prefix="gdb -ex run - -args" (no space after first -)
+  <node launch-prefix="gdb -ex run - -args" pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
 -->
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
     <rosparam file="$(find explore_pioneer)/footprint.yaml" command="load" />

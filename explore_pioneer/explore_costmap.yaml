@@ -13,10 +13,14 @@ explore_costmap:
   resolution: 0.2
   #resolution: 0.05
 
-  width: 100.0
-  height: 100.0
-  origin_x: 20.0
-  origin_y: -80.0
+  width: 60.0
+  height: 60.0
+  origin_x: -30.0
+  origin_y: -30.0
+  #width: 100.0
+  #height: 100.0
+  #origin_x: 20.0
+  #origin_y: -80.0
 
   track_unknown_space: true
   unknown_cost_value: 254
