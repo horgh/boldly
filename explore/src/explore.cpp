@@ -50,7 +50,7 @@
 #ifdef SIMULATION
 #define PROGRESS_TIMEOUT 60.0
 #else
-#define PROGRESS_TIMEOUT 30.0
+#define PROGRESS_TIMEOUT 60.0
 #endif
 
 // Enable this to periodically make a new plan even if we're following one
@@ -59,19 +59,23 @@
 #define REEVALUATE_PLANS_TIME 10.0
 
 // Number of times to go out exploring before we decide to go far
-#define EXPLORATION_RUNS 2
+#define EXPLORATION_RUNS 4
 
 // Our battery is a timer. Makes us go home when we judge we need to.
 // With CONSTANT_BATTERY_TIME, always use BATTERY_TIME as our battery life.
 // Otherwise we change battery time to duration until heard warning voltage.
-//#define BATTERY_TIMER
+#define BATTERY_TIMER
 
 // Always use BATTERY_TIME as battery duration rather than voltage logic.
 // Requires BATTERY_TIMER as well.
-//#define CONSTANT_BATTERY_TIME
+#define CONSTANT_BATTERY_TIME
 
 // Life of battery in seconds
+#ifdef SIMULATION
 #define BATTERY_TIME 30
+#else
+#define BATTERY_TIME 600
+#endif
 // Start heading back with at least this margin of safety (wrt battery time remaining)
 #define MIN_BATTERY_SAFETY_MARGIN 10
 // Starting safety margin

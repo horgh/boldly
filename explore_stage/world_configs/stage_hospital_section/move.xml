@@ -9,7 +9,10 @@
     <rosparam file="$(find explore_stage)/explore/navfn_params.yaml" command="load" />
 
     <param name="controller_frequency" type="double" value="5.0" />
+<!--
     <param name="recovery_behavior_enabled" value="false" />
+-->
+    <param name="recovery_behavior_enabled" value="true" />
 
     <!-- world specific costmap settings -->
     <rosparam file="$(find explore_stage)/world_configs/stage_hospital_section/global_costmap.yaml" command="load" />
