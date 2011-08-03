@@ -219,13 +219,10 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap_ros,
     costmap.worldToMap(weighted_frontier.frontier.pose.position.x, weighted_frontier.frontier.pose.position.y,
       map_x, map_y);
     if (costmap.getCost(map_x, map_y) >= costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
-      Point p = openPoint(weighted_frontier, costmap);
-      //Point p = openPointCircumscribed(map_x, map_y, costmap);
-
-      // We got same invalid point from openPointCircumscribed() as we gave it
-      // This means it couldn't find a valid one. Forget this frontier for
-      // now.
-      if (p.x == map_x && p.y == map_y) {
+      //Point p = openPoint(weighted_frontier, costmap);
+      Point p;
+      // Didn't get a valid point. Forget the frontier for now
+      if ( !openPointArea(map_x, map_y, costmap, p) ) {
         ROS_WARN("!!! Lost a frontier since we couldn't find a valid open point for it.");
         ++it;
         continue;
@@ -697,41 +694,42 @@ Point ExploreFrontier::openPoint(WeightedFrontier frontier, const costmap_2d::Co
 }
 
 /*
-  Find an open point which is at least the robot's circumscribed radius away
-  from the given point (which is in unknown space)
+  Find an open point which is both in open space and surrounded by a
+  minimum number of open cells from the given point (which is in unknown
+  space)
 */
-Point ExploreFrontier::openPointCircumscribed(unsigned int map_x, unsigned int map_y,
-  const costmap_2d::Costmap2D& costmap)
+bool ExploreFrontier::openPointArea(unsigned int map_x, unsigned int map_y,
+  const costmap_2d::Costmap2D& costmap, Point& p)
 {
-    // XXX Arbitrary * 4 to ensure we have at least 4*circumscribed passable
-    // space around.
-    unsigned int cell_step_size = ceil(costmap.getCircumscribedRadius() / costmap.getResolution()) * 4;
-    
-    //for(int rad = 0; rad <= frontier.frontier.size; rad++)
-    //for(unsigned int rad = cell_step_size; true; rad += cell_step_size)
+  // Number of cells free we want in every direction from centre
+  // point.
+  unsigned int meters = 5;
+  unsigned int cell_step_size = ceil( meters / costmap.getResolution() );
+  
+  //for(int rad = 0; rad <= frontier.frontier.size; rad++)
+  //for(unsigned int rad = cell_step_size; true; rad += cell_step_size)
 
-    // Check radius of 3*circumscribed radius?
-    for(unsigned int rad = 0; rad < 3 * cell_step_size; rad++)
-    {
-        for(unsigned int i = map_x - rad; i <= map_x + rad; i++)
-        {
-            for(unsigned int j = map_y - rad;
-              j <= map_y + rad;
-              j += (i == map_x - rad || i == map_x + rad ? 1 : std::max( (unsigned int) 1, 2*rad)))
-            {
-                if (!inBounds(i, j, costmap)) {
-                  continue;
-                }
-                //if(costmap.getCost(i, j) < PASSABLE_THRESH) {
-                if (validOpenArea(i, j, cell_step_size, costmap)) {
-                    return Point(i, j);
-                }
-            }
-        }
-    }
-    
-    //give up and return the center
-    return Point(map_x, map_y);
+  for(unsigned int rad = 0; rad < 3 * cell_step_size; rad++)
+  {
+      for(unsigned int i = map_x - rad; i <= map_x + rad; i++)
+      {
+          for(unsigned int j = map_y - rad;
+            j <= map_y + rad;
+            j += (i == map_x - rad || i == map_x + rad ? 1 : std::max( (unsigned int) 1, 2*rad)))
+          {
+              if (!inBounds(i, j, costmap)) {
+                continue;
+              }
+              //if(costmap.getCost(i, j) < PASSABLE_THRESH) {
+              if (validOpenArea(i, j, cell_step_size, costmap)) {
+                  p.x = i;
+                  p.y = j;
+                  return true;
+              }
+          }
+      }
+  }
+  return false;
 }
 
 /*
@@ -747,40 +745,48 @@ bool ExploreFrontier::validOpenArea(unsigned int map_x, unsigned int map_y,
   unsigned int top_left_x = map_x - needed_passable_cells;
   if (top_left_x > costmap.getSizeInCellsX())
     return false;
+/*
   while (top_left_x > costmap.getSizeInCellsX()) {
     top_left_x = map_x - needed_passable_cells - ++i;
   }
+*/
 
   unsigned int top_left_y = map_y - needed_passable_cells;
   i = 0;
   if (top_left_y > costmap.getSizeInCellsY())
     return false;
+/*
   while (top_left_y > costmap.getSizeInCellsY()) {
     top_left_y = map_y - needed_passable_cells - ++i;
   }
+*/
 
   unsigned int bottom_right_x = map_x + needed_passable_cells;
   i = 0;
   if (bottom_right_x > costmap.getSizeInCellsX())
     return false;
+/*
   while (bottom_right_x > costmap.getSizeInCellsX()) {
     bottom_right_x = map_x + needed_passable_cells - ++i;
   }
+*/
 
   unsigned int bottom_right_y = map_y + needed_passable_cells;
   i = 0;
   if (bottom_right_y > costmap.getSizeInCellsY())
     return false;
+/*
   while (bottom_right_y > costmap.getSizeInCellsY()) {
     bottom_right_y = map_y + needed_passable_cells - ++i;
   }
+*/
 
   //ROS_WARN("Checking valid open area from top left: (%d, %d) to bottom right: (%d, %d)",
   //  top_left_x, top_left_y, bottom_right_x, bottom_right_y);
 
-  for (i = top_left_x; i <= bottom_right_x && i < costmap.getSizeInCellsX(); ++i)
+  for (i = top_left_x; i <= bottom_right_x; ++i)
   {
-    for (unsigned int j = top_left_y; j <= bottom_right_y && j < costmap.getSizeInCellsY(); ++j)
+    for (unsigned int j = top_left_y; j <= bottom_right_y; ++j)
     {
       if ( costmap.getCost(i, j) > 0 )
         return false;

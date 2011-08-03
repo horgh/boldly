@@ -41,6 +41,7 @@ struct Line {
 
 struct Point {
   unsigned int x, y;
+  Point() {};
   Point(int x_, int y_) : x(x_), y(y_) {};
 };
 
