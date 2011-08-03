@@ -751,7 +751,7 @@ bool ExploreFrontier::validOpenArea(unsigned int map_x, unsigned int map_y,
   }
 */
 
-  unsigned int top_left_y = map_y - needed_passable_cells;
+  unsigned int top_left_y = map_y + needed_passable_cells;
   i = 0;
   if (top_left_y > costmap.getSizeInCellsY())
     return false;
@@ -771,7 +771,7 @@ bool ExploreFrontier::validOpenArea(unsigned int map_x, unsigned int map_y,
   }
 */
 
-  unsigned int bottom_right_y = map_y + needed_passable_cells;
+  unsigned int bottom_right_y = map_y - needed_passable_cells;
   i = 0;
   if (bottom_right_y > costmap.getSizeInCellsY())
     return false;
