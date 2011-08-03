@@ -18,4 +18,4 @@ explore_costmap:
   origin_y: -30.0
 
   track_unknown_space: true
-  unknown_cost_value: 255
+  unknown_cost_value: 254

@@ -21,7 +21,7 @@ global_costmap:
   # Need this if we want to use allow_unknown false
   #track_unknown_space: false
   track_unknown_space: true
-  unknown_cost_value: 255
+  unknown_cost_value: 254
 
   # ** probably must set these since no longer static_map
   #width: 60.0

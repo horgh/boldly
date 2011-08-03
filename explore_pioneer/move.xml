@@ -20,11 +20,11 @@
 <!--
     <param name="controller_frequency" type="double" value="15.0" />
 -->
-    <param name="controller_frequency" type="double" value="1.0" />
+    <param name="controller_frequency" type="double" value="10.0" />
 
-    <!-- need costmaps to have track_unknown_space: true for this to work -->
+    <param name="recovery_behavior_enabled" value="false" />
 <!--
-    <param name="explore_planner/allow_unknown" value="false" />
+    <param name="recovery_behavior_enabled" value="false" />
 -->
   </node>
 </launch>
