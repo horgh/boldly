@@ -13,10 +13,16 @@
 
     <param name="maxUrange" value="80.0" />
     <param name="particles" value="30" />
+<!--
     <param name="xmin" value="-15.0" />
     <param name="xmax" value="15.0" />
     <param name="ymin" value="-15.0" />
     <param name="ymax" value="15.0" />
+-->
+    <param name="xmin" value="-120.0" />
+    <param name="xmax" value="120.0" />
+    <param name="ymin" value="-120.0" />
+    <param name="ymax" value="120.0" />
     <param name="angularUpdate" value="0.5" />
     <param name="linearUpdate" value="1.0" />
     <param name="map_update_interval" value="1.0" />

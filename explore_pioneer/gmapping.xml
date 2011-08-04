@@ -17,12 +17,11 @@
     <!-- Taken from p2os gmapping.launch -->
     <param name="temporalUpdate" type="double" value="2.5" />
 
-    <!-- Initial map size. Defaults to -100.0. p2os has -2 -->
-    <param name="xmin" type="double" value="-2" />
-    <param name="ymin" type="double" value="-2" />
-    <!-- defaults to 100, p2os has 2 -->
-    <param name="xmax" type="double" value="2" />
-    <param name="ymax" type="double" value="2" />
+    <!-- Initial map size. -->
+    <param name="xmin" type="double" value="-120.0" />
+    <param name="xmax" type="double" value="100.0" />
+    <param name="ymin" type="double" value="-50.0" />
+    <param name="ymax" type="double" value="120.0" />
 
     <!-- The neff based resampling threshold (?) Default = 0.5, explore uses 0.3 -->
     <param name="resampleThreshold" type="double" value="0.5" />

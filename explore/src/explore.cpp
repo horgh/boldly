@@ -595,9 +595,9 @@ void Explore::makePlan() {
   */
 
   // getExplorationGoals() is old frontier rating system
-  if (! explorer_->getExplorationGoals(*explore_costmap_ros_, robot_pose, planner_, goals, potential_scale_, orientation_scale_, gain_scale_) ) {
+  //if (! explorer_->getExplorationGoals(*explore_costmap_ros_, robot_pose, planner_, goals, potential_scale_, orientation_scale_, gain_scale_) ) {
 
-  //if (! explorer_->rateFrontiers(*explore_costmap_ros_, robot_pose, planner_, goals, potential_scale_, orientation_scale_, gain_scale_, topomap_->get_topomap() )) {
+  if (! explorer_->rateFrontiers(*explore_costmap_ros_, robot_pose, planner_, goals, potential_scale_, orientation_scale_, gain_scale_, topomap_->get_topomap() )) {
     ROS_WARN("No frontiers found?");
   }
 
@@ -1161,7 +1161,7 @@ void Explore::execute() {
              )
          )
       {
-        //topomap_->update(explore_costmap_ros_);
+        topomap_->update(explore_costmap_ros_);
         makePlan();
 
       }
@@ -1192,7 +1192,7 @@ void Explore::execute() {
       topomap_publisher_marker_id = 0;
 
       // and topomap
-      //topomap_publisher_marker_id = topomap_->publish_topomap(&topomap_marker_publisher_, topomap_publisher_marker_id);
+      topomap_publisher_marker_id = topomap_->publish_topomap(&topomap_marker_publisher_, topomap_publisher_marker_id);
 
       // and blacklisted frontiers
       visualize_blacklisted();
