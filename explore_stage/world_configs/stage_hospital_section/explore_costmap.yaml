@@ -1,23 +1,24 @@
 explore_costmap:
   global_frame: /map
   robot_base_frame: base_link
-  update_frequency: 1.0
+  update_frequency: 2.0
   publish_frequency: 0.0
   #raytrace_range: 5.0
   #obstacle_range: 5.0
   raytrace_range: 80.0
   obstacle_range: 80.0
-  static_map: false
+  #static_map: false
+  static_map: true
   rolling_window: false
-  resolution: 0.2
+  resolution: 0.1
   #resolution: 0.02
   #resolution: 0.1
 
   # Explore controller requires this to be true
   track_unknown_space: true
 
-  #unknown_cost_value: 255
-  unknown_cost_value: 254
+  unknown_cost_value: 255
+  #unknown_cost_value: 254
 
   # The below are world specific
   #width: 60.0
