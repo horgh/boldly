@@ -308,6 +308,11 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap_ros,
     goals.push_back(rated_frontiers_[i].weighted_frontier.frontier.pose);
   }
 
+  // We don't need these for this algorithm, but clearing them allows
+  // us to recognise when using this algorithm to visualise rated_frontiers_
+  // only (see getVisualizationMarkers())
+  frontiers_.clear();
+
   return goals.size() > 0;
 }
 
@@ -553,6 +558,25 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
 
 void ExploreFrontier::getVisualizationMarkers(std::vector<Marker>& markers)
 {
+  /*
+   * Old frontier algorithm (getExplorationGoals()) does not use
+   * rated_frontiers_. Fill rated_frontiers_ with frontiers_ if this
+   * is the case
+   */
+  if (frontiers_.size() > 0) {
+    rated_frontiers_.clear();
+
+    for (std::vector<Frontier>::const_iterator it = frontiers_.begin();
+      it < frontiers_.end(); ++it)
+    {
+      RatedFrontier rated_frontier;
+      WeightedFrontier weighted_frontier;
+      weighted_frontier.frontier = *it;
+      rated_frontier.weighted_frontier = weighted_frontier;
+      rated_frontiers_.push_back( rated_frontier );
+    }
+  }
+
   /*
     Frontier as a cube
   */
