@@ -28,15 +28,10 @@ global_costmap:
   #unknown_cost_value: 254
   unknown_cost_value: 255
 
-#  width: 60.0
-#  height: 60.0
-#  origin_x: -30.0
-#  origin_y: -30.0
-
-  width: 120.0
-  height: 120.0
-  origin_x: -60.0
-  origin_y: -60.0
+  #width: 60.0
+  #height: 60.0
+  #origin_x: -30.0
+  #origin_y: -30.0
 
   #width: 100.0
   #height: 100.0
