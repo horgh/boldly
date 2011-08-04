@@ -14,8 +14,8 @@
     <rosparam file="$(find explore_pioneer)/trajectory_planner_params.yaml" command="load" />
 
     <!-- these are not in explore, but in p2os navigation.launch -->
-    <param name="base_global_planner" type="string" value="NavfnROS" />
     <param name="conservative_reset_dist" type="double" value="3.0" />
+
 <!--
     <param name="controller_frequency" type="double" value="15.0" />
 -->

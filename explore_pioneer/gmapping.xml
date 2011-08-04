@@ -1,5 +1,8 @@
 <launch>
+<!--
   <node pkg="gmapping" type="slam_gmapping" name="gmapping" args="/sonarify_scan">
+-->
+  <node pkg="gmapping" type="slam_gmapping" name="gmapping" args="/scan">
     <!-- The maximum usable range of the laser. A beam is cropped to this value. -->
     <param name="maxUrange" value ="80.0" />
 
@@ -19,7 +22,10 @@
     <param name="ymax" type="double" value="2" />
 
     <!-- How long (in seconds) between updates to the map. Lowering this number updates the occupancy grid more often, at the expense of greater computational load. Default is 5.0, explore uses 1.0 -->
+<!--
     <param name="map_update_interval" type="double" value="5.0" />
+-->
+    <param name="map_update_interval" type="double" value="1.0" />
 
     <!-- The neff based resampling threshold (?) Default = 0.5, explore uses 0.3 -->
     <param name="resampleThreshold" type="double" value="0.5" />

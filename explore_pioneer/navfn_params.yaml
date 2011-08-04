@@ -1,6 +1,6 @@
 navfn/NavfnROS:
   # from explore, p2os doesn't have
-  transform_tolerance: 0.3
+  transform_tolerance: 3.0
   default_tolerance: 5.0
   # Need costmaps having track_unknown_space: true for this to work
   allow_unknown: false
