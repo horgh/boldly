@@ -6,11 +6,13 @@
     <param name="maxUrange" value="30.0" />
   -->
     <!-- How long (in seconds) between updates to the map. Lowering this number updates the occupancy grid more often, at the expense of greater computational load. -->
-    <param name="max_update_interval" value="1.0" />
+    <param name="max_update_interval" value="5.0" />
+
+    <!-- resolution -->
+    <param name="delta" value="0.20" />
 
     <param name="maxUrange" value="80.0" />
     <param name="particles" value="30" />
-    <param name="delta" value="0.10" />
     <param name="xmin" value="-15.0" />
     <param name="xmax" value="15.0" />
     <param name="ymin" value="-15.0" />

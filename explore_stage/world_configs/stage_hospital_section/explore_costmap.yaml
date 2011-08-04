@@ -1,7 +1,7 @@
 explore_costmap:
   global_frame: /map
   robot_base_frame: base_link
-  update_frequency: 2.0
+  update_frequency: 1.0
   publish_frequency: 0.0
   #raytrace_range: 5.0
   #obstacle_range: 5.0
@@ -10,7 +10,7 @@ explore_costmap:
   #static_map: false
   static_map: true
   rolling_window: false
-  resolution: 0.1
+  resolution: 0.2
   #resolution: 0.02
   #resolution: 0.1
 
