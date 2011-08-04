@@ -8,10 +8,9 @@ global_costmap:
   #publish_frequency: 10.0
   publish_frequency: 0.5
 
-  # For gmapping, want static true and same resolution as gmapping
-  static_map: false
-  resolution: 0.1
-  #resolution: 0.05
+  # For gmapping, want static true
+  static_map: true
+  rolling_window: false
 
   # from explore
 
@@ -19,7 +18,6 @@ global_costmap:
   #obstacle_range: 5.0
   raytrace_range: 80.0
   obstacle_range: 80.0
-  rolling_window: false
 
   # Need this if we want to use allow_unknown false
   #track_unknown_space: false
@@ -28,12 +26,10 @@ global_costmap:
   #unknown_cost_value: 254
   unknown_cost_value: 255
 
+  # Only used when static_map is false
   #width: 60.0
   #height: 60.0
   #origin_x: -30.0
   #origin_y: -30.0
-
-  #width: 100.0
-  #height: 100.0
-  #origin_x: 20.0
-  #origin_y: -80.0
+  resolution: 0.1
+  #resolution: 0.05

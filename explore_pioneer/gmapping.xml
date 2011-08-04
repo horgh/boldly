@@ -8,7 +8,10 @@
 
     <!-- Processing parameters (resolution of the map). Default = 0.05 -->
     <!-- 0.10 from explore? previously had 0.05 -->
-    <param name="delta" type="double" value="0.10" />
+    <param name="delta" type="double" value="0.20" />
+
+    <!-- How long (in seconds) between updates to the map. Lowering this number updates the occupancy grid more often, at the expense of greater computational load. Default is 5.0, explore uses 1.0 -->
+    <param name="map_update_interval" type="double" value="5.0" />
 
     <!-- Process a scan if the last scan proccessed is older than the update time in seconds. A value less than zero will turn time based updates off. Default = -1.0 -->
     <!-- Taken from p2os gmapping.launch -->
@@ -20,12 +23,6 @@
     <!-- defaults to 100, p2os has 2 -->
     <param name="xmax" type="double" value="2" />
     <param name="ymax" type="double" value="2" />
-
-    <!-- How long (in seconds) between updates to the map. Lowering this number updates the occupancy grid more often, at the expense of greater computational load. Default is 5.0, explore uses 1.0 -->
-<!--
-    <param name="map_update_interval" type="double" value="5.0" />
--->
-    <param name="map_update_interval" type="double" value="1.0" />
 
     <!-- The neff based resampling threshold (?) Default = 0.5, explore uses 0.3 -->
     <param name="resampleThreshold" type="double" value="0.5" />

@@ -8,12 +8,10 @@ global_costmap:
   #obstacle_range: 5.0
   raytrace_range: 80.0
   obstacle_range: 80.0
-  #static_map: false
+
+  # For gmapping, need static true
   static_map: true
   rolling_window: false
-  # May want to reduce this to say 0.2 (like explore_costmap)
-  #resolution: 0.05
-  resolution: 0.2
 
   # Need this if we are using SkelePlanner as global planner
   # However, with it true the planner is much less willing to go through unknown,
@@ -35,3 +33,5 @@ global_costmap:
   #origin_y: -30.0
   #origin_x: -80.0
   #origin_y: -40.0
+  # may want much higher resolution than this for global planner
+  #resolution: 0.2
