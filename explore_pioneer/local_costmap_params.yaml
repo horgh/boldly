@@ -18,3 +18,6 @@ local_costmap:
   # explore
   #origin_x: 0.0
   #origin_y: 0.0
+
+  observation_sources: laser_scan_sensor
+  laser_scan_sensor: {sensor_frame: laser, data_type: LaserScan, topic: sonarify_scan, marking: true, clearing: true, expected_updated_rate: 0.2}

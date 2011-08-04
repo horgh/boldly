@@ -21,8 +21,6 @@ raytrace_range: 80.0
 # explore has 0.5
 transform_tolerance: 3.0
 map_type: costmap
-observation_sources: laser_scan_sensor
 
-# explore has observation_persistance: 0.0 in this
+#observation_sources: laser_scan_sensor
 #laser_scan_sensor: {sensor_frame: laser, data_type: LaserScan, topic: sonarify_scan, marking: true, clearing: true, expected_updated_rate: 0.2}
-laser_scan_sensor: {sensor_frame: laser, data_type: LaserScan, topic: scan, marking: true, clearing: true, expected_updated_rate: 0.2}
