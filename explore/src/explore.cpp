@@ -839,9 +839,11 @@ void Explore::checkIfStuck() {
     if (state == STATE_EXPLORING) {
       frontier_blacklist_.push_back(current_goal_pose_stamped_);
       ROS_WARN("Adding current goal to black list.");
+      notifier_->publish("Adding current goal to black list.");
       setState(STATE_WAITING_FOR_GOAL);
       time_since_progress_ = 0.0;
     } else if (state == STATE_HEADING_HOME) {
+      notifier_->publish("Stuck while heading home.");
       // Try to move in a random direction to get unstuck
       moveRandomDirection();
       // The above sent a new goal to move_base. When it's done, we need to
