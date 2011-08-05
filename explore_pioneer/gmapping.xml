@@ -18,10 +18,10 @@
     <param name="temporalUpdate" type="double" value="2.5" />
 
     <!-- Initial map size. -->
-    <param name="xmin" type="double" value="-120.0" />
-    <param name="xmax" type="double" value="100.0" />
-    <param name="ymin" type="double" value="-50.0" />
-    <param name="ymax" type="double" value="120.0" />
+    <param name="xmin" type="double" value="-200.0" />
+    <param name="xmax" type="double" value="200.0" />
+    <param name="ymin" type="double" value="-100.0" />
+    <param name="ymax" type="double" value="300.0" />
 
     <!-- The neff based resampling threshold (?) Default = 0.5, explore uses 0.3 -->
     <param name="resampleThreshold" type="double" value="0.5" />
