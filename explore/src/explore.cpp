@@ -59,7 +59,7 @@
 #define REEVALUATE_PLANS_TIME 10.0
 
 // Number of times to go out exploring before we decide to go far
-#define EXPLORATION_RUNS 4
+#define EXPLORATION_RUNS 400
 
 // Our battery is a timer. Makes us go home when we judge we need to.
 // With CONSTANT_BATTERY_TIME, always use BATTERY_TIME as our battery life.
