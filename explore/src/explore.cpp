@@ -409,6 +409,8 @@ Explore::Explore() :
   // Haven't yet done any exploration runs
   exploration_runs_ = 0;
 
+  notifier_ = new Notifier(&node_);
+
   setState(STATE_WAITING_FOR_GOAL);
 }
 
@@ -1111,6 +1113,7 @@ void Explore::setState(int new_state) {
   ROS_WARN("Setting state to: %s", s.c_str());
 #endif
 
+  notifier_->publish(s);
   state = new_state;
 }
 

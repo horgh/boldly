@@ -55,6 +55,7 @@
 #include <p2os_driver/BatteryState.h>
 #include <std_msgs/Empty.h>
 #include <skeleplanner/waypoint.h>
+#include <explore/notifier.h>
 
 namespace explore {
 
@@ -225,6 +226,8 @@ private:
 
   // Plan we're trying to carry out. Made in makePlan()
   std::vector<geometry_msgs::PoseStamped> current_plan_;
+
+  Notifier* notifier_;
 };
 
 }

@@ -20,7 +20,10 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 rosbuild_add_boost_directories()
 
 # Library
-rosbuild_add_library(explore_lib src/explore_frontier.cpp src/loop_closure.cpp)
+rosbuild_add_library(explore_lib
+src/explore_frontier.cpp
+src/loop_closure.cpp
+src/notifier.cpp)
 set_target_properties(explore_lib
                       PROPERTIES OUTPUT_NAME "explore")
 rosbuild_link_boost(explore_lib thread)
