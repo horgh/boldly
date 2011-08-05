@@ -1,0 +1,34 @@
+== How to run on pioneer robot (roy) & laptop (fi)
+$ ssh -AX wjs2@fi
+fi$ screen -c ros/boldly/explore_pioneer/screenrc_laptop
+
+= In fi's screen 1:
+fi$ roscore
+
+== Roy
+
+fi$ ssh -AX wjs2@roy
+roy$ screen -c ros/boldly/explore_pioneer/screenrc_robot
+
+= In roy's screen window 0:
+roy$ roslaunch explore_pioneer p2os.launch
+
+= In roy's screen window 1:
+roy$ roslaunch explore_pioneer sick.launch
+
+
+== fi
+
+= In fi's screen 2
+fi$ cd bags; rosbag record -a
+
+= In fi's screen 0
+fi$ roslaunch explore_pioneer offboard.launch
+
+** Ensure motors are on by hitting white button.
+
+
+
+== To update robot:
+Can git pull in ~/ros/boldly which will pull from wjs2@fi:ros/boldly
+
