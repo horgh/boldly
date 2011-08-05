@@ -86,7 +86,7 @@ public:
 // This many sonars on the front. Assume index starts at 0
 #define NUM_SONARS 8
 // If this is 0, multiple laser ranges are replaced
-#define SINGLE_RANGE_REPLACEMENT 1
+#define SINGLE_RANGE_REPLACEMENT 0
 // Samples to average to limit error
 #define SAMPLE_COUNT 5
 
