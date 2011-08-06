@@ -41,6 +41,11 @@
 // Compile with some debugging
 #define DEBUG
 
+// Make a new topomap every time we want to update the topomap
+// rather than rely on updating an existing one
+// (May choose to do this to avoid crashing when map size changes)
+//#define REMAKE_TOPOMAP
+
 // If uncommented, use frontier comparison algorithm where we don't try to go to those
 // frontiers which we deem unsafe due to battery life, but may go to others intead
 // XXX Probably not working correctly now.
@@ -1166,6 +1171,11 @@ void Explore::execute() {
              )
          )
       {
+#ifdef REMAKE_TOPOMAP
+        delete topomap_;
+        topomap_ = new Topomap(explore_costmap_ros_, home_pose_msg.pose.position.x,
+          home_pose_msg.pose.position.y);
+#endif
         topomap_->update(explore_costmap_ros_);
         makePlan();
 
