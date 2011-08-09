@@ -137,7 +137,7 @@ void laser_callback(const sensor_msgs::LaserScan::ConstPtr & laser_scan) {
 
     // Index into the laser range array depends on angle of sonar
     int laser_scan_index = floor(
-      abs( laser_scan->angle_min - sonar_array.sonars[NUM_SONARS-i].angle_radian )
+      abs( laser_scan->angle_min - sonar_array.sonars[7-i].angle_radian )
       / laser_scan->angle_increment
     );
 
@@ -174,11 +174,12 @@ void laser_callback(const sensor_msgs::LaserScan::ConstPtr & laser_scan) {
 	}	
 
 	//2) If ~P, then replace with mins
-	if(accounted / counted > 0.25)
+	if(accounted / counted > 0.1)
 		continue;
 
 	sonarify_laser_scan.ranges[laser_scan_index] = std::min(sonar_array.sonars[i].range + sonar_array.sonars[i].offset, (double)sonarify_laser_scan.ranges[laser_scan_index]);
-	for(int j = 0; j < (sonarify_laser_scan.ranges.size() / 8)/2; j++)
+	int num_to_replace = ceil( ( sonarify_laser_scan.ranges.size() / 8.0 ) / 2.0 );
+	for(int j = 1; j < num_to_replace; j++)
 	{
 		if(laser_scan_index-j >= 0)
 			sonarify_laser_scan.ranges[laser_scan_index-j] = min(sonar_array.sonars[i].range + sonar_array.sonars[i].offset, (double)sonarify_laser_scan.ranges[laser_scan_index-j]);
