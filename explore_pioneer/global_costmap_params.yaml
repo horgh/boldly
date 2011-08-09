@@ -16,8 +16,8 @@ global_costmap:
 
   #raytrace_range: 30.0
   #obstacle_range: 5.0
-  raytrace_range: 80.0
-  obstacle_range: 80.0
+  raytrace_range: 20.0
+  obstacle_range: 20.0
 
   # Need this if we want to use allow_unknown false
   #track_unknown_space: false

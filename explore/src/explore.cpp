@@ -819,7 +819,11 @@ bool Explore::atHome() {
   Are we close enough to our goal?
 */
 bool Explore::atGoal() {
-  return closeEnoughToPoseStamped(&current_goal_pose_stamped_);
+  if (closeEnoughToPoseStamped(&current_goal_pose_stamped_)) {
+    frontier_blacklist_.push_back(current_goal_pose_stamped_);
+    return true;
+  }
+return false;
 }
 
 /*

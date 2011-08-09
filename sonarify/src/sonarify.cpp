@@ -174,7 +174,7 @@ void laser_callback(const sensor_msgs::LaserScan::ConstPtr & laser_scan) {
 	}	
 
 	//2) If ~P, then replace with mins
-	if(accounted / counted > 0.1)
+	if(accounted / counted > 0.5)
 		continue;
 
 	sonarify_laser_scan.ranges[laser_scan_index] = std::min(sonar_array.sonars[i].range + sonar_array.sonars[i].offset, (double)sonarify_laser_scan.ranges[laser_scan_index]);
