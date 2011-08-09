@@ -26,5 +26,7 @@ void Notifier::publish(std::string state) {
   sound_request.command = sound_play::SoundRequest::PLAY_ONCE;
   sound_request.arg = state;
 
+  sound_pub.publish( sound_request );
+
   ROS_INFO("Notifier publishing: %s", state.c_str());
 }
