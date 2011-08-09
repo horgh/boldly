@@ -159,18 +159,22 @@ void laser_callback(const sensor_msgs::LaserScan::ConstPtr & laser_scan) {
      //Let's do this properly
 	//1) P: more than 5% of the sonar cone's laser scans are within 120% range of the sonar's reading
 	int accounted = 0;
+	int counted = 1;
 	if(sonarify_laser_scan.ranges[laser_scan_index] / (sonar_array.sonars[i].range + sonar_array.sonars[i].offset) < 1.25)
 		accounted++;
 
 	for(int j = 0; j < (sonarify_laser_scan.ranges.size() / 8)/2; j++)
 	{
+		if( laser_scan_index-j >= 0 && laser_scan_index+j < sonarify_laser_scan.ranges.size() )
+			counted++;
+
 		if( (laser_scan_index-j >= 0 && sonarify_laser_scan.ranges[laser_scan_index-j] / (sonar_array.sonars[i].range + sonar_array.sonars[i].offset) < 1.25) ||
 		    (laser_scan_index+j < sonarify_laser_scan.ranges.size() && sonarify_laser_scan.ranges[laser_scan_index+j] / (sonar_array.sonars[i].range + sonar_array.sonars[i].offset) < 1.25 ) )
 			accounted++;
 	}	
 
 	//2) If ~P, then replace with mins
-	if(accounted / ((sonarify_laser_scan.ranges.size() / 8) + 1) > 0.05)
+	if(accounted / counted > 0.25)
 		continue;
 
 	sonarify_laser_scan.ranges[laser_scan_index] = std::min(sonar_array.sonars[i].range + sonar_array.sonars[i].offset, (double)sonarify_laser_scan.ranges[laser_scan_index]);
