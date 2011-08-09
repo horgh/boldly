@@ -166,30 +166,19 @@ MapWaypoint Topomap::waypointBest(int x, int y, const costmap_2d::Costmap2D& cos
   return MapWaypoint(newx, newy, newm);
 }
 
-Topomap::Topomap(costmap_2d::Costmap2DROS* costmap_ros, double start_world_x,
+Topomap::Topomap(const costmap_2d::Costmap2DROS* costmap_ros, double start_world_x,
   double start_world_y)
   : start_world_x(start_world_x), start_world_y(start_world_y),
     r_(255.0), g_(255.0), b_(0.0), a_(1.0) // yellow
 {
-  costmap_2d::Costmap2D costmap;
-  costmap_ros->getCostmapCopy(costmap);
-  costmap.worldToMap(start_world_x, start_world_y, start_map_x, start_map_y);
-
-  home = new MapWaypoint(start_map_x, start_map_y, 0);
-  map_topomap.push_back(home);
-
-  topomap.push_back(new Waypoint(start_world_x, start_world_y, 0));
-
-  // Allocate a 2 dimensional array called memo, which is of size
-  // costmap cells x by costmap cells y
-  for (unsigned int i = 0; i < costmap.getSizeInCellsX(); ++i) {
-    std::vector<int> column;
-    column.resize(costmap.getSizeInCellsY());
-    memo.push_back( column );
-  }
+  rebuild(costmap_ros);
 }
 
 Topomap::~Topomap() {
+  wipeTopo();
+}
+
+void Topomap::wipeTopo() {
   for (std::vector<MapWaypoint*>::iterator it = map_topomap.begin();
     it < map_topomap.end(); ++it)
   {
@@ -200,6 +189,38 @@ Topomap::~Topomap() {
   {
     delete *it;
   }
+
+  map_topomap.clear();
+  topomap.clear();
+
+  memo.clear();
+  ignore.clear();
+}
+
+/*
+  Start topomap from scratch (for when map size changes)
+*/
+void Topomap::rebuild(const costmap_2d::Costmap2DROS* costmap_ros) {
+  wipeTopo();
+
+  costmap_2d::Costmap2D costmap;
+  costmap_ros->getCostmapCopy(costmap);
+  costmap.worldToMap(start_world_x, start_world_y, start_map_x, start_map_y);
+
+  home = new MapWaypoint(start_map_x, start_map_y, 0);
+  map_topomap.push_back(home);
+  topomap.push_back(new Waypoint(start_world_x, start_world_y, 0));
+
+  // Allocate a 2 dimensional array called memo, which is of size
+  // costmap cells x by costmap cells y
+  for (unsigned int i = 0; i < costmap.getSizeInCellsX(); ++i) {
+    std::vector<int> column;
+    column.resize(costmap.getSizeInCellsY());
+    memo.push_back( column );
+  }
+
+  costmap_size_x = costmap.getSizeInCellsX();
+  costmap_size_y = costmap.getSizeInCellsY();
 }
 
 //this function takes a starting point and creates a topological map of the image from that point.
@@ -212,6 +233,12 @@ Topomap::~Topomap() {
 void Topomap::update(const costmap_2d::Costmap2DROS* costmap_ros, bool showDebug) {
   costmap_2d::Costmap2D costmap;
   costmap_ros->getCostmapCopy(costmap);
+
+  // If costmap size has changed, rebuild whole thing (or we can segfault)
+  if (costmap.getSizeInCellsX() != costmap_size_x || costmap.getSizeInCellsY() != costmap_size_y) {
+    rebuild(costmap_ros);
+    ROS_WARN("Rebuilt topomap.");
+  }
 
   // reset the ignore array each time in case the map has changed enough
   ignore.clear();
