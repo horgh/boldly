@@ -117,30 +117,58 @@ void laser_callback(const sensor_msgs::LaserScan::ConstPtr & laser_scan) {
     // cone shaped, we restrict and only care about the sensor if it is
     // closer than 2 meters (pulled out of the air)
     // For reference, see http://comments.gmane.org/gmane.science.robotics.ros.user/6508
-    if (sonar_array.sonars[i].range >= 1.0)
+
+	//1 meter is TOO restrictive. make it 1.5    
+    if (sonar_array.sonars[i].range >= 1.5)
       continue;
 
     // Index into the laser range array depends on angle of sonar
     int laser_scan_index = floor(
-      abs( laser_scan->angle_min - sonar_array.sonars[i].angle_radian )
+      abs( laser_scan->angle_min - sonar_array.sonars[NUM_SONARS-i].angle_radian )
       / laser_scan->angle_increment
     );
 
     // We only care if sonar range is less than laser range
     // XXX May wish to include ranges of all laser points within the angle
     // of the sonar? See Lai, "Online Map [..]", 2005, page 3, column 2
-    if (sonar_array.sonars[i].range < sonarify_laser_scan.ranges[laser_scan_index]) {
+    /*if (sonar_array.sonars[i].range < sonarify_laser_scan.ranges[laser_scan_index]) {
 #if SINGLE_RANGE_REPLACEMENT
       sonarify_laser_scan.ranges[laser_scan_index] = sonar_array.sonars[i].range + sonar_array.sonars[i].offset;
 #else
-      for (int j = 0; j < 7; j++) {
+      for (int j = 0; j < 180/8; j++) {
         if (laser_scan_index - j >= 0)
           sonarify_laser_scan.ranges[laser_scan_index-j] = sonar_array.sonars[i].range + sonar_array.sonars[i].offset;
         if (laser_scan_index + j < (int) sonarify_laser_scan.ranges.size())
           sonarify_laser_scan.ranges[laser_scan_index+j] = sonar_array.sonars[i].range + sonar_array.sonars[i].offset;
       }
-#endif
+#endif*/
 
+     //Let's do this properly
+	//1) P: more than 5% of the sonar cone's laser scans are within 120% range of the sonar's reading
+	int accounted = 0;
+	if(sonarify_laser_scan.ranges[laser_scan_index] / (sonar_array.sonars[i].range + sonar_array.sonars[i].offset) < 1.25)
+		accounted++;
+
+	for(int j = 0; j < (sonarify_laser_scan.ranges.size() / 8)/2; j++)
+	{
+		if( (laser_scan_index-j >= 0 && sonarify_laser_scan.ranges[laser_scan_index-j] / (sonar_array.sonars[i].range + sonar_array.sonars[i].offset) < 1.25) ||
+		    (laser_scan_index+j < sonarify_laser_scan.ranges.size() && sonarify_laser_scan.ranges[laser_scan_index+j] / (sonar_array.sonars[i].range + sonar_array.sonars[i].offset) < 1.25 ) )
+			accounted++;
+	}	
+
+	//2) If ~P, then replace with mins
+	if(accounted / ((sonarify_laser_scan.ranges.size() / 8) + 1) > 0.05)
+		continue;
+
+	sonarify_laser_scan.ranges[laser_scan_index] = std::min(sonar_array.sonars[i].range + sonar_array.sonars[i].offset, (double)sonarify_laser_scan.ranges[laser_scan_index]);
+	for(int j = 0; j < (sonarify_laser_scan.ranges.size() / 8)/2; j++)
+	{
+		if(laser_scan_index-j >= 0)
+			sonarify_laser_scan.ranges[laser_scan_index-j] = min(sonar_array.sonars[i].range + sonar_array.sonars[i].offset, (double)sonarify_laser_scan.ranges[laser_scan_index-j]);
+		if(laser_scan_index+j < sonarify_laser_scan.ranges.size())
+			sonarify_laser_scan.ranges[laser_scan_index+j] = min(sonar_array.sonars[i].range + sonar_array.sonars[i].offset, (double)sonarify_laser_scan.ranges[laser_scan_index+j]);
+	}
+/*
 #ifdef DEBUG
       ROS_INFO("laser range index %i (@ %f degrees) was %f but now %f",
         laser_scan_index,
@@ -149,7 +177,7 @@ void laser_callback(const sensor_msgs::LaserScan::ConstPtr & laser_scan) {
         sonarify_laser_scan.ranges[laser_scan_index]
       );
 #endif
-    }
+    }*/
   }
 
   laser_pub.publish(sonarify_laser_scan);

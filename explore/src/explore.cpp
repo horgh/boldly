@@ -48,13 +48,13 @@
 
 // Time until we decide we are stuck in seconds
 #ifdef SIMULATION
-#define PROGRESS_TIMEOUT 60.0
+#define PROGRESS_TIMEOUT 30.0
 #else
-#define PROGRESS_TIMEOUT 60.0
+#define PROGRESS_TIMEOUT 30.0
 #endif
 
 // Enable this to periodically make a new plan even if we're following one
-//#define REEVALUATE_PLANS
+#define REEVALUATE_PLANS
 // Time until we make a new plan, even if we're currently following one
 #define REEVALUATE_PLANS_TIME 10.0
 
@@ -74,7 +74,7 @@
 #ifdef SIMULATION
 #define BATTERY_TIME 30
 #else
-#define BATTERY_TIME 600
+#define BATTERY_TIME 1200
 #endif
 // Start heading back with at least this margin of safety (wrt battery time remaining)
 #define MIN_BATTERY_SAFETY_MARGIN 10
