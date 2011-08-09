@@ -183,6 +183,9 @@ private:
   double potential_scale_, orientation_scale_, gain_scale_;
   boost::mutex client_mutex_;
   bool   close_loops_;
+  
+  //our current frontier rating
+  RatedFrontier currentFrontier;
 
   // Location of our home base to charge
   geometry_msgs::PoseStamped home_pose_msg;

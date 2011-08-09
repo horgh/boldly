@@ -595,7 +595,7 @@ void Explore::makePlan() {
   tf::Stamped<tf::Pose> robot_pose;
   explore_costmap_ros_->getRobotPose(robot_pose);
 
-  std::vector<geometry_msgs::Pose> goals;
+  std::vector<RatedFrontier> goals;
 
   /*
     Find frontier goals
@@ -617,7 +617,8 @@ void Explore::makePlan() {
     return;
   }
 
-#ifdef FRONTIER_COMPARE
+//REALLY doesn't work atm.
+/*#ifdef FRONTIER_COMPARE
   removeUnsafeFrontiers(&goals);
 
   // Go home if there are no reachable goals at the moment
@@ -625,7 +626,7 @@ void Explore::makePlan() {
     goHome();
     return;
   }
-#endif
+#endif*/
 
   bool valid_plan = false;
   std::vector<geometry_msgs::PoseStamped> plan;
@@ -633,10 +634,12 @@ void Explore::makePlan() {
   PoseStamped goal_pose;
   goal_pose.header.frame_id = explore_costmap_ros_->getGlobalFrameID();
   goal_pose.header.stamp = ros::Time::now();
+  RatedFrontier possibleFrontier;
 
   int blacklist_count = 0;
   for (unsigned int i = 0; i < goals.size(); i++) {
-    goal_pose.pose = goals[i];
+    goal_pose.pose = goals[i].weighted_frontier.frontier.pose;
+    possibleFrontier = goals[i];
     if (goalOnBlacklist(goal_pose)) {
       blacklist_count++;
       continue;
@@ -648,8 +651,19 @@ void Explore::makePlan() {
       break;
     }
   }
+  
+  //if we're only REchecking things, ensure that the new frontier is much better to change to it
+  if( state != STATE_WAITING_FOR_GOAL && !atGoal() )
+  {
+    //so, in order to change frontiers while rechecking, the new frontier must be at least X PERCENT better
+    if(possibleFrontier.rating / currentFrontier.rating < 1.2)
+        return;
+  }
 
   if (valid_plan) {
+    //remember the new frontier's rating
+    currentFrontier = possibleFrontier;
+  
     move_base_msgs::MoveBaseGoal goal;
     goal.target_pose = goal_pose;
     current_goal_pose_stamped_ = goal_pose;

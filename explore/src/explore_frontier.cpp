@@ -128,9 +128,11 @@ void ExploreFrontier::computePotentialFromRobot(Costmap2DROS* costmap, navfn::Na
 /*
   Rate frontiers according to a new algorithm
 */
+//std::vector<geometry_msgs::Pose>& goals, double potential_scale,
+
 bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap_ros,
   tf::Stamped<tf::Pose> robot_pose, navfn::NavfnROS* planner,
-  std::vector<geometry_msgs::Pose>& goals, double potential_scale,
+  std::vector<RatedFrontier>& goals, double potential_scale,
   double orientation_scale, double gain_scale, std::vector<Waypoint*>* topo_map)
 {
   // May not have created topomap yet
@@ -305,7 +307,8 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap_ros,
   goals.clear();
   goals.reserve(rated_frontiers_.size());
   for (unsigned int i = 0; i < rated_frontiers_.size(); ++i) {
-    goals.push_back(rated_frontiers_[i].weighted_frontier.frontier.pose);
+    //goals.push_back(rated_frontiers_[i].weighted_frontier.frontier.pose);
+    goals.push_back(rated_frontiers_[i]);
   }
 
   // We don't need these for this algorithm, but clearing them allows
