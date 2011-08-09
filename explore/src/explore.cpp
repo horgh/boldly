@@ -1118,13 +1118,13 @@ void Explore::setState(int new_state) {
   std::string s;
   switch (new_state) {
     case STATE_HEADING_HOME:
-      s = "HEADING_HOME"; 
+      s = "HEADING HOME"; 
       break;
     case STATE_EXPLORING:
       s = "EXPLORING";
       break;
     case STATE_WAITING_FOR_GOAL:
-      s = "WAITING_FOR_GOAL";
+      s = "WAITING FOR GOAL";
       break;
     case STATE_CHARGING:
       s = "CHARGING";
