@@ -189,6 +189,19 @@ Topomap::Topomap(costmap_2d::Costmap2DROS* costmap_ros, double start_world_x,
   }
 }
 
+Topomap::~Topomap() {
+  for (std::vector<MapWaypoint*>::iterator it = map_topomap.begin();
+    it < map_topomap.end(); ++it)
+  {
+    delete *it;
+  }
+  for (std::vector<Waypoint*>::iterator it = topomap.begin();
+    it < topomap.end(); ++it)
+  {
+    delete *it;
+  }
+}
+
 //this function takes a starting point and creates a topological map of the image from that point.
 //the function stops when it cannot make a new waypoint without placing one in an area already covered by waypoints
 //however you can stop is short by specifying a maxPoints. Make maxPoints large (INT_MAX) if you want it to find

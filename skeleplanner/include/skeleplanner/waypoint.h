@@ -75,7 +75,8 @@ protected:
   std::vector<bool> ignore;
 
   int calcSpace(int x, int y, const costmap_2d::Costmap2D& costmap);
-// bool straightClear(int x1, int y1, int x2, int y2, const costmap_2d::Costmap2D& costmap);
+// bool straightClear(int x1, int y1, int x2, int y2,
+//  const costmap_2d::Costmap2D& costmap);
   MapWaypoint waypointBest(int x, int y, const costmap_2d::Costmap2D& costmap);
 
   // Topomap in world coordinates
@@ -86,6 +87,7 @@ protected:
 
 public:
  Topomap(costmap_2d::Costmap2DROS* costmap_ros, double world_x, double world_y);
+ ~Topomap();
 
   void update(const costmap_2d::Costmap2DROS* costmap_ros, bool showDebug=false);
   std::vector<Waypoint*>* get_topomap();

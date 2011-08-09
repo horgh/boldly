@@ -13,6 +13,7 @@
   http://ros-users.122217.n3.nabble.com/sonar-data-for-navigation-stack-td986448.html
 
   P3DX spec says 8 sonar, 180 degrees @ 20 degree intervals each
+  Stage says they have 30 degree fov.
 
   From Stage definition for P3DX sonars, seems to be
   [0] @ (0.069 -0.136) = -90 degrees (far left front sonar)
@@ -85,10 +86,21 @@ public:
 
 // This many sonars on the front. Assume index starts at 0
 #define NUM_SONARS 8
-// If this is 0, multiple laser ranges are replaced
-#define SINGLE_RANGE_REPLACEMENT 0
 // Samples to average to limit error
 #define SAMPLE_COUNT 5
+// We discount sonar readings when they are >= this value
+#define SONAR_MAX_VALUE 2.0
+
+// If this is 0, multiple laser ranges are replaced
+#define SINGLE_RANGE_REPLACEMENT 0
+// Number of indices into laser array to replace with sonar data
+// (when found to be valuable) on either side of the centre of the
+// sonar. So giving 5 here means replacing indices in the laser array
+// from [centre_index - VALUE, centre_index + value]
+// Only used when SINGLE_RANGE_REPLACEMENT is 0
+// 12 = ceil(180 / 8 / 2) : 180 degrees / 8 sonars / 2 for indices being
+// replaced on both sides of the centre index
+#define NUM_REPLACEMENTS 12
 
 //#define DEBUG
 
@@ -119,6 +131,7 @@ void laser_callback(const sensor_msgs::LaserScan::ConstPtr & laser_scan) {
     // For reference, see http://comments.gmane.org/gmane.science.robotics.ros.user/6508
 
 	//1 meter is TOO restrictive. make it 1.5    
+//we still want this to be smaller than the max sonar range, since the cone introduces error
     if (sonar_array.sonars[i].range >= 1.5)
       continue;
 
@@ -135,7 +148,7 @@ void laser_callback(const sensor_msgs::LaserScan::ConstPtr & laser_scan) {
 #if SINGLE_RANGE_REPLACEMENT
       sonarify_laser_scan.ranges[laser_scan_index] = sonar_array.sonars[i].range + sonar_array.sonars[i].offset;
 #else
-      for (int j = 0; j < 180/8; j++) {
+      for (int j = 0; j < NUM_REPLACEMENTS; j++) {
         if (laser_scan_index - j >= 0)
           sonarify_laser_scan.ranges[laser_scan_index-j] = sonar_array.sonars[i].range + sonar_array.sonars[i].offset;
         if (laser_scan_index + j < (int) sonarify_laser_scan.ranges.size())
