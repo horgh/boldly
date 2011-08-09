@@ -7,7 +7,7 @@
 
 class Notifier {
 public:
-  ros::Publisher state_pub;
+  //ros::Publisher state_pub;
   ros::Publisher sound_pub;
 
   Notifier(ros::NodeHandle* n);

@@ -6,11 +6,14 @@
 #include <explore/notifier.h>
 
 Notifier::Notifier(ros::NodeHandle* n) {
-  state_pub = n->advertise<std_msgs::String>("boldly_state", 1000);
+  //state_pub = n->advertise<std_msgs::String>("boldly_state", 1000);
   sound_pub = n->advertise<sound_play::SoundRequest>("robotsound", 1000);
 }
 
 void Notifier::publish(std::string state) {
+/*
+  using state_pub above.
+
   std::stringstream ss;
   ss << state;
 
@@ -19,6 +22,7 @@ void Notifier::publish(std::string state) {
 
   // Publish string
   state_pub.publish(msg);
+*/
 
   // Publish to audio
   sound_play::SoundRequest sound_request;
