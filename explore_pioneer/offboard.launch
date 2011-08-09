@@ -19,6 +19,9 @@
   <!-- gmapping -->
   <include file="$(find explore_pioneer)/gmapping.xml" />
 
+  <!-- soundplay_node -->
+  <node pkg="sound_play" type="soundplay_node.py" name="soundplay_node" />
+
   <!-- explore controller -->
   <include file="$(find explore_pioneer)/explore_slam.xml" />
 </launch>
