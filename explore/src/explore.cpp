@@ -255,7 +255,7 @@ void Explore::find_furthest_reachable_point_from_home() {
 
   std::vector<geometry_msgs::PoseStamped> plan;
 
-  double furthest_distance = 0.0;
+  furthest_distance = 0.0;
   double furthest_x, furthest_y;
 
   // Want to be able to find plans from home
@@ -1184,7 +1184,8 @@ void Explore::execute() {
     PoseStamped output_stamped;
     tf::poseStampedTFToMsg(output_pose, output_stamped);
     outputTime = time (NULL);
-    fprintf (outputFile, "%d %f %f\n", outputTime, output_stamped.pose.position.x, output_stamped.pose.position.y);
+    //fprintf (outputFile, "%d %f %f\n", outputTime, output_stamped.pose.position.x, output_stamped.pose.position.y);
+    fprintf (outputFile, "%d %f %f %f\n", outputTime, output_stamped.pose.position.x, output_stamped.pose.position.y, furthest_distance);
     fflush(outputFile);
 
     if (close_loops_) {
@@ -1276,9 +1277,7 @@ void Explore::execute() {
       }
     }
 
-#ifdef SIMULATION
     find_furthest_reachable_point_from_home();
-#endif
 
     last_pose = currentPoseStamped();
     r.sleep();

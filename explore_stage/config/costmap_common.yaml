@@ -3,8 +3,8 @@ transform_tolerance: 0.5
 max_obstacle_height: 2.0
 #obstacle_range: 2.5
 #raytrace_range: 3.0
-obstacle_range: 80.0
-raytrace_range: 80.0
+obstacle_range: 20.0
+raytrace_range: 20.0
 
 #inscribed_radius: 0.385
 inscribed_radius: 0.2555

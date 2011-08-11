@@ -11,7 +11,7 @@
     <!-- resolution -->
     <param name="delta" value="0.20" />
 
-    <param name="maxUrange" value="80.0" />
+    <param name="maxUrange" value="20.0" />
     <param name="particles" value="30" />
 
     <param name="xmin" value="-5.0" />
