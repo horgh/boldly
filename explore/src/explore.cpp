@@ -380,6 +380,9 @@ Explore::Explore() :
         move_base_client_,
         *explore_costmap_ros_,
         client_mutex_);
+        
+  //open file for writing
+  outputFile = fopen ("poses_output","w");
 
   // Assume start position is our home. Record it
   tf::Stamped<tf::Pose> robot_pose;
@@ -672,8 +675,8 @@ void Explore::makePlan() {
   if( state != STATE_WAITING_FOR_GOAL && !atGoal() )
   {
     //so, in order to change frontiers while rechecking, the new frontier must be at least X PERCENT better
-    if(possibleFrontier.rating / currentFrontier.rating < 1.2)
-        return;
+    /*if(possibleFrontier.rating / currentFrontier.rating < 1.2)
+        return;*/
   }
 
   if (valid_plan) {
@@ -1174,6 +1177,15 @@ void Explore::execute() {
   explorer_->computePotentialFromRobot(explore_costmap_ros_, planner_);
 
   while (node_.ok()) {
+  
+    //output current pose to file
+    tf::Stamped<tf::Pose> output_pose;
+    explore_costmap_ros_->getRobotPose(output_pose);
+    PoseStamped output_stamped;
+    tf::poseStampedTFToMsg(output_pose, output_stamped);
+    outputTime = time (NULL);
+    fprintf (outputFile, "%d %f %f\n", outputTime, output_stamped.pose.position.x, output_stamped.pose.position.y);
+    fflush(outputFile);
 
     if (close_loops_) {
       tf::Stamped<tf::Pose> robot_pose;

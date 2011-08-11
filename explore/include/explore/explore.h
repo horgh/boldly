@@ -184,6 +184,10 @@ private:
   boost::mutex client_mutex_;
   bool   close_loops_;
   
+  //output to file
+  FILE * outputFile;
+  time_t outputTime;
+  
   //our current frontier rating
   RatedFrontier currentFrontier;
 
