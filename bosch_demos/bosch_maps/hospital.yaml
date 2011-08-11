@@ -1,0 +1,9 @@
+image: hospital.png
+#resolution: 0.2
+resolution: 0.06737247
+#origin: [12.0, -1.50, 0.0]
+#origin: [85.0, 40.0, 0.0]
+origin: [0.0, 0.0, 0.0]
+occupied_thresh: 0.6
+free_thresh: 0.1
+negate: 0

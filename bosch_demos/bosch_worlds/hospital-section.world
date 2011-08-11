@@ -60,11 +60,15 @@ floorplan
 
   # This should match our costmap sizes.
   #size [140.000 60.000 2.500]
-  size [170.000 80.000 2.500]
+  #size [170.000 80.000 2.500]
+  size [210.000 80.000 2.500]
   #size [300.000 150.000 2.500]
   #pose [2 2.500 0 0]
-  pose [12 -1.5 0 0]
-  #pose [5 2.500 0 0]
+
+  # Previously used:
+  #pose [12 -1.5 0 0]
+  pose [0.0 0.0 0.0 0.0]
+
   bitmap "../bosch_maps/hospital.png"
 
 )

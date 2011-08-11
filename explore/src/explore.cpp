@@ -285,7 +285,7 @@ void Explore::find_furthest_point() {
     goal_pose_stamped.pose.position.x = x;
     goal_pose_stamped.pose.position.y = y;
     // Seem to have a valid plan
-    if ( planner_->getPlanFromPotential(goal_pose_stamped, plan) && !plan.empty() ) {
+    if ( planner_->getPlanFromPotential(goal_pose_stamped, plan) && !plan.empty() && plan.size() > 2 ) {
       // XXX May need to ensure that the plan does not go through unknown cells
 
       furthest_distance = distance;
@@ -293,6 +293,14 @@ void Explore::find_furthest_point() {
       furthest_y = y;
     }
   }
+
+  ROS_WARN("Furthest distance: %f", furthest_distance);
+
+  goal_pose_stamped.pose.position.x = furthest_x;
+  goal_pose_stamped.pose.position.y = furthest_y;
+  planner_->getPlanFromPotential(goal_pose_stamped, plan);
+
+  plan.push_back(home_pose_msg);
 
   // Visualise the plan & furthest pt
   int id = 0;
@@ -306,6 +314,7 @@ void Explore::find_furthest_point() {
       0.0, 245.0, 255.0, 0.5, // turquoise
       &markers, "furthest");
     topomap_publisher_marker_id++;
+    //ROS_WARN("Marker at %f %f", it->pose.position.x, it->pose.position.y);
   }
 
   // Publish the markers
@@ -314,6 +323,7 @@ void Explore::find_furthest_point() {
     ++it)
   {
     topomap_marker_publisher_.publish( *it );
+    //ROS_WARN("publishing a marker");
   }
 
   // Leave planner in expected state
@@ -1153,6 +1163,12 @@ void Explore::execute() {
   ROS_INFO("Explore: Connected to move_base server.");
 
   ros::Rate r(planner_frequency_);
+
+  while (node_.ok()) {
+    find_furthest_point();
+    publishMap();
+    r.sleep();
+  }
 
   // We need this initially or may think we should go home already!
   explorer_->computePotentialFromRobot(explore_costmap_ros_, planner_);
