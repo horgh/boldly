@@ -31,5 +31,5 @@ global_costmap:
   #height: 60.0
   #origin_x: -30.0
   #origin_y: -30.0
-  resolution: 0.1
+  #resolution: 0.1
   #resolution: 0.05
