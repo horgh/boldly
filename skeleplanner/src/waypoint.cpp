@@ -139,7 +139,7 @@ MapWaypoint Topomap::waypointBest(int x, int y, const costmap_2d::Costmap2D& cos
         }
                   
         //don't use new waypoints that are clustered around current ones
-        if(innerWaypoints >= 3 || tmps <= 1)
+        if(innerWaypoints >= 2 || tmps <= 1)
           continue;
                       
         if(tmps > newm)
