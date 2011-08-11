@@ -284,11 +284,14 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap_ros,
     // Normalise size (area)
     double size = (gain_scale * getFrontierGain(it->frontier, costmapResolution_)) / max_area;
 
-    //double rating = size * exp(-1.0*lambda*it->cost);
-    // Normalise rating
-    //double rating = size / (it->cost / max_cost);
-    //double endness = sqrt(it2->vectorx*it2->vectorx + it2->vectory*it2->vectory);
-    double rating = size * std::abs(it2->corrCoeff) * it2->endness;
+    //1) our rating - corrCoeff is a little deceptive. It's really a measure of linearity.
+    //double rating = size * std::abs(it2->corrCoeff) * it2->endness;
+    
+    //2) plain size as rating
+    //double rating = size;
+    
+    //3) ros / duhadway / bosch -like frontier selection
+    double rating = (gain_scale * getFrontierGain((*it).frontier, costmapResolution_)) - (potential_scale * getFrontierCost((*it).frontier) + orientation_scale * getOrientationChange((*it).frontier, robot_pose));
     
     ROS_WARN("A %f L %f rating %f lambda %f", size, (it->cost / max_cost), rating, lambda);
 
