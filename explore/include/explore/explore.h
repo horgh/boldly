@@ -74,7 +74,12 @@ public:
   void visualize_blacklisted();
   double distance_between_coords(double x1, double y1, double x2, double y2);
   void visualize_plan(std::vector<geometry_msgs::PoseStamped>& plan);
-  void find_furthest_point();
+  void find_furthest_reachable_point_from_home();
+
+  /**
+   * @brief publish map
+   */
+  void publishMap();
 
   /**
    * @brief  Constructor
@@ -109,11 +114,6 @@ private:
    * @param  goal The goal to visualize
    */
   void publishGoal(const geometry_msgs::Pose& goal);
-
-  /**
-   * @brief publish map
-   */
-  void publishMap();
 
   void reachedGoal(const actionlib::SimpleClientGoalState& status, const move_base_msgs::MoveBaseResultConstPtr& result, geometry_msgs::PoseStamped frontier_goal);
 

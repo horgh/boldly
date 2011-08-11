@@ -23,7 +23,8 @@ rosbuild_add_boost_directories()
 rosbuild_add_library(explore_lib
 src/explore_frontier.cpp
 src/loop_closure.cpp
-src/notifier.cpp)
+src/notifier.cpp
+src/explore.cpp)
 set_target_properties(explore_lib
                       PROPERTIES OUTPUT_NAME "explore")
 rosbuild_link_boost(explore_lib thread)
@@ -33,3 +34,8 @@ rosbuild_add_executable(explore src/explore.cpp)
 target_link_libraries(explore explore_lib)
 #target_link_libraries(explore skeleplanner)
 target_link_libraries(explore topomap)
+
+# Find max
+rosbuild_add_executable(find_max src/find_max.cpp)
+target_link_libraries(find_max explore_lib)
+target_link_libraries(find_max topomap)

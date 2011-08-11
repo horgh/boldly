@@ -234,7 +234,7 @@ double Explore::distance_between_coords(double x1, double y1, double x2, double 
   Look at our current costmap. Find the longest straight line point from home
   that we can reach. Mark the point, and draw the plan.
 */
-void Explore::find_furthest_point() {
+void Explore::find_furthest_reachable_point_from_home() {
   costmap_2d::Costmap2D costmap;
   explore_costmap_ros_->getCostmapCopy(costmap);
 
@@ -285,7 +285,7 @@ void Explore::find_furthest_point() {
     goal_pose_stamped.pose.position.x = x;
     goal_pose_stamped.pose.position.y = y;
     // Seem to have a valid plan
-    if ( planner_->getPlanFromPotential(goal_pose_stamped, plan) && !plan.empty() ) {
+    if ( planner_->getPlanFromPotential(goal_pose_stamped, plan) && !plan.empty() && plan.size() > 2) {
       // XXX May need to ensure that the plan does not go through unknown cells
 
       furthest_distance = distance;
@@ -293,6 +293,18 @@ void Explore::find_furthest_point() {
       furthest_y = y;
     }
   }
+
+  ROS_WARN("Furthest distance: %f", furthest_distance);
+
+  // Make sure the plan to furthest pos is used... (Not needed?)
+  goal_pose_stamped.pose.position.x = furthest_x;
+  goal_pose_stamped.pose.position.y = furthest_y;
+  planner_->getPlanFromPotential(goal_pose_stamped, plan);
+
+  // Ensure we visualise home when we visualise the path
+  plan.push_back(home_pose_msg);
+
+  ROS_WARN("Plan size: %d", plan.size());
 
   // Visualise the plan & furthest pt
   int id = 0;
@@ -333,7 +345,7 @@ Explore::Explore() :
 
   marker_publisher_ = node_.advertise<Marker>("visualization_marker",10);
   marker_array_publisher_ = node_.advertise<MarkerArray>("visualization_marker_array",10);
-  topomap_marker_publisher_ = node_.advertise<Marker>("topomap_marker", 3000);
+  topomap_marker_publisher_ = node_.advertise<Marker>("topomap_marker", 5000);
   map_publisher_ = private_nh.advertise<nav_msgs::OccupancyGrid>("map", 1, true);
   voltage_subscriber_ = node_.subscribe<p2os_driver::BatteryState>("battery_state", 1, &Explore::battery_state_callback, this);
   charged_subscriber_ = node_.subscribe<std_msgs::Empty>("charge_complete", 1, &Explore::charge_complete_callback, this);
@@ -400,13 +412,17 @@ Explore::Explore() :
   max_vel_x = 0.0;
   private_nh.getParam("/move_base/TrajectoryPlannerROS/max_vel_x", max_vel_x);
   ROS_WARN("Robot has max speed %f", max_vel_x);
-  assert(max_vel_x != 0.0);
+  //assert(max_vel_x != 0.0);
+  if (max_vel_x == 0.0)
+    ROS_WARN("**** We have max_vel_x = 0.0!");
 
   // And max turn speed
   max_vel_th = 0.0;
   private_nh.getParam("/move_base/TrajectoryPlannerROS/max_vel_th", max_vel_th);
   ROS_WARN("Robot has max turn speed %f", max_vel_th);
-  assert(max_vel_th != 0.0);
+  //assert(max_vel_th != 0.0);
+  if (max_vel_th == 0.0)
+    ROS_WARN("**** We have max_vel_th = 0.0!");
 
   topomap_ = new Topomap(explore_costmap_ros_, home_pose_msg.pose.position.x,
     home_pose_msg.pose.position.y);
@@ -1249,7 +1265,7 @@ void Explore::execute() {
     }
 
 #ifdef SIMULATION
-    find_furthest_point();
+    find_furthest_reachable_point_from_home();
 #endif
 
     last_pose = currentPoseStamped();
