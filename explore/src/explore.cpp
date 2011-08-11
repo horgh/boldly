@@ -343,8 +343,8 @@ Explore::Explore() :
 {
   ros::NodeHandle private_nh("~");
 
-  marker_publisher_ = node_.advertise<Marker>("visualization_marker",10);
-  marker_array_publisher_ = node_.advertise<MarkerArray>("visualization_marker_array",10);
+  marker_publisher_ = node_.advertise<Marker>("visualization_marker",10000);
+  marker_array_publisher_ = node_.advertise<MarkerArray>("visualization_marker_array",10000);
   topomap_marker_publisher_ = node_.advertise<Marker>("topomap_marker", 5000);
   map_publisher_ = private_nh.advertise<nav_msgs::OccupancyGrid>("map", 1, true);
   voltage_subscriber_ = node_.subscribe<p2os_driver::BatteryState>("battery_state", 1, &Explore::battery_state_callback, this);
@@ -497,12 +497,12 @@ void Explore::publishMap() {
 /*
 	For visualization
 */
-void Explore::publishGoal(const geometry_msgs::Pose& goal){
+void Explore::publishGoal(int marker_id, const geometry_msgs::Pose& goal){
   visualization_msgs::Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = ros::Time::now();
   marker.ns = "explore_goal";
-  marker.id = 0;
+  marker.id = marker_id;
   marker.type = visualization_msgs::Marker::ARROW;
   marker.pose = goal;
   marker.scale.x = 0.5;
@@ -697,9 +697,6 @@ void Explore::makePlan() {
     //time_since_progress_ = 0.0;
     time_following_plan_ = 0.0;
 
-    if (visualize_) {
-      publishGoal(goal_pose.pose);
-    }
   } else {
     ROS_WARN("Done exploring with %d goals left that could not be reached. There are %d goals on our blacklist, and %d of the frontier goals are too close to them to pursue. The rest had global planning fail to them. \n", (int)goals.size(), (int)frontier_blacklist_.size(), blacklist_count);
     ROS_INFO("Exploration finished. Hooray.");
@@ -912,7 +909,6 @@ void Explore::moveRandomDirection() {
   ROS_WARN("**** Moving random direction %f ****", goal.target_pose.pose.orientation.w);
 
   move_base_client_.sendGoal(goal);
-  publishGoal(goal.target_pose.pose); 
 
   move_base_client_.waitForResult();
 
@@ -1254,6 +1250,8 @@ void Explore::execute() {
       publishMap();
 
       topomap_publisher_marker_id = 0;
+      publishGoal(topomap_publisher_marker_id, current_goal_pose_stamped_.pose);
+      topomap_publisher_marker_id++;
 
       // and topomap
       topomap_publisher_marker_id = topomap_->publish_topomap(&topomap_marker_publisher_, topomap_publisher_marker_id);

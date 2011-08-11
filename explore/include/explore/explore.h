@@ -113,7 +113,7 @@ private:
    * @brief  Publish a goal to the visualizer
    * @param  goal The goal to visualize
    */
-  void publishGoal(const geometry_msgs::Pose& goal);
+  void publishGoal(int marker_id, const geometry_msgs::Pose& goal);
 
   void reachedGoal(const actionlib::SimpleClientGoalState& status, const move_base_msgs::MoveBaseResultConstPtr& result, geometry_msgs::PoseStamped frontier_goal);
 

@@ -317,7 +317,7 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap_ros,
   // We don't need these for this algorithm, but clearing them allows
   // us to recognise when using this algorithm to visualise rated_frontiers_
   // only (see getVisualizationMarkers())
-  frontiers_.clear();
+  //frontiers_.clear();
 
   return goals.size() > 0;
 }
@@ -523,14 +523,18 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
 
       segments.push_back(segment);
       segment_id--;
+      /*
       if (segment_id < -127)
         break;
+      */
     }
   }
 
+  /*
   int num_segments = 127 - segment_id;
   if (num_segments <= 0)
     return;
+  */
 
   for (unsigned int i=0; i < segments.size(); i++) {
     Frontier frontier;
@@ -569,6 +573,7 @@ void ExploreFrontier::getVisualizationMarkers(std::vector<Marker>& markers)
    * rated_frontiers_. Fill rated_frontiers_ with frontiers_ if this
    * is the case
    */
+   /*
   if (frontiers_.size() > 0) {
     rated_frontiers_.clear();
 
@@ -582,6 +587,7 @@ void ExploreFrontier::getVisualizationMarkers(std::vector<Marker>& markers)
       rated_frontiers_.push_back( rated_frontier );
     }
   }
+  */
 
   /*
     Frontier as a cube
@@ -655,6 +661,19 @@ void ExploreFrontier::getVisualizationMarkers(std::vector<Marker>& markers)
     markers.push_back(Marker(m_text));
     id++;
   }
+  /*
+   * Draw regular frontiers
+  for (uint i = 0; i < frontiers_.size(); ++i) {
+    Frontier frontier = frontiers_[i];
+    m.id = id;
+    m.pose = frontier.pose;
+    m.scale.x = 2.0;
+    m.scale.y = 2.0;
+    m.scale.z = 2.0;
+    markers.push_back(Marker(m));
+    ++id;
+  }
+  */
 
   m.action = Marker::DELETE;
   for (; id < lastMarkerCount_; id++) {
