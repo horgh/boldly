@@ -1188,11 +1188,13 @@ void Explore::execute() {
     fprintf (outputFile, "%d %f %f %f\n", outputTime, output_stamped.pose.position.x, output_stamped.pose.position.y, furthest_distance);
     fflush(outputFile);
 
+/*
     if (close_loops_) {
       tf::Stamped<tf::Pose> robot_pose;
       explore_costmap_ros_->getRobotPose(robot_pose);
       loop_closure_->updateGraph(robot_pose);
     }
+*/
 
     if (state != STATE_CHARGING && exploration_runs_ < EXPLORATION_RUNS) {
 #ifdef BATTERY_TIMER
