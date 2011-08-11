@@ -252,6 +252,14 @@ void Topomap::update(const costmap_2d::Costmap2DROS* costmap_ros, bool showDebug
       memo[i][j] = -1;
     }
   }
+  
+  //refresh the waypointBests for each since they're probably too conservative now
+  for(unsigned int j = 0; j < map_topomap.size(); ++j)
+    {
+      MapWaypoint* tmp = map_topomap[j];
+      MapWaypoint tmp_mapwaypoint = waypointBest(tmp->x, tmp->y, costmap);
+      tmp->space = tmp_mapwaypoint.space;
+    }
 
   // add waypoints
   for (unsigned int i = 0; true; ++i)
@@ -316,7 +324,7 @@ void Topomap::update(const costmap_2d::Costmap2DROS* costmap_ros, bool showDebug
     map_topomap.push_back(newway);
 
     // only recalc waypointBest for nearby waypoints
-    for(unsigned int j = 0; j < map_topomap.size() - 1; ++j)
+    /*for(unsigned int j = 0; j < map_topomap.size() - 1; ++j)
     {
       MapWaypoint* tmp = map_topomap[j];
 
@@ -331,7 +339,7 @@ void Topomap::update(const costmap_2d::Costmap2DROS* costmap_ros, bool showDebug
         MapWaypoint tmp_mapwaypoint = waypointBest(tmp->x, tmp->y, costmap);
         tmp->space = tmp_mapwaypoint.space;
       }
-    }
+    }*/
 
     maxWaypoint->neighbors.push_back(newway);
     worldMax->neighbors.push_back(newworld);
