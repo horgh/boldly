@@ -235,6 +235,9 @@ private:
   std::vector<geometry_msgs::PoseStamped> current_plan_;
 
   Notifier* notifier_;
+
+  // Furthest distance we can travel from home
+  double furthest_distance;
 };
 
 }

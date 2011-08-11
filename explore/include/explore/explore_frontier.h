@@ -50,7 +50,7 @@
 
 #include <skeleplanner/waypoint.h>
 
-#define FRONTIERDEPTH 10
+#define FRONTIERDEPTH 15
 
 namespace explore {
 

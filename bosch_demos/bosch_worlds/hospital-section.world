@@ -76,8 +76,7 @@ floorplan
 
 #pioneer2dx (
 pioneer3dx (
-  #pose [-10.071 3.186 0 -2.333]
-  pose [-3.0 -3.0 0.0 0.0]
+  pose [-105 -20 0.0 0.0]
   name "pioneer"
   sick(pose [0.0 0.0 0.0 0.0])
 )

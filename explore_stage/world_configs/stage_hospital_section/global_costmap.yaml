@@ -6,8 +6,8 @@ global_costmap:
   publish_frequency: 0.5
   #raytrace_range: 30.0
   #obstacle_range: 5.0
-  raytrace_range: 80.0
-  obstacle_range: 80.0
+  raytrace_range: 20.0
+  obstacle_range: 20.0
 
   # For gmapping, need static true
   static_map: true
