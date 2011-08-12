@@ -593,10 +593,10 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
       costmap.mapToWorld(proposedx, proposedy, xworld, yworld);
       frontier.pose.position.x = xworld;
       frontier.pose.position.y = yworld;
+      frontier.pose.orientation = tf::createQuaternionMsgFromYaw(btAtan2(1.0, 1.0));
       int pw = 1 + ((r.x2 - r.x1) / 2);
       int ph = 1 + ((r.y2 - r.y1) / 2);
-      frontier.size = std::max(pw/2.0, ph/2.0);
-      
+      frontier.size = std::max(pw/2.0, ph/2.0);      
 
       frontiers_.push_back(frontier);
   }
@@ -668,7 +668,7 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
         if (idx-map_.info.width < size && map_.data[idx-map_.info.width] == -128)
           neighbors.push_back(idx-map_.info.width);
         if (idx-map_.info.width+1 < size && map_.data[idx-map_.info.width+1] == -128)
-          neighbors.push_back(idx-map_.info.width+1);
+          neighbors.push_back(idx-map_.info.width+1);frontier.pose.orientation.
         if (idx-map_.info.width-1 < size && map_.data[idx-map_.info.width-1] == -128)
           neighbors.push_back(idx-map_.info.width-1);
         if (idx+map_.info.width < size && map_.data[idx+map_.info.width] == -128)
@@ -759,7 +759,7 @@ void ExploreFrontier::getVisualizationMarkers(std::vector<Marker>& markers)
   m.id = 0;
   m.ns = "frontiers";
   //m.type = Marker::ARROW;
-  m.type = Marker::CUBE;
+  m.type = Marker::SPHERE;
   m.pose.position.x = 0.0;
   m.pose.position.y = 0.0;
   m.pose.position.z = 0.0;
@@ -772,7 +772,7 @@ void ExploreFrontier::getVisualizationMarkers(std::vector<Marker>& markers)
   m.color.g = 0;
   m.color.b = 255;
   //m.color.a = 255;
-  m.color.a = 0.5;
+  m.color.a = 0.2;
   m.lifetime = ros::Duration(0);
   m.action = Marker::ADD;
 
