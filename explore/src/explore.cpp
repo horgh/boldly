@@ -374,11 +374,15 @@ Explore::Explore() :
   private_nh.param("orientation_scale", orientation_scale_, 0.0); // TODO: set this back to 0.318 once getOrientationChange is fixed
   private_nh.param("gain_scale", gain_scale_, 1.0);
 
+  int rating_type_;
+  private_nh.param("rating_type", rating_type_, 0);
+  ROS_WARN("Rating type: %d", rating_type_);
+
   explore_costmap_ros_ = new Costmap2DROS(std::string("explore_costmap"), tf_);
   explore_costmap_ros_->clearRobotFootprint();
 
   planner_ = new navfn::NavfnROS(std::string("explore_planner"), explore_costmap_ros_);
-  explorer_ = new ExploreFrontier();
+  explorer_ = new ExploreFrontier(rating_type_);
   loop_closure_ = new LoopClosure(loop_closure_addition_dist_min,
         loop_closure_loop_dist_min,
         loop_closure_loop_dist_max,

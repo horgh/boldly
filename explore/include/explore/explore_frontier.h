@@ -121,6 +121,8 @@ struct FrontierStats {
  */
 class ExploreFrontier {
 private:
+  int rating_type_;
+
   nav_msgs::OccupancyGrid map_;
 
   uint lastMarkerCount_;
@@ -160,7 +162,7 @@ protected:
   virtual float getFrontierGain(const Frontier& frontier, double map_resolution);
 
 public:
-  ExploreFrontier();
+  ExploreFrontier(int rating_type);
   virtual ~ExploreFrontier();
 
   /**

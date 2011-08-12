@@ -190,6 +190,9 @@ private:
   //output to file
   FILE * outputFile;
   time_t outputTime;
+
+  // which frontier rating scheme to use
+  int rating_type_;
   
   //our current frontier rating
   RatedFrontier currentFrontier;

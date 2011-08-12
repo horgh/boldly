@@ -47,11 +47,12 @@ using namespace costmap_2d;
 
 namespace explore {
 
-ExploreFrontier::ExploreFrontier() :
+ExploreFrontier::ExploreFrontier(int rating_type) :
   map_(),
   lastMarkerCount_(0),
   planner_(NULL),
-  frontiers_()
+  frontiers_(),
+  rating_type_(rating_type)
 {
 }
 
@@ -288,14 +289,23 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap_ros,
     // Normalise size (area)
     double size = (gain_scale * getFrontierGain(it->frontier, costmapResolution_)) / max_area;
 
-    //1) our rating - corrCoeff is a little deceptive. It's really a measure of linearity.
-    double rating = size * std::abs(it2->corrCoeff) * std::abs(it2->corrCoeff) * it2->endness * it2->endness;
+    double rating;
+    if (rating_type_ == 0) {
+      //0) our rating - corrCoeff is a little deceptive. It's really a measure of linearity.
+      rating = size * std::abs(it2->corrCoeff) * std::abs(it2->corrCoeff) * it2->endness * it2->endness;
 
-    //2) plain size as rating
-    //double rating = size;
+    } else if (rating_type_ == 1) {
+      //1) plain size as rating
+      rating = size;
     
-    //3) ros / duhadway / bosch -like frontier selection
-    //double rating = (gain_scale * getFrontierGain((*it).frontier, costmapResolution_)) - (potential_scale * getFrontierCost((*it).frontier) + orientation_scale * getOrientationChange((*it).frontier, robot_pose));
+    } else if (rating_type_ == 2) {
+      //2) ros / duhadway / bosch -like frontier selection
+      rating = (gain_scale * getFrontierGain((*it).frontier, costmapResolution_)) - (potential_scale * getFrontierCost((*it).frontier) + orientation_scale * getOrientationChange((*it).frontier, robot_pose));
+
+    } else {
+      assert(9 == 10);
+
+    }
     
     //4) our rating - corrCoeff is a little deceptive. It's really a measure of linearity.
     //double rating = size * std::abs(it2->corrCoeff) * it2->endness;
