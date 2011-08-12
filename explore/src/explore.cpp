@@ -1208,8 +1208,8 @@ void Explore::execute() {
 
       // We need a new exploration goal
       if (state != STATE_HEADING_HOME
-          && (state == STATE_WAITING_FOR_GOAL
-              || atGoal()
+          && (atGoal()
+              || state == STATE_WAITING_FOR_GOAL
 #ifdef REEVALUATE_PLANS
               || time_following_plan_ > REEVALUATE_PLANS_TIME
 #endif
