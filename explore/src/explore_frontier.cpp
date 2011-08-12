@@ -161,7 +161,7 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap_ros,
   for (std::vector<Frontier>::iterator it = frontiers_.begin();
     it < frontiers_.end() ; )
   {
-    for (std::vector<Frontier>::iterator it2 = it+1;
+    /*for (std::vector<Frontier>::iterator it2 = it+1;
       it2 < frontiers_.end() ; )
     {
       // Distance between the two frontiers
@@ -186,7 +186,7 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap_ros,
         continue;
       }
       ++it2;
-    }
+    }*/
     average_frontier_size += gain_scale * getFrontierGain(*it, costmapResolution_);
     ++it;
   }
@@ -409,14 +409,15 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
   Costmap2D costmap;
   costmap_.getCostmapCopy(costmap);
 
-  unsigned int idx;
+  int idx;
   unsigned int w = costmap.getSizeInCellsX();
   unsigned int h = costmap.getSizeInCellsY();
   unsigned int size = w * h;
 
   map_.info.width = w;
   map_.info.height = h;
-  //map_.set_data_size(size);
+  //?
+  map_.set_data_size(size);
   map_.data.resize(size);
   map_.info.resolution = costmap.getResolution();
   map_.info.origin.position.x = costmap.getOriginX();
@@ -433,19 +434,19 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
 //    geometry_msgs::Point p;
 //    costmap.mapToWorld(mx, my, p.x, p.y);
 //
-    //check if the point has valid potential and is next to unknown space
+    //check if the point is free and is next to unknown space
 //    bool valid_point = planner_->validPointPotential(p);
-    bool valid_point = map[idx] < LETHAL_OBSTACLE;
+    bool valid_point = map[idx] < LETHAL_OBSTACLE && map[idx] != NO_INFORMATION;
 
 		// Check if there is a cell with no information around our cell
     if ((valid_point && map) &&
         ( (idx+1 < size && map[idx+1] == NO_INFORMATION) ||
-          (idx-1 < size && map[idx-1] == NO_INFORMATION) ||
+          (idx-1 >= 0 && map[idx-1] == NO_INFORMATION) ||
           (idx+w < size && map[idx+w] == NO_INFORMATION) ||
-          (idx-w < size && map[idx-w] == NO_INFORMATION) ))
+          (idx-w >= 0 && map[idx-w] == NO_INFORMATION) ))
     {
-      frontier_points.push_back(Point(map[idx] % map_.info.width, map[idx] / map_.info.width));
-      map_.data[idx] = -128;
+      frontier_points.push_back(Point(idx % w, idx / w));
+      map_.data[idx] = -127;
       //map_.data[idx] = -128;
     /*
     } else {
@@ -454,8 +455,6 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
     */
     }
   }
-
-  ROS_WARN("Frontier size %d", frontier_points.size());
 
   std::vector<Point> frontier_cleaned;
   int sidelen = 2;
@@ -467,7 +466,7 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
     int i = (*it).x;
     int j = (*it).y;
 
-    int trans = (map_.info.width * j) + i;
+    int trans = (w * j) + i;
     
     for (int m = i-sidelen; m <= i+sidelen; m++)
     {
@@ -476,27 +475,25 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
         if(i == m && j == n)
           continue;
 
-        int trans2 = (map_.info.width * n) + m;
+        int trans2 = (w * n) + m;
         // if(costmap.getCost(m, n) >= LETHAL_OBSTACLE)
-        if(map_.data[trans2] == -128)
+        if(map_.data[trans2] == -127)
           count++;
       }
-
     }
-    if (count > 0)
-      ROS_WARN("some bullshit %d", count);
-    if (count >= (1+2*sidelen)*(1+2*sidelen)*0.3) {
+
+    if (true || count >= (1+2*sidelen)*(1+2*sidelen)*0.3) {
       frontier_cleaned.push_back(Point(i, j));
-      map_.data[trans] = -127;
+      map_.data[trans] = -126;
     }
   }
-  ROS_WARN("Frontier cleaned size %d", frontier_cleaned.size());
 
   //for (int i = 0; i < w; i++) {
   //  for (int j = 0; j < h; j++) {
+  int gsidelen = 1;
   for(std::vector<Point>::iterator it = frontier_cleaned.begin(); it != frontier_cleaned.end(); it++)
   {
-      bool alreadybelongs = false;
+      /*bool alreadybelongs = false;
       for (std::vector<Frontier>::iterator it2 = frontiers_.begin();
         it2 < frontiers_.end(); ++it2)
       {
@@ -506,25 +503,62 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
           alreadybelongs = true;
           break;
         }
-      }
-      if (alreadybelongs)
+      }*/
+      
+      int trans1 = (w * it->y) + it->x;
+      
+      if (map_.data[trans1] != -126)
         continue;
 
       Rectangle r(it->x, it->y, it->x, it->y);
-      while (1)
+      
+      //BFS grouping
+      std::vector<Point> p; //the points in the new frontier grouping
+      std::queue<Point> q;
+      p.push_back(Point(it->x, it->y));
+      q.push(Point(it->x, it->y));
+      while(!q.empty())
+      {
+        Point current = q.front();
+        q.pop();
+        int i = current.x;
+        int j = current.y;
+        
+        for (int m = i-gsidelen; m <= i+gsidelen; m++)
+        {
+          for(int n = j-gsidelen; n <= j+gsidelen; n++)
+          {
+            int trans2 = (w * n) + m;
+            if( map_.data[trans2] == -126 )
+            {
+                q.push(Point(m, n));
+                p.push_back(Point(m, n));   
+                map_.data[trans2] = 0;   
+                
+                r.x1 = std::min(r.x1, m);
+                r.x2 = std::max(r.x2, m);
+                r.y1 = std::min(r.y1, n);
+                r.y2 = std::max(r.y2, n);      
+            }
+          }
+        }
+      }
+      
+      //this is geometric grouping. This is not robust enough for when the robot is acting dumb in the beginning.
+      /*while (1)
       {
         bool mod = false;
         for(int i = r.x1; i <= r.x2; i++)
         {
             //if(costmap.getCost(i, r.y1-1, image) < BLACKTHRESH)
           int trans = (map_.info.width * (r.y1-1)) + i;
-          if(map_.data[trans] == -127)
+          if(map_.data[trans] == -126)
             {
                 r.y1--;
                 mod = true;
             }
           trans = (map_.info.width * (r.y2+1)) + i;
-          if(map_.data[trans] == -127)
+          if(map_.data[trans] == -126)
             {
                 r.y2++;
                 mod = true;
@@ -535,14 +569,14 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
         {
         //    if(colorSum(r.x1-1, i, image) < BLACKTHRESH)
           int trans = (map_.info.width * i) + (r.x1-1);
-          if(map_.data[trans] == -127)
+          if(map_.data[trans] == -126)
             {
                 r.x1--;
                 mod = true;
             }
             //if(colorSum(r.x2+1, i, image) < BLACKTHRESH)
           trans = (map_.info.width * i) + (r.x2+1);
-          if(map_.data[trans] == -127)
+          if(map_.data[trans] == -126)
             {
                 r.x2++;
                 mod = true;
@@ -551,7 +585,7 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
         
         if(!mod)
             break;
-      }
+      }*/
       Frontier frontier;
       double xworld, yworld;
       int proposedx = (r.x2 + r.x1) / 2;
@@ -559,12 +593,12 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
       costmap.mapToWorld(proposedx, proposedy, xworld, yworld);
       frontier.pose.position.x = xworld;
       frontier.pose.position.y = yworld;
-      int pw = (r.x2 - r.x1) / 2;
-      int ph = (r.y2 - r.y1) / 2;
-      frontier.size = sqrt(pw*pw + ph*ph);
+      int pw = 1 + ((r.x2 - r.x1) / 2);
+      int ph = 1 + ((r.y2 - r.y1) / 2);
+      frontier.size = std::max(pw/2.0, ph/2.0);
+      
 
       frontiers_.push_back(frontier);
-      ROS_WARN("Added a frontier");
   }
   return;
 
