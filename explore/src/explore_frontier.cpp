@@ -800,16 +800,15 @@ void ExploreFrontier::getVisualizationMarkers(std::vector<Marker>& markers)
   m_text.color.a = 1.0;
 
   uint id = 0;
-  /*
   for (uint i = 0; i < rated_frontiers_.size(); ++i) {
     RatedFrontier rated_frontier = rated_frontiers_[i];
 
     // Cube
     m.id = id;
     m.pose = rated_frontier.weighted_frontier.frontier.pose;
-    m.scale.x = rated_frontier.weighted_frontier.frontier.size / 20.0;
-    m.scale.y = rated_frontier.weighted_frontier.frontier.size / 20.0;
-    m.scale.z = rated_frontier.weighted_frontier.frontier.size / 20.0;
+    m.scale.x = rated_frontier.weighted_frontier.frontier.size / 2.0;
+    m.scale.y = rated_frontier.weighted_frontier.frontier.size / 2.0;
+    m.scale.z = rated_frontier.weighted_frontier.frontier.size / 2.0;
     markers.push_back(Marker(m));
     id++;
 
@@ -823,8 +822,8 @@ void ExploreFrontier::getVisualizationMarkers(std::vector<Marker>& markers)
     markers.push_back(Marker(m_text));
     id++;
   }
-  */
-  // draw regular
+  /*
+  // draw regular / raw frontiers
   for (uint i = 0; i < frontiers_.size(); ++i) {
     Frontier frontier = frontiers_[i];
     m.id = id;
@@ -835,6 +834,7 @@ void ExploreFrontier::getVisualizationMarkers(std::vector<Marker>& markers)
     markers.push_back(Marker(m));
     ++id;
   }
+  */
 
   m.action = Marker::DELETE;
   for (; id < lastMarkerCount_; id++) {
