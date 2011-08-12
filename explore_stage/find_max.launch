@@ -7,7 +7,7 @@
   <node pkg="map_server" type="map_server" name="map_server" args="$(find bosch_maps)/map_server_configs/hospital.yaml" />
 
   <!-- Depends on robot's initial position in specific world? -->
-  <node pkg="tf" type="static_transform_publisher" name="map_odom" args="105 40 0 0 0 0 map odom 100" />
+  <node pkg="tf" type="static_transform_publisher" name="map_odom" args="157.5 60 0 0 0 0 map odom 100" />
 
   <!-- Very similar to explore_slam.xml to run explore -->
   <node pkg="explore" type="find_max" respawn="false" name="explore" output="screen" >
