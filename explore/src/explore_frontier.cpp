@@ -60,6 +60,10 @@ ExploreFrontier::~ExploreFrontier()
 
 }
 
+inline double dist(double x1, double y1, double x2, double y2) {
+  return std::sqrt( (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
+}
+
 bool ExploreFrontier::getFrontiers(Costmap2DROS& costmap, std::vector<geometry_msgs::Pose>& frontiers)
 {
   findFrontiers(costmap);
@@ -418,6 +422,8 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
   map_.info.origin.position.x = costmap.getOriginX();
   map_.info.origin.position.y = costmap.getOriginY();
 
+  std::vector<Point> frontier_points;
+
   // Find all frontiers (open cells next to unknown cells).
   const unsigned char* map = costmap.getCharMap();
   for (idx = 0; idx < size; idx++) {
@@ -438,12 +444,131 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
           (idx+w < size && map[idx+w] == NO_INFORMATION) ||
           (idx-w < size && map[idx-w] == NO_INFORMATION) ))
     {
+      frontier_points.push_back(Point(map[idx] % map_.info.width, map[idx] / map_.info.width));
       map_.data[idx] = -128;
+      //map_.data[idx] = -128;
+    /*
     } else {
       map_.data[idx] = -127;
     }
+    */
+    }
   }
 
+  ROS_WARN("Frontier size %d", frontier_points.size());
+
+  std::vector<Point> frontier_cleaned;
+  int sidelen = 2;
+  //for (int i = 0; i < w; i++) {
+  //  for (int j = 0; j < h; j++) {
+  for(std::vector<Point>::iterator it = frontier_points.begin(); it != frontier_points.end(); it++)
+  {
+    int count = 0;
+    int i = (*it).x;
+    int j = (*it).y;
+
+    int trans = (map_.info.width * j) + i;
+    
+    for (int m = i-sidelen; m <= i+sidelen; m++)
+    {
+      for(int n = j-sidelen; n <= j+sidelen; n++)
+      {
+        if(i == m && j == n)
+          continue;
+
+        int trans2 = (map_.info.width * n) + m;
+        // if(costmap.getCost(m, n) >= LETHAL_OBSTACLE)
+        if(map_.data[trans2] == -128)
+          count++;
+      }
+
+    }
+    if (count > 0)
+      ROS_WARN("some bullshit %d", count);
+    if (count >= (1+2*sidelen)*(1+2*sidelen)*0.3) {
+      frontier_cleaned.push_back(Point(i, j));
+      map_.data[trans] = -127;
+    }
+  }
+  ROS_WARN("Frontier cleaned size %d", frontier_cleaned.size());
+
+  //for (int i = 0; i < w; i++) {
+  //  for (int j = 0; j < h; j++) {
+  for(std::vector<Point>::iterator it = frontier_cleaned.begin(); it != frontier_cleaned.end(); it++)
+  {
+      bool alreadybelongs = false;
+      for (std::vector<Frontier>::iterator it2 = frontiers_.begin();
+        it2 < frontiers_.end(); ++it2)
+      {
+        unsigned int frontierx, frontiery;
+        costmap.worldToMap((*it2).pose.position.x, (*it2).pose.position.y, frontierx, frontiery);
+        if(dist((*it).x, (*it).y, frontierx, frontiery) <= it2->size) {
+          alreadybelongs = true;
+          break;
+        }
+      }
+      if (alreadybelongs)
+        continue;
+
+      Rectangle r(it->x, it->y, it->x, it->y);
+      while (1)
+      {
+        bool mod = false;
+        for(int i = r.x1; i <= r.x2; i++)
+        {
+            //if(costmap.getCost(i, r.y1-1, image) < BLACKTHRESH)
+          int trans = (map_.info.width * (r.y1-1)) + i;
+          if(map_.data[trans] == -127)
+            {
+                r.y1--;
+                mod = true;
+            }
+          trans = (map_.info.width * (r.y2+1)) + i;
+          if(map_.data[trans] == -127)
+            {
+                r.y2++;
+                mod = true;
+            }
+        }
+        
+        for(int i = r.y1; i <= r.y2; i++)
+        {
+        //    if(colorSum(r.x1-1, i, image) < BLACKTHRESH)
+          int trans = (map_.info.width * i) + (r.x1-1);
+          if(map_.data[trans] == -127)
+            {
+                r.x1--;
+                mod = true;
+            }
+            //if(colorSum(r.x2+1, i, image) < BLACKTHRESH)
+          trans = (map_.info.width * i) + (r.x2+1);
+          if(map_.data[trans] == -127)
+            {
+                r.x2++;
+                mod = true;
+            }
+        }
+        
+        if(!mod)
+            break;
+      }
+      Frontier frontier;
+      double xworld, yworld;
+      int proposedx = (r.x2 + r.x1) / 2;
+      int proposedy = (r.y2 + r.y1) / 2;
+      costmap.mapToWorld(proposedx, proposedy, xworld, yworld);
+      frontier.pose.position.x = xworld;
+      frontier.pose.position.y = yworld;
+      int pw = (r.x2 - r.x1) / 2;
+      int ph = (r.y2 - r.y1) / 2;
+      frontier.size = sqrt(pw*pw + ph*ph);
+
+      frontiers_.push_back(frontier);
+      ROS_WARN("Added a frontier");
+  }
+  return;
+
+/*
   // Clean up frontiers detected on separate rows of the map
   idx = map_.info.height - 1;
   for (unsigned int y=0; y < map_.info.width; y++) {
@@ -523,18 +648,14 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
 
       segments.push_back(segment);
       segment_id--;
-      /*
       if (segment_id < -127)
         break;
-      */
     }
   }
 
-  /*
   int num_segments = 127 - segment_id;
   if (num_segments <= 0)
     return;
-  */
 
   for (unsigned int i=0; i < segments.size(); i++) {
     Frontier frontier;
@@ -560,10 +681,16 @@ void ExploreFrontier::findFrontiers(Costmap2DROS& costmap_) {
     frontier.pose.position.z = 0.0;
 
     frontier.pose.orientation = tf::createQuaternionMsgFromYaw(btAtan2(d.y(), d.x()));
-    frontier.size = size;
+    double maxDist = -1;
+    for(int m = 0; m < segment.size(); m++)
+      for(int n = m+1; n < segment.size(); n++)
+        maxDist = std::max(maxDist, dist(segment[m].idx % map_.info.width, segment[m].idx / map_.info.width, segment[n].idx % map_.info.width, segment[n].idx / map_.info.width));
+    frontier.size = std::max(maxDist, (double) size);
+    //frontier.size = size;
 
     frontiers_.push_back(frontier);
   }
+  */
 }
 
 void ExploreFrontier::getVisualizationMarkers(std::vector<Marker>& markers)
@@ -639,6 +766,7 @@ void ExploreFrontier::getVisualizationMarkers(std::vector<Marker>& markers)
   m_text.color.a = 1.0;
 
   uint id = 0;
+  /*
   for (uint i = 0; i < rated_frontiers_.size(); ++i) {
     RatedFrontier rated_frontier = rated_frontiers_[i];
 
@@ -661,19 +789,18 @@ void ExploreFrontier::getVisualizationMarkers(std::vector<Marker>& markers)
     markers.push_back(Marker(m_text));
     id++;
   }
-  /*
-   * Draw regular frontiers
+  */
+  // draw regular
   for (uint i = 0; i < frontiers_.size(); ++i) {
     Frontier frontier = frontiers_[i];
     m.id = id;
     m.pose = frontier.pose;
-    m.scale.x = 2.0;
-    m.scale.y = 2.0;
-    m.scale.z = 2.0;
+    m.scale.x = frontier.size;
+    m.scale.y = frontier.size;
+    m.scale.z = frontier.size;
     markers.push_back(Marker(m));
     ++id;
   }
-  */
 
   m.action = Marker::DELETE;
   for (; id < lastMarkerCount_; id++) {
@@ -857,10 +984,6 @@ inline double perpenDist(double m, double b, double x, double y)
 inline double linePointPosition2D ( double x1, double y1, double x2, double y2, double x3, float y3 )
 {
     return (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1);   
-}
-
-inline double dist(double x1, double y1, double x2, double y2) {
-  return std::sqrt( (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
 }
 
 //this is the this least reliable, but the fastest. I have not copied to slower and more reliable version.
