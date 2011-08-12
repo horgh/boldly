@@ -1,0 +1,9 @@
+    <param name="explore_planner/allow_unknown" value="false" />
+<!--
+    <param name="explore_planner/allow_unknown" value="true" />
+-->
+
+    <!-- world specific -->
+    <rosparam file="$(find explore_stage)/world_configs/stage_hospital_section/explore_costmap.yaml" command="load" />
+  </node>
+</launch>
