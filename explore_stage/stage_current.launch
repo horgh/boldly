@@ -1,0 +1,14 @@
+<!--
+  Do explore & slam in current.world
+-->
+
+<launch>
+  <master auto="start"/>
+  <param name="/use_sim_time" value="true"/>
+
+  <node pkg="stage" type="stageros" name="stage" args="$(find bosch_worlds)/current.world" respawn="false" output="screen"/>
+
+  <include file="$(find explore_stage)/gmapping.xml" />
+  <include file="$(find explore_stage)/move.xml" />
+  <include file="$(find explore_stage)/explore_slam.xml" />
+</launch>

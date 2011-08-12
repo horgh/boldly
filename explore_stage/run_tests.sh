@@ -16,9 +16,9 @@ do
   $MAXDIST=${line_array[3]}
 
   #set pose
-  cat ../bosch_demos/bosch_worlds/$MAPNAME.world.top > current.world
-  echo "pose [$XPOS $YPOS 0 0]" >> current.world
-  cat ../bosch_demos/bosch_worlds/$MAPNAME.world.bottom >> current.world
+  cat ../bosch_demos/bosch_worlds/$MAPNAME.world.top > ../bosch_demos/bosch_worlds/current.world
+  echo "pose [$XPOS $YPOS 0 0]" >> ../bosch_demos/bosch_worlds/current.world
+  cat ../bosch_demos/bosch_worlds/$MAPNAME.world.bottom >> ../bosch_demos/bosch_worlds/current.world
 
   #for each rating
   for j in `seq 0 2`
@@ -30,7 +30,7 @@ do
     cat ../explore_stage/explore_slam.xml.bottom >> ../explore_stage/explore_slam.xml
 
     #run
-    roslaunch explore_stage stage_hospital.launch &
+    roslaunch explore_stage stage_current.launch &
 
     FINISHED=0
     #wait for finish
