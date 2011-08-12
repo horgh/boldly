@@ -1,7 +1,8 @@
 #!/bin/bash
-# Must execute in explore_stage dir
+#
+# Must execute in a subdir of ros/boldly/
+#
 
-MAPPATH="hospital-section"
 MAPNAME="hospital"
 INDEX=0
 
@@ -15,21 +16,21 @@ do
   $MAXDIST=${line_array[3]}
 
   #set pose
-  cat ../bosch_demos/bosch_worlds/$MAPPATH.world.top > used.world
-  echo "pose [$XPOS $YPOS 0 0]" >> used.world
-  cat ../bosch_demos/bosch_worlds/$MAPPATH.world.bottom >> used.world
+  cat ../bosch_demos/bosch_worlds/$MAPNAME.world.top > current.world
+  echo "pose [$XPOS $YPOS 0 0]" >> current.world
+  cat ../bosch_demos/bosch_worlds/$MAPNAME.world.bottom >> current.world
 
   #for each rating
   for j in `seq 0 2`
   do
     
     #set rating
-    cat world_configs/stage_hospital_section/explore_slam.xml.top > world_configs/stage_hospital_section/explore_slam.xml
-    echo "<param name=\"rating_type\" value=\"$j\" />" >> world_configs/stage_hospital_section/explore_slam.xml
-    cat world_configs/stage_hospital_section/explore_slam.xml.bottom >> world_configs/stage_hospital_section/explore_slam.xml
+    cat ../explore_stage/explore_slam.xml.top > ../explore_stage/explore_slam.xml
+    echo "<param name=\"rating_type\" value=\"$j\" />" >> ../explore_stage/explore_slam.xml
+    cat ../explore_stage/explore_slam.xml.bottom >> ../explore_stage/explore_slam.xml
 
     #run
-    roslaunch explore_stage stage_hospital_section.launch &
+    roslaunch explore_stage stage_hospital.launch &
 
     FINISHED=0
     #wait for finish
