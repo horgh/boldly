@@ -1,12 +1,12 @@
 <launch>  
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen" >
-    <rosparam file="$(find explore_stage)/config/footprint.yaml" command="load" />
-    <rosparam file="$(find explore_stage)/config/costmap_common.yaml" command="load" ns="global_costmap" />
-    <rosparam file="$(find explore_stage)/config/costmap_common.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find explore_stage)/footprint.yaml" command="load" />
+    <rosparam file="$(find explore_stage)/costmap_common.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find explore_stage)/costmap_common.yaml" command="load" ns="local_costmap" />
 
-    <rosparam file="$(find explore_stage)/explore/local_costmap.yaml" command="load" />
-    <rosparam file="$(find explore_stage)/explore/trajectory_planner_params.yaml" command="load" />
-    <rosparam file="$(find explore_stage)/explore/navfn_params.yaml" command="load" />
+    <rosparam file="$(find explore_stage)/local_costmap.yaml" command="load" />
+    <rosparam file="$(find explore_stage)/trajectory_planner_params.yaml" command="load" />
+    <rosparam file="$(find explore_stage)/navfn_params.yaml" command="load" />
 
 <!--
     <param name="controller_frequency" type="double" value="5.0" />
@@ -17,7 +17,6 @@
 -->
     <param name="recovery_behavior_enabled" value="true" />
 
-    <!-- world specific costmap settings -->
-    <rosparam file="$(find explore_stage)/world_configs/stage_hospital_section/global_costmap.yaml" command="load" />
+    <rosparam file="$(find explore_stage)/global_costmap.yaml" command="load" />
   </node>
 </launch>

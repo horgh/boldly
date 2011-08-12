@@ -3,9 +3,9 @@
 <!--
   <node launch-prefix="gdb -ex run - -args " pkg="explore" type="explore" respawn="false" name="explore" output="screen" >
 -->
-    <rosparam file="$(find explore_stage)/config/footprint.yaml" command="load" />
+    <rosparam file="$(find explore_stage)/footprint.yaml" command="load" />
 
-    <rosparam file="$(find explore_stage)/config/costmap_common.yaml" command="load" ns="explore_costmap" />
+    <rosparam file="$(find explore_stage)/costmap_common.yaml" command="load" ns="explore_costmap" />
 
     <param name="potential_scale" value="0.005"/>
     <param name="orientation_scale" value="0.0"/>
@@ -20,6 +20,6 @@
 -->
 
     <!-- world specific -->
-    <rosparam file="$(find explore_stage)/world_configs/stage_hospital_section/explore_costmap.yaml" command="load" />
+    <rosparam file="$(find explore_stage)/explore_costmap.yaml" command="load" />
   </node>
 </launch>
