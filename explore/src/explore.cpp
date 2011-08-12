@@ -135,6 +135,11 @@ void Explore::battery_state_callback(const p2os_driver::BatteryState::ConstPtr &
   battery_voltage = msg->voltage;
 }
 
+void Explore::ground_truth_callback(const nav_msgs::Odometry::ConstPtr & msg) {
+  ground_truth_x_ = msg->pose.pose.position.x;
+  ground_truth_y_ = msg->pose.pose.position.y;
+}
+
 /*
   Add an arrow marker to the given markers vector
 */
@@ -347,6 +352,8 @@ Explore::Explore() :
   marker_array_publisher_ = node_.advertise<MarkerArray>("visualization_marker_array",10000);
   topomap_marker_publisher_ = node_.advertise<Marker>("topomap_marker", 5000);
   map_publisher_ = private_nh.advertise<nav_msgs::OccupancyGrid>("map", 1, true);
+
+  ground_truth_subscriber_ = node_.subscribe<nav_msgs::Odometry>("base_pose_ground_truth", 1, &Explore::ground_truth_callback, this);
   voltage_subscriber_ = node_.subscribe<p2os_driver::BatteryState>("battery_state", 1, &Explore::battery_state_callback, this);
   charged_subscriber_ = node_.subscribe<std_msgs::Empty>("charge_complete", 1, &Explore::charge_complete_callback, this);
 
@@ -730,6 +737,7 @@ void Explore::reachedGoal(const actionlib::SimpleClientGoalState& status,
     geometry_msgs::PoseStamped frontier_goal)
 {
   ROS_WARN("Reached goal.");
+  atGoal();
   setState(STATE_WAITING_FOR_GOAL);
 
   if (status == actionlib::SimpleClientGoalState::ABORTED) {
@@ -1179,9 +1187,12 @@ void Explore::execute() {
     explore_costmap_ros_->getRobotPose(output_pose);
     PoseStamped output_stamped;
     tf::poseStampedTFToMsg(output_pose, output_stamped);
-    outputTime = time (NULL);
+
     //fprintf (outputFile, "%d %f %f\n", outputTime, output_stamped.pose.position.x, output_stamped.pose.position.y);
-    fprintf (outputFile, "%d %f %f %f\n", outputTime, output_stamped.pose.position.x, output_stamped.pose.position.y, furthest_distance);
+    //fprintf (outputFile, "%d %f %f %f\n", ros::Time::now().sec, output_stamped.pose.position.x, output_stamped.pose.position.y, furthest_distance);
+    fprintf (outputFile, "%d %f %f %f\n", ros::Time::now().sec,
+      ground_truth_x_, ground_truth_y_,
+      furthest_distance);
     fflush(outputFile);
 
 /*

@@ -42,6 +42,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Point.h>
 #include <nav_msgs/GetMap.h>
+#include <nav_msgs/Odometry.h>
 #include <costmap_2d/costmap_2d_ros.h>
 #include <costmap_2d/costmap_2d.h>
 #include <navfn/navfn_ros.h>
@@ -68,6 +69,7 @@ public:
 
   void charge_complete_callback(const std_msgs::Empty::ConstPtr & msg);
   void battery_state_callback(const p2os_driver::BatteryState::ConstPtr & msg);
+  void ground_truth_callback(const nav_msgs::Odometry::ConstPtr & msg);
   void visualize_arrow(int id, double x, double y, double scale, double r,
     double g, double b, double a, std::vector<visualization_msgs::Marker>* markers,
     std::string ns);
@@ -166,6 +168,7 @@ private:
   ros::Publisher topomap_marker_publisher_;
   ros::Publisher map_publisher_;
   ros::Subscriber voltage_subscriber_;
+  ros::Subscriber ground_truth_subscriber_;
   ros::Subscriber charged_subscriber_;
 
   ExploreFrontier* explorer_;
@@ -238,6 +241,8 @@ private:
 
   // Furthest distance we can travel from home
   double furthest_distance;
+
+  double ground_truth_x_, ground_truth_y_;
 };
 
 }
