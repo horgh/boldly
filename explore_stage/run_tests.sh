@@ -129,5 +129,5 @@ do
     # Wait for processes to cleanly die before beginning next trial
     nap 30
   done
-  INDEX=$INDEX+1
+  INDEX=$(expr $INDEX + 1)
 done < <(cat ../data/$MAPNAME/positions)
