@@ -51,6 +51,7 @@ do
     nap 10
 
     FINISHED=0
+    FINISHED_BADLY=0
     #wait for finish
     while [ $FINISHED == "0" ]
     do
@@ -77,6 +78,7 @@ do
       then
         echo "Finished trial due to determined explore is no longer running."
         FINISHED=1
+        FINISHED_BADLY=1
       fi
 
       # Check if done due to robot getting stuck
@@ -85,6 +87,7 @@ do
       then
         echo "Finished trial due to determining robot is stuck."
         FINISHED=1
+        FINISHED_BADLY=1
       fi
 
       # Wait a bit before checking again (to avoid busy loop)
@@ -100,8 +103,15 @@ do
     killall -9 gmapping
     killall -9 slam_gmapping
     
-    #move and rename output
-    mv ~/.ros/poses_output ../data/$MAPNAME/$INDEX-$j-$MAPNAME
+    if [ $FINISHED_BADLY == "1" ]
+    then
+      # Bad trial data
+      touch ../data/$MAPNAME/$INDEX-$j-$MAPNAME-BAD
+      
+    else
+      # Good trial data
+      mv ~/.ros/poses_output ../data/$MAPNAME/$INDEX-$j-$MAPNAME
+    fi
 
     # Wait for processes to cleanly die before beginning next trial
     nap 30
