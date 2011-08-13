@@ -119,7 +119,7 @@ do
     if [ $FINISHED_BADLY == "1" ]
     then
       # Bad trial data
-      touch $FILENAME-BAD-$FINISHED_BADLY_REASON
+      mv ~/.ros/poses_output $FILENAME-BAD-$FINISHED_BADLY_REASON
       
     else
       # Good trial data
