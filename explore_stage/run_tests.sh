@@ -54,7 +54,7 @@ do
         FINISHED=1
       fi
 
-      RUNNING=`ps -ef | grep explore`
+      RUNNING=`ps -ef | grep bin/explore | grep -v grep`
       if [ -z "$RUNNING" ]
       then
         FINISHED=1
