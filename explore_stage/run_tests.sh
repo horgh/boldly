@@ -7,13 +7,15 @@ MAPNAME="hospital"
 INDEX=0
 
 #for each starting pose
-for line in `cat ../data/$MAPNAME/positions`
+while read line # this gets filename at bottom of loop
 do
   #read in from positions
   line_array=($line)
-  $XPOS=${line_array[0]}
-  $YPOS=${line_array[1]}
-  $MAXDIST=${line_array[3]}
+  XPOS=${line_array[0]}
+  YPOS=${line_array[1]}
+  MAXDIST=${line_array[3]}
+
+  echo "Starting at $XPOS, $YPOS in $MAPNAME."
 
   #set pose
   cat ../bosch_demos/bosch_worlds/$MAPNAME.world.top > ../bosch_demos/bosch_worlds/current.world
@@ -24,13 +26,15 @@ do
   for j in `seq 0 2`
   do
     
+    echo "Using rating type $j at $XPOS, $YPOS in $MAPNAME."
+
     #set rating
-    cat ../explore_stage/explore_slam.xml.top > ../explore_stage/explore_slam.xml
-    echo "<param name=\"rating_type\" value=\"$j\" />" >> ../explore_stage/explore_slam.xml
-    cat ../explore_stage/explore_slam.xml.bottom >> ../explore_stage/explore_slam.xml
+    cat ../explore_stage/explore_slam.xml.top > ../explore_stage/current_explore_slam.xml
+    echo "<param name=\"rating_type\" value=\"$j\" />" >> ../explore_stage/current_explore_slam.xml
+    cat ../explore_stage/explore_slam.xml.bottom >> ../explore_stage/current_explore_slam.xml
 
     #run
-    roslaunch explore_stage stage_current.launch &
+    roslaunch explore_stage stage_current.launch &> ../explore_stage/current.log &
 
     FINISHED=0
     #wait for finish
@@ -40,7 +44,11 @@ do
       CURR_LAST_LINE_ARRAY=($CURR_LAST_LINE)
       CURR_MAX_DIST=${CURR_LAST_LINE_ARRAY[3]}
 
-      if [ "$CURR_MAX_DIST" -gt "$MAXDIST" ]
+      echo "Checking if we have finished (current max distance: $CURR_MAX_DIST, needed max distance: $MAXDIST"
+      echo "  using rating scheme $j at $XPOS, $YPOS in $MAPNAME."
+
+      BOOL_GT=`perl -e 'die unless @ARGV == 2; if ($ARGV[0] >= $ARGV[1]) { print 1 } else { print 0 }' $CURR_MAX_DIST $MAXDIST`
+      if [ "$BOOL_GT" == 1 ]
       then
         FINISHED=1
       fi
@@ -50,6 +58,11 @@ do
       then
         FINISHED=1
       fi
+
+      # Wait a bit before checking again
+      SECS=10
+      echo "Sleeping for $SECS seconds..."
+      sleep $SECS
     done
 
     #end it all
@@ -63,4 +76,4 @@ do
     mv ~/.ros/poses_output ../data/$MAPNAME/$INDEX-$j-$MAPNAME
   done
   INDEX=$INDEX+1
-done
+done < <(cat ../data/$MAPNAME/positions)

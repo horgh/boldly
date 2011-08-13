@@ -10,5 +10,5 @@
 
   <include file="$(find explore_stage)/gmapping.xml" />
   <include file="$(find explore_stage)/move.xml" />
-  <include file="$(find explore_stage)/explore_slam.xml" />
+  <include file="$(find explore_stage)/current_explore_slam.xml" />
 </launch>
