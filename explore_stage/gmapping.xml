@@ -1,5 +1,5 @@
 <launch>
-  <node pkg="gmapping" type="slam_gmapping" name="gmapping" output="screen">
+  <node pkg="gmapping" type="slam_gmapping" name="gmapping" output="log">
     <remap from="scan" to="base_scan" />
     <param name="inverted_laser" value="false" />
   <!--
