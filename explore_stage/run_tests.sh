@@ -52,6 +52,7 @@ do
 
     FINISHED=0
     FINISHED_BADLY=0
+    FINISHED_BADLY_REASON=""
     #wait for finish
     while [ $FINISHED == "0" ]
     do
@@ -79,6 +80,7 @@ do
         echo "Finished trial due to determined explore is no longer running."
         FINISHED=1
         FINISHED_BADLY=1
+        FINISHED_BADLY_REASON="crash"
       fi
 
       # Check if done due to robot getting stuck
@@ -88,6 +90,7 @@ do
         echo "Finished trial due to determining robot is stuck."
         FINISHED=1
         FINISHED_BADLY=1
+        FINISHED_BADLY_REASON="stuck"
       fi
 
       # Wait a bit before checking again (to avoid busy loop)
@@ -106,7 +109,7 @@ do
     if [ $FINISHED_BADLY == "1" ]
     then
       # Bad trial data
-      touch ../data/$MAPNAME/$INDEX-$j-$MAPNAME-BAD
+      touch ../data/$MAPNAME/$INDEX-$j-$MAPNAME-BAD-$FINISHED_BADLY_REASON
       
     else
       # Good trial data
