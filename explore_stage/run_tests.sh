@@ -25,6 +25,7 @@ do
   #for each rating
   for j in `seq 0 2`
   do
+    rm -f ~/.ros/poses_output
     
     echo "Using rating type $j at $XPOS, $YPOS in $MAPNAME."
 
@@ -38,7 +39,7 @@ do
 
     FINISHED=0
     #wait for finish
-    while [ $FINISHED = 0 ]
+    while [ $FINISHED == "0" ]
     do
       CURR_LAST_LINE=`tail -n 1 ~/.ros/poses_output`
       CURR_LAST_LINE_ARRAY=($CURR_LAST_LINE)
@@ -71,6 +72,7 @@ do
     killall -9 stage
     killall -9 stageros
     killall -9 gmapping
+    killall -9 slam_gmapping
     
     #move and rename output
     mv ~/.ros/poses_output ../data/$MAPNAME/$INDEX-$j-$MAPNAME
