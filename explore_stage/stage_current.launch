@@ -6,11 +6,11 @@
   <master auto="start"/>
   <param name="/use_sim_time" value="true"/>
 
-<!-- This runs with no gui -->
-<!--
+<!-- This runs with no gui BUT it seems speedup does not take effect. -->
   <node pkg="stage" type="stageros" name="stage" respawn="false" output="screen" args="-g $(find bosch_worlds)/current.world" />
--->
+<!--
   <node pkg="stage" type="stageros" name="stage" respawn="false" output="screen" args="$(find bosch_worlds)/current.world" />
+-->
 
   <include file="$(find explore_stage)/gmapping.xml" />
   <include file="$(find explore_stage)/move.xml" />
