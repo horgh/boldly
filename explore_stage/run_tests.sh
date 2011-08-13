@@ -36,8 +36,18 @@ do
   for j in `seq 0 2`
   do
     rm -f ~/.ros/poses_output
-    
+
     echo "Using rating type $j at $XPOS, $YPOS in $MAPNAME."
+
+    FILENAME=../data/$MAPNAME/$INDEX-$j-$MAPNAME
+    # Check if we already have data for this set
+    if [ -e $FILENAME ]
+    then
+      echo "We already have data for this set ($FILENAME). Continuing to next..."
+      continue
+    fi
+
+    echo "Beginning test. Will save data in $FILENAME."
 
     #set rating
     cat ../explore_stage/explore_slam.xml.top > ../explore_stage/current_explore_slam.xml
@@ -109,11 +119,11 @@ do
     if [ $FINISHED_BADLY == "1" ]
     then
       # Bad trial data
-      touch ../data/$MAPNAME/$INDEX-$j-$MAPNAME-BAD-$FINISHED_BADLY_REASON
+      touch $FILENAME-BAD-$FINISHED_BADLY_REASON
       
     else
       # Good trial data
-      mv ~/.ros/poses_output ../data/$MAPNAME/$INDEX-$j-$MAPNAME
+      mv ~/.ros/poses_output $FILENAME
     fi
 
     # Wait for processes to cleanly die before beginning next trial
