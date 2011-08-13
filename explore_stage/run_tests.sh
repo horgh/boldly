@@ -76,6 +76,10 @@ do
     
     #move and rename output
     mv ~/.ros/poses_output ../data/$MAPNAME/$INDEX-$j-$MAPNAME
+
+    SECS=30
+    echo "Sleeping for $SECS seconds to ensure processes died..."
+    sleep $SECS
   done
   INDEX=$INDEX+1
 done < <(cat ../data/$MAPNAME/positions)

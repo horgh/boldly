@@ -24,6 +24,9 @@ define floorplan model
   laser_return 1
 )
 
+# Go 4x speed
+speedup 4
+
 resolution 0.02
 interval_sim 100  # simulation timestep in milliseconds
 interval_real 150 # real-time interval between simulation updates in milliseconds 
@@ -74,5 +77,5 @@ floorplan
 
 )
 
-#pioneer2dx (
 pioneer3dx (
+  pose [-105 -20 0.0 0.0]
