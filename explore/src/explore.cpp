@@ -896,7 +896,13 @@ void Explore::checkIfStuck() {
     } else if (state == STATE_HEADING_HOME) {
       notifier_->publish("Stuck while heading home.");
       // Try to move in a random direction to get unstuck
-      moveRandomDirection();
+
+      // XXX This can work, but seems to also possible to never return from
+      // it since we wait for a response from move_base (and thus our main
+      // loop is forever interrupted, and no more file writes. Should write
+      // this into main loop structure - but unnecessary for now.)
+      //moveRandomDirection();
+
       // The above sent a new goal to move_base. When it's done, we need to
       // return to heading home.
       goHome();
