@@ -67,6 +67,7 @@ do
     done
 
     #end it all
+    killall -9 roslaunch
     killall -9 explore
     killall -9 move_base
     killall -9 stage
