@@ -105,9 +105,9 @@ do
     for j in `seq 0 2`
     do
       echo "Using rating type $j at $XPOS, $YPOS in $MAPNAME."
+      FILENAME=../data/$MAPNAME/$POSE_INDEX-$j-$MAPNAME
       echo "Will save data in $FILENAME."
 
-      FILENAME=../data/$MAPNAME/$POSE_INDEX-$j-$MAPNAME
       # Check if we already have data for this set
       if [ -e $FILENAME ]
       then
