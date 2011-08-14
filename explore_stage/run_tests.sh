@@ -35,7 +35,7 @@ function do_trial {
 
       echo ""
       echo "Checking if we have finished..."
-      echo "On trial #$COUNT for position $XPOS, $YPOS, rating type $j on $MAPNAME."
+      echo "On trial #$COUNT for position $POSE_INDEX ($XPOS, $YPOS), rating type $j on $MAPNAME."
       echo "  Current max distance: $CURR_MAX_DIST, needed max distance: $MAXDIST."
 
       # Check if we're done due to max distance hit
@@ -104,7 +104,7 @@ do
     # Run a trial for each rating type
     for j in `seq 0 2`
     do
-      echo "Using rating type $j at $XPOS, $YPOS in $MAPNAME."
+      echo "Using rating type $j at pose $POSE_INDEX ($XPOS, $YPOS) in $MAPNAME."
       FILENAME=../data/$MAPNAME/$POSE_INDEX-$j-$MAPNAME
       echo "Will save data in $FILENAME."
 
@@ -124,7 +124,7 @@ do
       COUNT=0
       while [ $SUCCESSFUL_TRIAL == "0" ]
       do
-        echo "Initiating trial #$COUNT for position $XPOS, $YPOS with rating $j for $MAPNAME."
+        echo "Initiating trial #$COUNT for position $POSE_INDEX ($XPOS, $YPOS) with rating $j for $MAPNAME."
         do_trial
 
         # Wait for processes to cleanly die before beginning next trial
