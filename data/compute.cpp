@@ -16,7 +16,7 @@ int main(int argc, char **argv)
     if(argc >= 2)
     {
         int minrange = 0;
-        int maxrange = 10;
+        int maxrange = 9;
         if(argc >= 3)
             minrange = atoi(argv[2]);
         if(argc >= 4)
