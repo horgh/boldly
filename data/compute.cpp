@@ -27,6 +27,16 @@ int main(int argc, char **argv)
         posname << argv[1] << "/positions";
         positions = fopen(posname.str().c_str(), "r");
         
+        //histogram files
+        FILE * ratingA, * ratingB, * ratingC;
+        stringstream outA, outB, outC;
+        outA << argv[1] << "/0-" << argv[1] << ".histo";
+        outB << argv[1] << "/1-" << argv[1] << ".histo";
+        outC << argv[1] << "/2-" << argv[1] << ".histo";
+        ratingA = fopen(outA.str().c_str(), "w");
+        ratingB = fopen(outB.str().c_str(), "w");
+        ratingC = fopen(outC.str().c_str(), "w");
+        
         double throwaway;
         
         for(int i = 0; i < minrange; i++)
@@ -43,6 +53,7 @@ int main(int argc, char **argv)
                 stringstream filename;
                 filename << argv[1] << "/" << i << "-" << j << "-" << argv[1];
                 file = fopen(filename.str().c_str(), "r");
+                bool gotRatingPoint = false;
                 
                 if(file != NULL)
                 {
@@ -71,6 +82,18 @@ int main(int argc, char **argv)
                             travelled += dist(lastx, lasty, newx, newy);
                             lastx = newx;
                             lasty = newy;
+                        }
+                        
+                        if(!gotRatingPoint && 100*(maxval / mapmax) >= 95)
+                        {
+                            if(j == 0)
+                                fprintf(ratingA, "%lf 1\n", travelled);
+                            else if(j == 1)
+                                fprintf(ratingB, "%lf 1\n", travelled);
+                            else if(j == 2)
+                                fprintf(ratingC, "%lf 1\n", travelled);
+                                
+                            gotRatingPoint = true;
                         }
                                         
                         fprintf(output, "%lf %lf\n", 100*(maxval / mapmax), travelled);
