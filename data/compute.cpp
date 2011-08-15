@@ -21,9 +21,22 @@ int main(int argc, char **argv)
             minrange = atoi(argv[2]);
         if(argc >= 4)
             maxrange = atoi(argv[3]);
+            
+        FILE * positions;
+        stringstream posname;
+        posname << argv[1] << "/positions";
+        positions = fopen(posname.str().c_str(), "r");
+        
+        double throwaway;
+        
+        for(int i = 0; i < minrange; i++)
+            fscanf(positions, "%lf %lf %lf %lf", &throwaway, &throwaway, &throwaway, &throwaway);
     
         for(int i = minrange; i <= maxrange; i++)
         {
+            double mapmax;
+            fscanf(positions, "%lf %lf %lf %lf", &throwaway, &throwaway, &mapmax, &throwaway);
+            
             for(int j = 0; j < 3; j++)
             {
                 FILE * file;
@@ -60,7 +73,7 @@ int main(int argc, char **argv)
                             lasty = newy;
                         }
                                         
-                        fprintf(output, "%lf %lf\n", travelled, maxval);
+                        fprintf(output, "%lf %lf\n", 100*(maxval / mapmax), travelled);
                     }
                     
                     fclose(output);
