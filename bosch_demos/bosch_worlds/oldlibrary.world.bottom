@@ -1,0 +1,3 @@
+  name "pioneer"
+  sick(pose [0.0 0.0 0.0 0.0])
+)

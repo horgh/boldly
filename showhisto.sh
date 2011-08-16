@@ -11,6 +11,10 @@ set xlabel "Distance Travelled to 95% Maximum Sight" 0.000000,0.000000
 set title "Robot Performance Distributions" 0.000000,0.000000
 set key left top
 
+set terminal png enhanced size 1500, 900
+# Set the output-file name.
+set output "histo.png"
+
 plot "data/".MAP."/0-".MAP.".histo" using 1:2 title "A", \
     "data/".MAP."/1-".MAP.".histo" using 1:2 title "B", \
     "data/".MAP."/2-".MAP.".histo" using 1:2 title "C"

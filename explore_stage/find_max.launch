@@ -2,21 +2,21 @@
   <master auto="start" />
   <param name="/use_sim_time" value="true" />
 
-  <node pkg="stage" type="stageros" name="stage" args="$(find bosch_worlds)/hospital-section.world" respawn="false" output="screen"/>
+  <node pkg="stage" type="stageros" name="stage" args="$(find bosch_worlds)/oldlibrary.world" respawn="false" output="screen"/>
 
-  <node pkg="map_server" type="map_server" name="map_server" args="$(find bosch_maps)/map_server_configs/hospital.yaml" />
+  <node pkg="map_server" type="map_server" name="map_server" args="$(find bosch_maps)/map_server_configs/oldlibrary.yaml" />
 
   <!-- Depends on robot's initial position in specific world? -->
-  <node pkg="tf" type="static_transform_publisher" name="map_odom" args="157.5 60 0 0 0 0 map odom 100" />
+  <node pkg="tf" type="static_transform_publisher" name="map_odom" args="60 60 0 0 0 0 map odom 100" />
 
   <!-- Very similar to explore_slam.xml to run explore -->
   <node pkg="explore" type="find_max" respawn="false" name="explore" output="screen" >
 <!--
   <node launch-prefix="gdb -ex run - -args " pkg="explore" type="explore" respawn="false" name="explore" output="screen" >
 -->
-    <rosparam file="$(find explore_stage)/config/footprint.yaml" command="load" />
+    <rosparam file="$(find explore_stage)/footprint.yaml" command="load" />
 
-    <rosparam file="$(find explore_stage)/config/costmap_common.yaml" command="load" ns="explore_costmap" />
+    <rosparam file="$(find explore_stage)/costmap_common.yaml" command="load" ns="explore_costmap" />
 
     <param name="potential_scale" value="0.005"/>
     <param name="orientation_scale" value="0.0"/>
@@ -30,6 +30,8 @@
 -->
 
     <!-- world specific -->
+    <!-- 
     <rosparam file="$(find explore_stage)/world_configs/stage_hospital_section/explore_costmap.yaml" command="load" />
+    -->
   </node>
 </launch>
