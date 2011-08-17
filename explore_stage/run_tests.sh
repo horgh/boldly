@@ -4,7 +4,7 @@
 #
 
 # Must be space separated.
-WORLDS="hospital"
+WORLDS="oldlibrary"
 
 function nap {
   if [ -z $1 ]
@@ -95,10 +95,11 @@ do
     XPOS=${line_array[0]}
     YPOS=${line_array[1]}
     MAXDIST=${line_array[3]}
+    ROT=${line_array[4]}
 
     # Set robot initial pose in world file
     cat ../bosch_demos/bosch_worlds/$MAPNAME.world.top > ../bosch_demos/bosch_worlds/current.world
-    echo "pose [$XPOS $YPOS 0 0]" >> ../bosch_demos/bosch_worlds/current.world
+    echo "pose [$XPOS $YPOS 0 $ROT]" >> ../bosch_demos/bosch_worlds/current.world
     cat ../bosch_demos/bosch_worlds/$MAPNAME.world.bottom >> ../bosch_demos/bosch_worlds/current.world
 
     # Run a trial for each rating type
