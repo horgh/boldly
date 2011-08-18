@@ -78,7 +78,7 @@ floorplan
 )
 
 pioneer3dx (
-  pose [-5 0 0.0 0.0]
+  pose [-21 -55 0 210]
   name "pioneer"
   sick(pose [0.0 0.0 0.0 0.0])
 )
