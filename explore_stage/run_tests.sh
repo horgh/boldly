@@ -103,7 +103,7 @@ do
     cat ../bosch_demos/bosch_worlds/$MAPNAME.world.bottom >> ../bosch_demos/bosch_worlds/current.world
 
     # Run a trial for each rating type
-    for j in `seq 0 2`
+    for j in `seq 0 1`
     do
       echo "Using rating type $j at pose $POSE_INDEX ($XPOS, $YPOS) in $MAPNAME."
       FILENAME=../data/$MAPNAME/$POSE_INDEX-$j-$MAPNAME

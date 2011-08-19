@@ -65,7 +65,7 @@ floorplan
   #size [140.000 60.000 2.500]
   # Used to use
   #size [170.000 80.000 2.500]
-  size [120.0 120.0 2.5]
+  size [240.0 240.0 2.5]
   #size [210.0 80.0 2.5]
 
   #size [300.000 150.000 2.500]
@@ -78,7 +78,7 @@ floorplan
 )
 
 pioneer3dx (
-  pose [-5 0 0.0 0.0]
+  pose [-52 -110 0 71]
   name "pioneer"
   sick(pose [0.0 0.0 0.0 0.0])
 )
