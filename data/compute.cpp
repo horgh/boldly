@@ -40,14 +40,14 @@ int main(int argc, char **argv)
         double throwaway;
         
         for(int i = 0; i < minrange; i++)
-            fscanf(positions, "%lf %lf %lf %lf", &throwaway, &throwaway, &throwaway, &throwaway);
+            fscanf(positions, "%lf %lf %lf %lf %lf", &throwaway, &throwaway, &throwaway, &throwaway, &throwaway);
     
         for(int i = minrange; i <= maxrange; i++)
         {
             double mapmax;
-            fscanf(positions, "%lf %lf %lf %lf", &throwaway, &throwaway, &mapmax, &throwaway);
+            fscanf(positions, "%lf %lf %lf %lf %lf", &throwaway, &throwaway, &mapmax, &throwaway, &throwaway);
             
-            for(int j = 0; j < 3; j++)
+            for(int j = 0; j < 2; j++)
             {
                 FILE * file;
                 stringstream filename;
