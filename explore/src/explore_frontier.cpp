@@ -138,7 +138,8 @@ void ExploreFrontier::computePotentialFromRobot(Costmap2DROS* costmap, navfn::Na
 bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap_ros,
   tf::Stamped<tf::Pose> robot_pose, navfn::NavfnROS* planner,
   std::vector<RatedFrontier>& goals, double potential_scale,
-  double orientation_scale, double gain_scale, std::vector<Waypoint*>* topo_map)
+  double orientation_scale, double gain_scale, std::vector<Waypoint*>* topo_map,
+  geometry_msgs::PoseStamped home_posestamped)
 {
   // May not have created topomap yet
   if (topo_map == NULL)
@@ -300,7 +301,10 @@ bool ExploreFrontier::rateFrontiers(Costmap2DROS& costmap_ros,
     
     } else if (rating_type_ == 2) {
       //2) ros / duhadway / bosch -like frontier selection
-      rating = (gain_scale * getFrontierGain((*it).frontier, costmapResolution_)) - (potential_scale * getFrontierCost((*it).frontier) + orientation_scale * getOrientationChange((*it).frontier, robot_pose));
+      //rating = (gain_scale * getFrontierGain((*it).frontier, costmapResolution_)) - (potential_scale * getFrontierCost((*it).frontier) + orientation_scale * getOrientationChange((*it).frontier, robot_pose));
+      //2) distance from home / origin
+      rating = dist(home_posestamped.pose.position.x, home_posestamped.pose.position.y,
+        it->frontier.pose.position.x, it->frontier.pose.position.y);
 
     } else {
       assert(9 == 10);

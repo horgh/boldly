@@ -634,7 +634,7 @@ void Explore::makePlan() {
   // getExplorationGoals() is old frontier rating system
   //if (! explorer_->getExplorationGoals(*explore_costmap_ros_, robot_pose, planner_, goals, potential_scale_, orientation_scale_, gain_scale_) ) {
 
-  if (! explorer_->rateFrontiers(*explore_costmap_ros_, robot_pose, planner_, goals, potential_scale_, orientation_scale_, gain_scale_, topomap_->get_topomap() )) {
+  if (! explorer_->rateFrontiers(*explore_costmap_ros_, robot_pose, planner_, goals, potential_scale_, orientation_scale_, gain_scale_, topomap_->get_topomap(), home_pose_msg )) {
     ROS_WARN("No frontiers found?");
   }
 
