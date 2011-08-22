@@ -1,0 +1,8 @@
+1 intro
+2 related work
+
+3 algorithm (frontier) / topomap
+4 how tested: robot, simulation (how setup)
+5 results: 1. simulation, 2. robot
+
+X discussion/conclusion
