@@ -47,7 +47,7 @@ int main(int argc, char **argv)
             double mapmax;
             fscanf(positions, "%lf %lf %lf %lf %lf", &throwaway, &throwaway, &mapmax, &throwaway, &throwaway);
             
-            for(int j = 0; j < 2; j++)
+            for(int j = 0; j < 3; j++)
             {
                 FILE * file;
                 stringstream filename;
