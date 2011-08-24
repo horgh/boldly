@@ -26,7 +26,8 @@ foreach (reverse @poses_output_lines) {
     }
 
     # If pose hasn't changed for at least 30 min (ROS time), we're stuck
-    if ($time + 1800 < $latest_time) {
+    #if ($time + 1800 < $latest_time) {
+    if ($time + 7200 < $latest_time) {
     #if ($time + 60 < $latest_time) {
       # Robot is stuck
       print "1";
